@@ -9,6 +9,7 @@ import { H1, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { credentialProblem, signInWithPassword } from "@/auth/auth-actions";
+import { DEV_SIGN_IN } from "@/lib/config";
 
 /**
  * Sign in (S15). Email and password go straight to Supabase, so this works
@@ -17,15 +18,22 @@ import { credentialProblem, signInWithPassword } from "@/auth/auth-actions";
  * Continue with Apple and Continue with Google are not here yet: both currently
  * run through Lovable's OAuth broker on the web, and spike S1 decides whether
  * the app gets a native sheet or the bridge (§12).
+ *
+ * In development the fields arrive filled from EXPO_PUBLIC_DEV_EMAIL and
+ * EXPO_PUBLIC_DEV_PASSWORD with a one-tap button beside them. It is the same
+ * sign-in every other account goes through — a real session against the real
+ * backend — just without the retyping.
  */
 export default function SignIn() {
   const toast = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Captured locally: TypeScript will not narrow an imported binding inside
+  // the callback below.
+  const devCreds = DEV_SIGN_IN;
+  const [email, setEmail] = useState(DEV_SIGN_IN?.email ?? "");
+  const [password, setPassword] = useState(DEV_SIGN_IN?.password ?? "");
   const [busy, setBusy] = useState(false);
 
-  async function submit() {
-    const creds = { email, password };
+  async function submit(creds: { email: string; password: string } = { email, password }) {
     const problem = credentialProblem(creds, "signin");
     if (problem) {
       toast.error(new Error(problem));
@@ -51,7 +59,11 @@ export default function SignIn() {
         className="flex-1"
       >
         <ScreenScroll contentClassName="pt-4 gap-5">
-          <BackButton />
+          <BackButton
+            onPress={() =>
+              router.canGoBack() ? router.back() : router.replace("/(public)/welcome")
+            }
+          />
 
           <H1>Welcome back</H1>
 
@@ -81,6 +93,15 @@ export default function SignIn() {
           </View>
 
           <Button title="Sign in" loading={busy} onPress={() => void submit()} />
+
+          {devCreds ? (
+            <Button
+              title="Sign in as test user"
+              variant="secondary"
+              loading={busy}
+              onPress={() => void submit(devCreds)}
+            />
+          ) : null}
 
           <Pressable
             onPress={() => router.push("/(public)/forgot-password")}

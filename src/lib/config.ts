@@ -32,6 +32,24 @@ export const SUPABASE_PUBLISHABLE_KEY =
 export const APP_VARIANT = extra.variant ?? "development";
 export const IS_DEV_VARIANT = APP_VARIANT === "development";
 
+/**
+ * A throwaway account to sign in with while developing, from .env.
+ *
+ * The app talks to production and there is no staging backend (master plan
+ * §24), so seeing any signed-in screen means a real session. This saves
+ * retyping one on every reload; it does not create or bypass anything.
+ *
+ * Null unless __DEV__ AND both variables are set, so a build that never had
+ * them behaves exactly as before. Treat whatever goes in here as public:
+ * EXPO_PUBLIC_* values are inlined into the JS bundle at build time, so this
+ * is for a test account and nothing else, ever.
+ */
+const devEmail = process.env.EXPO_PUBLIC_DEV_EMAIL;
+const devPassword = process.env.EXPO_PUBLIC_DEV_PASSWORD;
+
+export const DEV_SIGN_IN =
+  __DEV__ && devEmail && devPassword ? { email: devEmail, password: devPassword } : null;
+
 export const APP_VERSION = Constants.expoConfig?.version ?? "0.0.0";
 
 export const SUPPORT_EMAIL = "support@pitchpage.co";
