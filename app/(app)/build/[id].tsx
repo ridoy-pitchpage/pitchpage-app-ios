@@ -3,10 +3,10 @@ import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
-import { File } from "expo-file-system";
 import { BriefcaseBusiness, FileText, Globe2, Sparkles, Trash2, Upload } from "lucide-react-native";
 
 import { BackButton } from "@/components/BackButton";
+import { fileSize } from "@/features/media/local-file";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Screen, ScreenScroll } from "@/components/Screen";
@@ -104,7 +104,7 @@ export default function BuildScreen() {
 
     setBusy("resume");
     try {
-      const size = asset.size ?? new File(asset.uri).size ?? 0;
+      const size = asset.size ?? (await fileSize(asset.uri));
       if (size > MEDIA_LIMITS.documentBytes) {
         toast.error(new Error(tooLargeMessage("document")));
         return;

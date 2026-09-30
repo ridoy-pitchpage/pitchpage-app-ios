@@ -1,6 +1,6 @@
-import { File } from "expo-file-system";
 
 import { supabase } from "@/auth/supabase";
+import { fileBytes } from "./local-file";
 
 /**
  * Putting media on a page.
@@ -73,8 +73,7 @@ export async function uploadMedia({
   // Reading as an ArrayBuffer rather than a fetch(uri).blob(): a blob from a
   // file URI arrives empty on some Android builds, and a large video would be
   // held twice in memory.
-  const file = new File(uri);
-  const bytes = await file.arrayBuffer();
+  const bytes = await fileBytes(uri);
 
   const { error } = await supabase.storage.from(bucket).upload(path, bytes, {
     contentType,
