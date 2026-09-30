@@ -95,7 +95,7 @@ export default function AccountScreen() {
             <Row label="Examples" onPress={() => router.push("/(public)/examples")} />
             <Row label="Pricing" onPress={() => router.push("/(public)/pricing")} />
             <Row label="Guides" onPress={() => router.push("/(app)/(tabs)/account/guides")} />
-            <Row label="What we measure" onPress={() => open(WEB_LINKS.tracking)} />
+            <Row label="What we measure" onPress={() => router.push("/(app)/(tabs)/account/tracking")} />
             <Row label="Contact support" onPress={() => void contactSupport()} last />
           </Card>
         </View>
