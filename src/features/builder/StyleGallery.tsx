@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { Pressable, View, type DimensionValue, type ViewStyle } from "react-native";
+import { Image } from "expo-image";
 import { Check } from "lucide-react-native";
 
 import { Body, Muted } from "@/components/Text";
 import { encodeStyleSelection, STYLE_CATEGORY_LABELS, type StyleFamily } from "@/page/style-families";
 import { themeForTemplate } from "@/render/template-theme";
+import { TEMPLATE_THUMBNAILS } from "@/page/template-thumbnails";
 import { useColors } from "@/theme/ThemeProvider";
 
 /**
@@ -59,7 +61,26 @@ export function StyleGallery({
               selected ? "border-primary" : "border-border",
             ].join(" ")}
           >
-            <StyleSwatch family={family} />
+            {/*
+              The real page, photographed from the website. The swatch below is
+              the fallback for a family whose thumbnail has not been generated
+              yet — better a rough shape than an empty card.
+            */}
+            {TEMPLATE_THUMBNAILS[family.id] ? (
+              <Image
+                source={TEMPLATE_THUMBNAILS[family.id]}
+                style={{ width: "100%", aspectRatio: 4 / 3 }}
+                contentFit="cover"
+                // The top of a page is what distinguishes it; the footer is
+                // the same everywhere.
+                contentPosition="top"
+                transition={120}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              />
+            ) : (
+              <StyleSwatch family={family} />
+            )}
             <View className="gap-0.5 px-2 py-2">
               <View className="flex-row items-center gap-1">
                 <Body numberOfLines={1} className="min-w-0 flex-1 text-[14px]">
