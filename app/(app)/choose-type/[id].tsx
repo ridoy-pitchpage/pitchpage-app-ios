@@ -53,24 +53,25 @@ export default function ChooseTypeScreen() {
   const existingKind = currentPitchKind(row.wizard_meta);
   const hasContent = hasSectionContent(clampSections(row.sections));
 
-  /** Kinds that ask their own questions before the builder. */
-  function needsIntake(kind: PitchKind): boolean {
-    return kind !== "job" && kind !== "other";
-  }
-
+  /*
+   * Choosing a type records it and then asks for the look, which is the order
+   * the website uses and the right one: what a page will look like changes
+   * what somebody writes for it, and picking the template afterwards means
+   * reading it all again to see whether it still fits.
+   *
+   * The kind is applied here rather than after intake so the template step can
+   * lead with the templates that suit it. The kinds that ask questions get
+   * their answers on the step after the template, and applying the kind again
+   * there with those answers is what seeds the sections properly.
+   */
   async function choose(kind: PitchKind, options?: { reseed?: boolean }) {
-    if (needsIntake(kind)) {
-      router.push({ pathname: "/(app)/intake/[kind]/[id]", params: { kind, id: row.id } });
-      return;
-    }
-
     setBusy(kind);
     try {
       if (options?.reseed) await reseedForKind(row, kind);
       else await applyPitchKind(row, kind);
       await queryClient.invalidateQueries({ queryKey: keys.page(row.id) });
       await queryClient.invalidateQueries({ queryKey: keys.pages });
-      router.replace({ pathname: "/(app)/builder/[id]", params: { id: row.id } });
+      router.push({ pathname: "/(app)/template/[id]", params: { id: row.id } });
     } catch (error) {
       toast.error(error);
     } finally {

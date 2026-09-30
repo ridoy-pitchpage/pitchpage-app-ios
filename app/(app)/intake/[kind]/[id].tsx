@@ -151,7 +151,8 @@ export default function IntakeScreen() {
       await applyPitchKind(row, pitchKind, withAnswers);
       await queryClient.invalidateQueries({ queryKey: keys.page(row.id) });
       await queryClient.invalidateQueries({ queryKey: keys.pages });
-      router.replace({ pathname: "/(app)/builder/[id]", params: { id: row.id } });
+      // The CV and links step comes next, then the builder.
+      router.replace({ pathname: "/(app)/build/[id]", params: { id: row.id } });
     } catch (error) {
       toast.error(error);
     } finally {
