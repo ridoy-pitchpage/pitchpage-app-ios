@@ -90,7 +90,7 @@ export default function SignIn() {
             accessibilityRole="link"
             className="self-center p-2"
           >
-            <Muted className="text-primary">Forgot your password?</Muted>
+            <Muted className="text-link">Forgot your password?</Muted>
           </Pressable>
 
           <Pressable
@@ -99,7 +99,7 @@ export default function SignIn() {
             className="self-center p-2"
           >
             <Muted>
-              No account yet? <Muted className="text-primary">Create one</Muted>
+              No account yet? <Muted className="text-link">Create one</Muted>
             </Muted>
           </Pressable>
         </ScreenScroll>

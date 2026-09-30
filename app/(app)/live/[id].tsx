@@ -77,7 +77,7 @@ export default function LivePageScreen() {
           accessibilityRole="button"
           className="min-h-[44px] justify-center px-2"
         >
-          <Body className="text-primary">Open in Safari</Body>
+          <Body className="text-link">Open in Safari</Body>
         </Pressable>
       </View>
 

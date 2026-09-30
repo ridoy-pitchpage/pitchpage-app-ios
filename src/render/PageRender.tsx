@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Pencil } from "lucide-react-native";
@@ -54,6 +54,10 @@ export function PageRender({
 
   const portrait = absoluteUrl(page.portrait_url);
   const hero = absoluteUrl(page.hero_image_url);
+  // A portrait that fails to load should leave nothing behind. An empty box
+  // where a face should be reads as a broken page, which is worse than no
+  // portrait at all.
+  const [portraitFailed, setPortraitFailed] = useState(false);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.ground }}>
@@ -86,9 +90,10 @@ export function PageRender({
             label="Edit your details"
           >
             <View style={{ gap: 12 }}>
-            {portrait ? (
+            {portrait && !portraitFailed ? (
               <Image
                 source={{ uri: portrait }}
+                onError={() => setPortraitFailed(true)}
                 style={{
                   width: 88,
                   height: 88,

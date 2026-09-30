@@ -29,6 +29,7 @@ module.exports = {
         "secondary-foreground": "var(--pp-secondary-foreground)",
         primary: "var(--pp-primary)",
         "primary-foreground": "var(--pp-primary-foreground)",
+        link: "var(--pp-link)",
         accent: "var(--pp-accent)",
         "accent-foreground": "var(--pp-accent-foreground)",
         destructive: "var(--pp-destructive)",

@@ -239,7 +239,7 @@ export function MediaSheet({
             Up to two minutes. A short hello does more than another paragraph.
           </Muted>
 
-          {page.video_url ? <Muted className="text-primary">Video added</Muted> : null}
+          {page.video_url ? <Muted className="text-link">Video added</Muted> : null}
 
           <Button
             title={page.video_url ? "Choose a different video" : "Choose a video"}

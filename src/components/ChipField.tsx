@@ -184,7 +184,7 @@ export function LineList({
           style={{ minHeight: MIN_TAP }}
           className="items-center justify-center rounded-control border border-dashed border-border"
         >
-          <Body className="text-primary">{addLabel}</Body>
+          <Body className="text-link">{addLabel}</Body>
         </Pressable>
       ) : null}
     </View>

@@ -112,7 +112,7 @@ export function SectionsSheet({
           ].join(" ")}
         >
           <Plus size={16} color={colors.primary} />
-          <Body className="text-primary">
+          <Body className="text-link">
             {atMax ? `You have the maximum of ${MAX_SECTIONS}` : "Add a section"}
           </Body>
         </Pressable>

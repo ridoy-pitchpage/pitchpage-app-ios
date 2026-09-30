@@ -152,7 +152,7 @@ export default function ChooseTypeScreen() {
                   <View className="min-w-0 flex-1 gap-1">
                     <H3>{tile.title}</H3>
                     <Muted>{tile.description}</Muted>
-                    {isCurrent ? <Muted className="text-primary">Current type</Muted> : null}
+                    {isCurrent ? <Muted className="text-link">Current type</Muted> : null}
                   </View>
                 </Card>
               </Pressable>

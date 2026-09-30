@@ -55,7 +55,7 @@ export default function ExamplesScreen() {
                 style={{ minHeight: 48 }}
                 className="justify-center border-b border-border"
               >
-                <Body className="text-primary">Example {index + 1}</Body>
+                <Body className="text-link">Example {index + 1}</Body>
               </Pressable>
             ),
           )}

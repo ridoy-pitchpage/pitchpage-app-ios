@@ -29,7 +29,7 @@ export default function HowItWorksScreen() {
                 className="h-8 w-8 items-center justify-center rounded-full bg-primary"
                 accessibilityElementsHidden
               >
-                <Body className="text-primary-foreground">{index + 1}</Body>
+                <Body className="text-link-foreground">{index + 1}</Body>
               </View>
               <View className="min-w-0 flex-1 gap-1">
                 <H3>{step.title}</H3>

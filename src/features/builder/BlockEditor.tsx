@@ -173,7 +173,7 @@ function AddButton({ label, onPress, atMax }: { label: string; onPress: () => vo
       className="flex-row items-center justify-center gap-2 rounded-control border border-dashed border-border"
     >
       <Plus size={16} color={colors.primary} />
-      <Body className="text-primary">{label}</Body>
+      <Body className="text-link">{label}</Body>
     </Pressable>
   );
 }

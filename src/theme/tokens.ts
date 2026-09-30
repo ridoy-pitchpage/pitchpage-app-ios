@@ -31,6 +31,8 @@ export type Palette = {
   secondaryForeground: string;
   primary: string;
   primaryForeground: string;
+  /** Text that acts as a link. See the note on `link` below. */
+  link: string;
   accent: string;
   accentForeground: string;
   destructive: string;
@@ -54,6 +56,7 @@ export const appLight: Palette = {
   secondaryForeground: "#413333",
   primary: "#0D47A1",
   primaryForeground: "#FFFFFF",
+  link: "#0D47A1",
   accent: "#F2765E",
   accentForeground: "#332424",
   destructive: "#A32017",
@@ -77,6 +80,7 @@ export const appDark: Palette = {
   secondaryForeground: "#F1E8DC",
   primary: "#90CAF9",
   primaryForeground: "#0A2038",
+  link: "#90CAF9",
   accent: "#F2765E",
   accentForeground: "#2A130E",
   destructive: "#F2675B",
@@ -96,6 +100,10 @@ export const site: Palette = {
   ...appLight,
   primary: "#2196F3",
   primaryForeground: "#0A2038",
+  // NOT the primary above. #2196F3 is the marketing palette's button fill and
+  // measures 2.4:1 as text on the cream ground — unreadable, and it was.
+  // Links take the darker step, which clears 8:1.
+  link: "#0D47A1",
   accent: "#0D47A1",
   accentForeground: "#FFFFFF",
   ring: "#90CAF9",
@@ -119,6 +127,7 @@ export const VAR_NAMES: Record<keyof Palette, string> = {
   secondaryForeground: "--pp-secondary-foreground",
   primary: "--pp-primary",
   primaryForeground: "--pp-primary-foreground",
+  link: "--pp-link",
   accent: "--pp-accent",
   accentForeground: "--pp-accent-foreground",
   destructive: "--pp-destructive",

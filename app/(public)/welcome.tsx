@@ -78,7 +78,7 @@ function FooterLink({ label, href }: { label: string; href: string }) {
       accessibilityLabel={label}
       style={{ minHeight: 44, justifyContent: "center" }}
     >
-      <Muted className="text-primary">{label}</Muted>
+      <Muted className="text-link">{label}</Muted>
     </Pressable>
   );
 }

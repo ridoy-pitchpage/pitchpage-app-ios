@@ -100,7 +100,7 @@ export default function SignUp() {
           <Muted className="text-center">
             By creating an account you agree to our{" "}
             <Muted
-              className="text-primary"
+              className="text-link"
               accessibilityRole="link"
               onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.terms)}
             >
@@ -108,7 +108,7 @@ export default function SignUp() {
             </Muted>{" "}
             and{" "}
             <Muted
-              className="text-primary"
+              className="text-link"
               accessibilityRole="link"
               onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.privacy)}
             >
@@ -123,7 +123,7 @@ export default function SignUp() {
             className="self-center p-2"
           >
             <Muted>
-              Already have an account? <Muted className="text-primary">Sign in</Muted>
+              Already have an account? <Muted className="text-link">Sign in</Muted>
             </Muted>
           </Pressable>
         </ScreenScroll>
