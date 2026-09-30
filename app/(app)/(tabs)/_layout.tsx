@@ -1,4 +1,5 @@
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BarChart3, CircleUser, Coins, FileText } from "lucide-react-native";
 
 import { useColors } from "@/theme/ThemeProvider";
@@ -13,6 +14,7 @@ import { useColors } from "@/theme/ThemeProvider";
  */
 export default function TabsLayout() {
   const colors = useColors();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -20,7 +22,16 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
-        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
+          // Explicit, because the icon and its label together need more room
+          // than the default on web, where there is no home-indicator inset to
+          // pad it out and the labels clip.
+          height: 56 + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 6,
+        },
         tabBarLabelStyle: { fontFamily: "Manrope_500Medium", fontSize: 11 },
       }}
     >
