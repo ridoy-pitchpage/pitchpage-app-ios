@@ -22,3 +22,6 @@ expo-env.d.ts
 
 # Testing
 coverage/
+
+# e2e screenshots
+.e2e-out/

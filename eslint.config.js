@@ -4,7 +4,15 @@ const expo = require("eslint-config-expo/flat");
 
 module.exports = [
   ...expo,
-  { ignores: ["dist/*", ".expo/*", "node_modules/*"] },
+  { ignores: ["dist/*", ".expo/*", "node_modules/*", ".e2e-out/*"] },
+  {
+    // The end-to-end suite is plain Node scripts, not React Native: they use
+    // Buffer, process and console, none of which exist in the app itself.
+    files: ["e2e/**/*.mjs"],
+    languageOptions: {
+      globals: { Buffer: "readonly", process: "readonly", console: "readonly" },
+    },
+  },
   {
     rules: {
       /*

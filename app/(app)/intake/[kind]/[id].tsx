@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/Button";
@@ -13,7 +13,7 @@ import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { keys, useMyPage } from "@/api/queries";
 import { applyPitchKind } from "@/page/apply-kind";
-import type { ListingAudience, PitchKind } from "@/page/page-types";
+import { PITCH_KINDS, type ListingAudience, type PitchKind } from "@/page/page-types";
 import {
   ATHLETE_LEVELS,
   CONTRACTOR_AUDIENCES,
@@ -95,13 +95,29 @@ export default function IntakeScreen() {
     );
   }
 
+  /*
+   * "job" and "other" are real page types that ask nothing before the builder,
+   * so choose-type sends them straight there and never links here. A deep link
+   * or an old URL still can, though, and showing "we couldn't open that page
+   * type" with a Try again that can never work would be wrong twice over: the
+   * type is fine, and there is nothing to retry. Send them where choosing that
+   * type would have sent them.
+   */
+  const isRealKind = (PITCH_KINDS as readonly string[]).includes(pitchKind);
+  if (!copy && isRealKind && page.data) {
+    return <Redirect href={{ pathname: "/(app)/builder/[id]", params: { id } }} />;
+  }
+
   if (page.isError || !page.data || !copy) {
     return (
       <Screen>
-        <ErrorState
-          error={page.error ?? new Error("We couldn't open that page type.")}
-          onRetry={() => void page.refetch()}
-        />
+        <ScreenScroll contentClassName="pt-2 gap-4">
+          <BackButton />
+          <ErrorState
+            error={page.error ?? new Error("We couldn't open that page type.")}
+            onRetry={page.isError ? () => void page.refetch() : undefined}
+          />
+        </ScreenScroll>
       </Screen>
     );
   }

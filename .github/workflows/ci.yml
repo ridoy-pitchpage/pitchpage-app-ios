@@ -38,3 +38,20 @@ jobs:
         run: npx expo export --platform web
         env:
           CI: "1"
+
+      # And the proof it still WORKS: every screen rendered and driven in a
+      # real browser against stubbed data. e2e/run.sh bundles and serves the
+      # app itself, so this needs no account and no network.
+      - name: Install Chromium for the e2e run
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end
+        run: npm run e2e
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: .e2e-out/
+          if-no-files-found: ignore
