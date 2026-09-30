@@ -54,7 +54,14 @@ export default function TemplateScreen() {
   // so the fallback stands in until it is. Nothing can apply a template while
   // the screen is still showing its spinner.
   const { apply, busy } = useApplyTemplate(
-    page.data ?? { id: id ?? "", template: null, updated_at: null, wizard_meta: null },
+    page.data ?? {
+      id: id ?? "",
+      template: null,
+      updated_at: null,
+      wizard_meta: null,
+      sections: null,
+      portrait_url: null,
+    },
   );
 
   const current = useMemo(() => resolveStyle(page.data?.template), [page.data?.template]);

@@ -36,7 +36,14 @@ export default function TemplatePreviewScreen() {
 
   const family = familyId ? FAMILY_BY_ID[familyId] : undefined;
   const { apply, busy } = useApplyTemplate(
-    page.data ?? { id: id ?? "", template: null, updated_at: null, wizard_meta: null },
+    page.data ?? {
+      id: id ?? "",
+      template: null,
+      updated_at: null,
+      wizard_meta: null,
+      sections: null,
+      portrait_url: null,
+    },
   );
 
   if (page.isPending) {

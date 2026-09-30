@@ -226,7 +226,7 @@ export const LISTING_CTA_LABEL: Record<ListingAudience, string> = {
 
 // ─── building the sections ──────────────────────────────────────────────────
 
-function freshId(): string {
+export function freshId(): string {
   const cryptoRef = globalThis.crypto as { randomUUID?: () => string } | undefined;
   if (typeof cryptoRef?.randomUUID === "function") return cryptoRef.randomUUID();
   return `sec-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
