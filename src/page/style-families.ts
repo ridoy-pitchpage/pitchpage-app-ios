@@ -28,6 +28,16 @@ export const STYLE_CATEGORY_LABELS: Record<StyleCategory, string> = {
   academic: "University & academic",
 };
 
+/** For places a full label would truncate, like under a swatch. */
+export const STYLE_CATEGORY_SHORT: Record<StyleCategory, string> = {
+  business: "Business",
+  job: "Job application",
+  sales: "Sales",
+  "real-estate": "Real estate",
+  athlete: "Athlete",
+  academic: "Academic",
+};
+
 export const STYLE_CATEGORY_ORDER: readonly StyleCategory[] = [
   "business",
   "job",

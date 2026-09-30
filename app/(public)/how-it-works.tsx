@@ -1,0 +1,55 @@
+import { Pressable, View } from "react-native";
+import { router } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
+
+import { Button } from "@/components/Button";
+import { Screen, ScreenScroll } from "@/components/Screen";
+import { Body, H1, H3, Muted } from "@/components/Text";
+import { HOW_IT_WORKS } from "@/page/faq-content";
+import { useAuth } from "@/auth/AuthProvider";
+import { useColors } from "@/theme/ThemeProvider";
+
+/** How it works (S09). */
+export default function HowItWorksScreen() {
+  const colors = useColors();
+  const { signedIn } = useAuth();
+
+  return (
+    <Screen>
+      <ScreenScroll contentClassName="pt-2 gap-5">
+        <Pressable
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+          className="-ml-1 self-start p-1"
+        >
+          <ChevronLeft size={28} color={colors.foreground} />
+        </Pressable>
+
+        <H1>How it works</H1>
+
+        <View className="gap-5">
+          {HOW_IT_WORKS.map((step, index) => (
+            <View key={step.title} className="flex-row gap-3">
+              <View
+                className="h-8 w-8 items-center justify-center rounded-full bg-primary"
+                accessibilityElementsHidden
+              >
+                <Body className="text-primary-foreground">{index + 1}</Body>
+              </View>
+              <View className="min-w-0 flex-1 gap-1">
+                <H3>{step.title}</H3>
+                <Muted>{step.body}</Muted>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {signedIn ? null : (
+          <Button title="Create an account" onPress={() => router.push("/(public)/sign-up")} />
+        )}
+      </ScreenScroll>
+    </Screen>
+  );
+}

@@ -72,13 +72,20 @@ export function PageRender({
           />
         ) : null}
 
-        <EditableRegion
-          editable={editable}
-          onPress={onEditHero}
-          theme={theme}
-          label="Edit your details"
-        >
-          <View style={{ paddingHorizontal: 20, paddingTop: hero ? 20 : 32, gap: 12 }}>
+        {/*
+          The horizontal padding sits OUTSIDE the editable region. The region
+          pulls itself 8pt wider so its dashed edge sits just outside the text,
+          and with the padding inside that widening would push it past the
+          screen.
+        */}
+        <View style={{ paddingHorizontal: 20, paddingTop: hero ? 20 : 32 }}>
+          <EditableRegion
+            editable={editable}
+            onPress={onEditHero}
+            theme={theme}
+            label="Edit your details"
+          >
+            <View style={{ gap: 12 }}>
             {portrait ? (
               <Image
                 source={{ uri: portrait }}
@@ -140,10 +147,11 @@ export function PageRender({
               </Text>
             ) : null}
 
-            {/* The accent hairline every editorial family uses under the name. */}
-            <View style={{ height: 2, width: 64, backgroundColor: theme.accent, marginTop: 4 }} />
-          </View>
-        </EditableRegion>
+              {/* The accent hairline every editorial family uses under the name. */}
+              <View style={{ height: 2, width: 64, backgroundColor: theme.accent, marginTop: 4 }} />
+            </View>
+          </EditableRegion>
+        </View>
 
         <View style={{ paddingHorizontal: 20, paddingTop: 28, gap: 28 }}>
           {sections.map((section, index) => (

@@ -3,7 +3,7 @@ import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, Eye, LayoutList, Palette, Pencil, UserRound } from "lucide-react-native";
+import { Camera, ChevronLeft, Eye, LayoutList, Palette, Pencil, UserRound } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { ErrorState, Loading } from "@/components/States";
@@ -15,6 +15,7 @@ import { DetailsSheet } from "@/features/builder/DetailsSheet";
 import { SectionSheet } from "@/features/builder/SectionSheet";
 import { SectionsSheet } from "@/features/builder/SectionsSheet";
 import { StylePicker } from "@/features/builder/StylePicker";
+import { MediaSheet } from "@/features/media/MediaSheet";
 import { saveLabel, startDraftAutosaveOnBackground, useDraft } from "@/state/draft-store";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
@@ -48,7 +49,7 @@ export default function BuilderScreen() {
   const draftId = useDraft((s) => s.pageId);
 
   const [mode, setMode] = useState<"edit" | "preview">("edit");
-  const [sheet, setSheet] = useState<"none" | "details" | "sections" | "style">("none");
+  const [sheet, setSheet] = useState<"none" | "details" | "sections" | "style" | "media">("none");
   const [sectionId, setSectionId] = useState<string | null>(null);
 
   // Load the row into the draft store once, and only when it is a different
@@ -177,6 +178,11 @@ export default function BuilderScreen() {
             onPress={() => setSheet("sections")}
           />
           <ToolbarButton
+            label="Media"
+            icon={<Camera size={19} color={colors.foreground} />}
+            onPress={() => setSheet("media")}
+          />
+          <ToolbarButton
             label="Style"
             icon={<Palette size={19} color={colors.foreground} />}
             onPress={() => setSheet("style")}
@@ -205,6 +211,7 @@ export default function BuilderScreen() {
         onEditSection={(section) => setSectionId(section.id)}
       />
       <StylePicker visible={sheet === "style"} onClose={() => setSheet("none")} />
+      <MediaSheet visible={sheet === "media"} onClose={() => setSheet("none")} />
       <SectionSheet sectionId={sectionId} onClose={() => setSectionId(null)} />
     </View>
   );
@@ -224,7 +231,7 @@ function ToolbarButton({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={{ minHeight: MIN_TAP, minWidth: 54 }}
+      style={{ minHeight: MIN_TAP, minWidth: 46 }}
       className="items-center justify-center gap-0.5"
     >
       {icon}

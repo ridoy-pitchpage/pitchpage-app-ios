@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 
 import { Button } from "@/components/Button";
@@ -58,7 +58,27 @@ export default function Welcome() {
         <Muted className="text-center">
           Building a page is free. Publishing one costs a single credit.
         </Muted>
+
+        <View className="flex-row flex-wrap justify-center gap-x-5 gap-y-2 pt-2">
+          <FooterLink label="See examples" href="/(public)/examples" />
+          <FooterLink label="How it works" href="/(public)/how-it-works" />
+          <FooterLink label="Pricing" href="/(public)/pricing" />
+          <FooterLink label="Questions" href="/(public)/faq" />
+        </View>
       </ScreenScroll>
     </Screen>
+  );
+}
+
+function FooterLink({ label, href }: { label: string; href: string }) {
+  return (
+    <Pressable
+      onPress={() => router.push(href as never)}
+      accessibilityRole="link"
+      accessibilityLabel={label}
+      style={{ minHeight: 44, justifyContent: "center" }}
+    >
+      <Muted className="text-primary">{label}</Muted>
+    </Pressable>
   );
 }

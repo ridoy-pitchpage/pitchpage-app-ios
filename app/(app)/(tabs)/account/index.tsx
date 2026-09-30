@@ -1,4 +1,5 @@
 import { Alert, Pressable, View } from "react-native";
+import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as MailComposer from "expo-mail-composer";
 import { ChevronRight } from "lucide-react-native";
@@ -77,10 +78,11 @@ export default function AccountScreen() {
         <View className="gap-2">
           <H3>Help</H3>
           <Card className="p-0">
-            <Row label="How it works" onPress={() => open(`${SITE_URL}/how-it-works`)} />
-            <Row label="FAQ" onPress={() => open(`${SITE_URL}/faq`)} />
+            <Row label="How it works" onPress={() => router.push("/(public)/how-it-works")} />
+            <Row label="Questions" onPress={() => router.push("/(public)/faq")} />
+            <Row label="Examples" onPress={() => router.push("/(public)/examples")} />
+            <Row label="Pricing" onPress={() => router.push("/(public)/pricing")} />
             <Row label="Guides" onPress={() => open(`${SITE_URL}/guides`)} />
-            <Row label="Pricing" onPress={() => open(`${SITE_URL}/pricing`)} />
             <Row label="What we measure" onPress={() => open(WEB_LINKS.tracking)} />
             <Row label="Contact support" onPress={() => void contactSupport()} last />
           </Card>
