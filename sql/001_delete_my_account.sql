@@ -34,6 +34,16 @@
 -- thing rather than aborting half way. It runs in one transaction: either the
 -- account and all of its data go, or nothing does.
 --
+-- TESTED. `./sql/test/run.sh` runs this against a throwaway PostgreSQL 16 with
+-- two users and checks that the caller and every row of theirs goes, that the
+-- other user is untouched, that no orphaned rows are left, and that a call with
+-- no signed-in user is refused. The mock schema's page-keyed foreign keys have
+-- NO cascade, so a wrong delete order fails the test rather than passing
+-- quietly, and several tables named below are deliberately missing from it to
+-- prove the existence check works. It also runs STEP 2's grant check.
+--
+-- Run that before you paste this anywhere. It does not need the real database.
+--
 -- ─── STEP 1 — paste this into Lovable's SQL editor and run it ────────────────
 
 CREATE OR REPLACE FUNCTION public.delete_my_account()
