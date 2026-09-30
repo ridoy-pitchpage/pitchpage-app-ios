@@ -1,9 +1,11 @@
 import { Tabs } from "expo-router";
-import type { ColorValue } from "react-native";
+import { Platform, StyleSheet, View, type ColorValue } from "react-native";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChartColumnBig, FileText, UserRound, Wallet } from "lucide-react-native";
 
-import { useColors } from "@/theme/ThemeProvider";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
+import { GLASS } from "@/theme/tokens";
 
 /**
  * A tab's icon: outlined when you are not on it, solid when you are.
@@ -52,6 +54,7 @@ function TabIcon({
  */
 export default function TabsLayout() {
   const colors = useColors();
+  const { resolved } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -60,8 +63,14 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
+        // The bar floats over the page rather than sitting under it, so a
+        // list scrolls beneath frosted glass instead of stopping at a solid
+        // slab. react-navigation still owns the height, so the blur goes in
+        // as a background rather than replacing the bar.
+        tabBarBackground: () => <TabBarGlass scheme={resolved} card={colors.card} />,
         tabBarStyle: {
-          backgroundColor: colors.card,
+          position: "absolute",
+          backgroundColor: "transparent",
           borderTopColor: colors.border,
           /*
            * Explicit, because the icon and its label together need more room
@@ -111,4 +120,25 @@ export default function TabsLayout() {
       />
     </Tabs>
   );
+}
+
+/**
+ * The frosted panel behind the tab bar.
+ *
+ * BlurView samples what is actually behind it on iOS. On Android and in the
+ * web build it degrades to a translucent fill, which is why the card colour
+ * is passed in rather than assumed: a fallback painted on the wrong ground
+ * is worse than no blur at all.
+ */
+function TabBarGlass({ scheme, card }: { scheme: "light" | "dark"; card: string }) {
+  if (Platform.OS === "ios") {
+    return (
+      <BlurView
+        intensity={GLASS.intensity}
+        tint={scheme === "dark" ? "dark" : "light"}
+        style={StyleSheet.absoluteFill}
+      />
+    );
+  }
+  return <View style={[StyleSheet.absoluteFill, { backgroundColor: card, opacity: 0.96 }]} />;
 }

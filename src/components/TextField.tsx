@@ -3,8 +3,8 @@ import { Pressable, TextInput, View, type TextInputProps } from "react-native";
 import { Eye, EyeOff } from "lucide-react-native";
 
 import { Label, Muted } from "./Text";
-import { useColors } from "@/theme/ThemeProvider";
-import { MIN_TAP } from "@/theme/tokens";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
+import { mix , MIN_TAP } from "@/theme/tokens";
 
 type Props = Omit<TextInputProps, "style"> & {
   label?: string;
@@ -30,6 +30,7 @@ export function TextField({
   ...rest
 }: Props) {
   const colors = useColors();
+  const { resolved } = useTheme();
   const [revealed, setRevealed] = useState(false);
   const [focused, setFocused] = useState(false);
   const fieldMinHeight = minHeight ?? MIN_TAP;
@@ -41,7 +42,7 @@ export function TextField({
 
       <View
         className={[
-          "flex-row rounded-control border bg-card px-3",
+          "flex-row rounded-control border px-3",
           multiline ? "items-stretch" : "items-center",
         ].join(" ")}
         style={{
@@ -50,6 +51,13 @@ export function TextField({
           // carries the raised `input` token (3:1) rather than the hairline.
           borderColor: error ? colors.destructive : focused ? colors.ring : colors.input,
           borderWidth: focused || error ? 2 : 1,
+          // A field is a well, not a card: it sits a shade BELOW the surface
+          // around it rather than level with it, which is what stops a form
+          // reading as a stack of identical white boxes.
+          backgroundColor: mix(colors.card, colors.foreground, resolved === "dark" ? 0.06 : 0.035),
+          // The focus ring is drawn outside the border so the field does not
+          // change size when it takes focus.
+          ...(focused ? { shadowColor: colors.ring, shadowOpacity: 0.28, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } } : null),
         }}
       >
         {icon ? (

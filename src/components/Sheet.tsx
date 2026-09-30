@@ -13,7 +13,8 @@ import { X } from "lucide-react-native";
 
 import { H3 } from "./Text";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
-import { paletteVars } from "@/theme/tokens";
+import { elevation, paletteVars, surfaceGradient } from "@/theme/tokens";
+import { LinearGradient } from "expo-linear-gradient";
 import { ModalSurface, useModalSurfaceDimensions } from "./ModalSurface";
 
 /**
@@ -38,7 +39,7 @@ export function Sheet({
   maxHeightRatio?: number;
 }) {
   const colors = useColors();
-  const { palette } = useTheme();
+  const { palette, resolved: mode } = useTheme();
   const surface = useModalSurfaceDimensions();
   const progress = useSharedValue(0);
 
@@ -78,10 +79,21 @@ export function Sheet({
             style={[
               panelStyle,
               vars(paletteVars(palette)),
-              { maxHeight: surface.height * maxHeightRatio, backgroundColor: palette.card },
+              { maxHeight: surface.height * maxHeightRatio },
+              // Cast upward, not down: the sheet is above the page, so its
+              // shadow belongs on the edge that meets it.
+              {
+                ...elevation(palette.foreground, 3),
+                shadowOffset: { width: 0, height: -10 },
+              },
             ]}
-            className="rounded-t-[20px] border-t border-border"
+            className="overflow-hidden rounded-t-[28px] border-t border-border"
           >
+            <LinearGradient
+              colors={surfaceGradient(palette.card, mode)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            >
             <SafeAreaView edges={["bottom"]}>
               {/* The grabber reads as "this can be dismissed" before anything is read. */}
               <View className="items-center pt-2">
@@ -113,6 +125,7 @@ export function Sheet({
                 {children}
               </ScrollView>
             </SafeAreaView>
+            </LinearGradient>
           </Animated.View>
         </View>
       </ModalSurface>
