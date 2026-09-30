@@ -34,6 +34,12 @@ for _ in $(seq 1 40); do
   sleep 0.25
 done
 
+# dev-server is not in the default set: it needs `expo start --web` running
+# separately, which the export-based suites do not. Run it after a change to
+# tailwind.config.js, babel.config.js or metro.config.js — the dev server and
+# the export differ exactly there.
+#     npx expo start --web --port 8081
+#     E2E_BASE=http://localhost:8081 node e2e/dev-server.mjs
 suites=("${@:-page-types build-flow accessibility}")
 status=0
 for s in ${suites[@]}; do

@@ -13,6 +13,21 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  /*
+   * Class, not the default "media".
+   *
+   * Nothing here uses a `dark:` variant — light and dark are two sets of CSS
+   * variables that ThemeProvider swaps with vars() — so this looks like it
+   * should not matter. It does, on web, and it crashes the app.
+   *
+   * react-native-css-interop watches <head> for the stylesheet, reads this
+   * flag out of it, and then calls colorScheme.set(). That setter throws
+   * outright when the flag says "media", so the first paint of the web build
+   * raises "Cannot manually set color scheme, as dark mode is type 'media'".
+   * It is loudest under `expo start --web`, where the stylesheet arrives after
+   * the observer is watching.
+   */
+  darkMode: "class",
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
