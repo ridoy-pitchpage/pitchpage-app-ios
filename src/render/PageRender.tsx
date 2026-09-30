@@ -7,7 +7,13 @@ import { BlockBody, SectionHeading } from "./blocks";
 import { Hero } from "./Hero";
 import { Reveal } from "./Reveal";
 import { RADIUS_FOR, TYPE_SPECS, themeForTemplate, type TemplateTheme } from "./template-theme";
-import { MAX_SECTIONS, sectionsForLayout, type PageSection } from "@/page/page-sections";
+import {
+  MAX_SECTIONS,
+  blockIsEmpty,
+  sectionsForEditing,
+  sectionsForLayout,
+  type PageSection,
+} from "@/page/page-sections";
 import type { PageModel } from "@/page/page-model";
 import { SITE_URL } from "@/lib/config";
 import { MIN_TAP } from "@/theme/tokens";
@@ -54,7 +60,12 @@ export function PageRender({
   onAddSection?: () => void;
 }) {
   const theme = useMemo(() => themeForTemplate(page.template), [page.template]);
-  const sections = useMemo(() => sectionsForLayout(page), [page]);
+  // While editing, the page is an outline to fill in; published, it is only
+  // what was actually filled in.
+  const sections = useMemo(
+    () => (editable ? sectionsForEditing(page) : sectionsForLayout(page)),
+    [editable, page],
+  );
   const spec = TYPE_SPECS[theme.archetype];
 
   const portrait = absoluteUrl(page.portrait_url);
@@ -118,7 +129,24 @@ export function PageRender({
                   {section.title?.trim() ? (
                     <SectionHeading theme={theme}>{section.title}</SectionHeading>
                   ) : null}
-                  <BlockBody section={section} theme={theme} />
+                  {editable && blockIsEmpty(section.blockType, section.data) ? (
+                    // The seed's own hint, standing in for the content. It says
+                    // what belongs here, which an empty block cannot.
+                    <Text
+                      numberOfLines={3}
+                      style={{
+                        color: theme.inkMuted,
+                        fontFamily: spec.bodyFamily,
+                        fontSize: 14,
+                        lineHeight: 21,
+                        opacity: 0.85,
+                      }}
+                    >
+                      {section.hint ?? "Tap to fill this in."}
+                    </Text>
+                  ) : (
+                    <BlockBody section={section} theme={theme} />
+                  )}
                 </View>
               </EditableRegion>
             </Reveal>
