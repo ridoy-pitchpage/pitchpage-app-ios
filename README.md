@@ -6,6 +6,10 @@ React Native, TypeScript, Expo Router.
 The full plan — every screen, the backend work it needs, App Store
 requirements, milestones — is in [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md).
 
+[`docs/PAGE_AUDIT.md`](docs/PAGE_AUDIT.md) is the shorter question: every one
+of the website's 61 routes, and what this app does about it. Read that first if
+you are wondering whether something was missed or decided against.
+
 ## Getting it running on Windows
 
 You do not need a Mac for this part.
@@ -110,9 +114,17 @@ which items were checked against the database's own grants rather than assumed.
 | `npm run typecheck` | `tsc --noEmit` — must be clean before every commit |
 | `npm run lint` | ESLint. Must be clean before every commit |
 | `npm test` | Jest. The colour maths, the page-health rules, the guide copy |
+| `npm run e2e` | Drives the app in a real browser against stubbed data |
 | `npm run doctor` | Checks the dependency set against the Expo SDK |
 
-CI runs the typecheck, the lint, the tests and a web bundle on every push.
+CI runs the typecheck, the lint, the tests, a web bundle and the end-to-end
+suite on every push.
+
+`npm run e2e` needs no account and no network — it bundles the app, serves it,
+and drives it against stubbed Supabase responses. Three suites: every page type
+renders, the whole build flow works (choose a type → intake → builder → review →
+share → analytics), and no control is under 44pt or unlabelled. It fails on any
+console error.
 
 ## Layout
 
@@ -130,7 +142,8 @@ src/
   theme/    colour tokens, fonts, light/dark
   lib/      config, formatters, error translation
 __tests__/  unit tests
-docs/       the master plan
+docs/       the master plan and the page audit
+e2e/        browser tests: the build flow, every page type, accessibility
 sql/        SQL this app needs that the website does not have. Apply by hand.
 ```
 
