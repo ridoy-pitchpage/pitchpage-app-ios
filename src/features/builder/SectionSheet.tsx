@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Alert, View } from "react-native";
 
 import { Button } from "@/components/Button";
@@ -27,11 +27,24 @@ export function SectionSheet({
   const setSections = useDraft((s) => s.setSections);
   const section = page?.sections.find((s) => s.id === sectionId) ?? null;
 
+  /*
+   * The field keeps its own copy of the title so typing stays smooth, and that
+   * copy is reset when a DIFFERENT section opens — not whenever the section
+   * object changes. It changes constantly: every write rebuilds the sections
+   * array, so `section` is a new object on each keystroke, and an effect
+   * watching it re-seeded the field from the store on every character typed.
+   *
+   * Adjusting state during render is React's own answer to "reset state when a
+   * prop changes". It re-renders before anything is shown, where an effect
+   * would commit the stale value first and then correct it.
+   */
   const [title, setTitle] = useState("");
+  const [titleFor, setTitleFor] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (section) setTitle(section.title);
-  }, [section?.id, section]);
+  if (section && titleFor !== section.id) {
+    setTitleFor(section.id);
+    setTitle(section.title);
+  }
 
   if (!page || !section) return null;
 

@@ -2,7 +2,7 @@ import { Linking, Pressable, Share, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import * as WebBrowser from "expo-web-browser";
-import { ChevronLeft, QrCode } from "lucide-react-native";
+import { QrCode } from "lucide-react-native";
 
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
@@ -161,7 +161,6 @@ export default function ShareScreen() {
 }
 
 function BackRow() {
-  const colors = useColors();
   return (
     <BackButton />
   );

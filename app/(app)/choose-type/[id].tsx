@@ -3,7 +3,6 @@ import { Alert, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Icons from "lucide-react-native";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Card } from "@/components/Card";
 import { BackButton } from "@/components/BackButton";

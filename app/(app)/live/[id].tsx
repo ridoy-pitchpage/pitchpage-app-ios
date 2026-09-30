@@ -2,7 +2,6 @@ import { Platform, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { WebView } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
@@ -11,7 +10,6 @@ import { ErrorState, Loading } from "@/components/States";
 import { Body, Muted } from "@/components/Text";
 import { useMyPage } from "@/api/queries";
 import { publicPageUrl } from "@/lib/share";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * The live page (S78) — the real thing, rendered by the website's own layouts,
@@ -26,7 +24,6 @@ import { useColors } from "@/theme/ThemeProvider";
  */
 export default function LivePageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const colors = useColors();
   const page = useMyPage(id);
 
   if (page.isPending) {

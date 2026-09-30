@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Alert, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
@@ -16,7 +15,6 @@ import { useCreatePageLink, useDeletePageLink, useMyPage, usePageLinks } from "@
 import type { PageLinkRow } from "@/api/supabase-direct";
 import { publicPageUrl } from "@/lib/share";
 import { relativeTime } from "@/lib/format";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Tracked links (S24).
@@ -30,7 +28,6 @@ import { useColors } from "@/theme/ThemeProvider";
  */
 export default function TrackedLinksScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const colors = useColors();
   const toast = useToast();
 
   const page = useMyPage(id);

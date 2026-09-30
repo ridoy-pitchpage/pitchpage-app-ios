@@ -2,12 +2,11 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
-import { Select, Segmented } from "@/components/Select";
+import { Select } from "@/components/Select";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
@@ -28,7 +27,6 @@ import {
   TRADES,
   type IntakeAnswers,
 } from "@/page/intake-options";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * The questions a vertical asks before the builder opens.
@@ -79,7 +77,6 @@ const COPY: Record<string, Copy> = {
 
 export default function IntakeScreen() {
   const { kind, id } = useLocalSearchParams<{ kind: string; id: string }>();
-  const colors = useColors();
   const toast = useToast();
   const queryClient = useQueryClient();
   const page = useMyPage(id);

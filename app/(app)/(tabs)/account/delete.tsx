@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
-import { router } from "expo-router";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import * as MailComposer from "expo-mail-composer";
 import * as Clipboard from "expo-clipboard";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
@@ -14,7 +12,6 @@ import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { SUPPORT_EMAIL } from "@/lib/config";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Delete account (S90).
@@ -30,7 +27,6 @@ import { useColors } from "@/theme/ThemeProvider";
  * deletion the moment the endpoint in §10.6 exists.
  */
 export default function DeleteAccountScreen() {
-  const colors = useColors();
   const toast = useToast();
   const { user } = useAuth();
   const [typed, setTyped] = useState("");

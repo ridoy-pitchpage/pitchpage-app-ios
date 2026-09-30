@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable } from "react-native";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
@@ -10,11 +9,9 @@ import { Body, H1 } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { sendPasswordReset } from "@/auth/auth-actions";
-import { useColors } from "@/theme/ThemeProvider";
 
 /** Forgot password (S18). The reset link itself is handled on the website (§12). */
 export default function ForgotPassword() {
-  const colors = useColors();
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);

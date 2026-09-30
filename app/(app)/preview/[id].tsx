@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Alert, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
@@ -16,7 +15,6 @@ import { sectionsForLayout, type PageSection } from "@/page/page-sections";
 import { toPageModel } from "@/page/page-model";
 import { checkPageHealth, pageIsEmpty, EMPTY_PAGE_MESSAGE } from "@/page/page-health";
 import { creditCount } from "@/lib/format";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Review and publish (S74/S75/S68).
@@ -29,7 +27,6 @@ import { useColors } from "@/theme/ThemeProvider";
  */
 export default function PreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const colors = useColors();
   const toast = useToast();
 
   const page = useMyPage(id);

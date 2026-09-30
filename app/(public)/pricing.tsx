@@ -1,6 +1,5 @@
-import { Pressable, View } from "react-native";
-import { router } from "expo-router";
-import { Check, ChevronLeft } from "lucide-react-native";
+import { View } from "react-native";
+import { Check } from "lucide-react-native";
 
 import { Card } from "@/components/Card";
 import { BackButton } from "@/components/BackButton";

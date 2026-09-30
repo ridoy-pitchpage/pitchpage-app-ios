@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { router } from "expo-router";
-import { ChevronDown, ChevronLeft, ChevronUp } from "lucide-react-native";
+import { ChevronDown, ChevronUp } from "lucide-react-native";
 
 import { Card } from "@/components/Card";
 import { BackButton } from "@/components/BackButton";

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
@@ -10,7 +9,6 @@ import { H1, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { credentialProblem, signInWithPassword } from "@/auth/auth-actions";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Sign in (S15). Email and password go straight to Supabase, so this works
@@ -21,7 +19,6 @@ import { useColors } from "@/theme/ThemeProvider";
  * the app gets a native sheet or the bridge (§12).
  */
 export default function SignIn() {
-  const colors = useColors();
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react-native";
 
-import { Body, Label, Muted } from "@/components/Text";
+import { Body, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { ChipField, LineList } from "@/components/ChipField";
 import { Segmented } from "@/components/Select";

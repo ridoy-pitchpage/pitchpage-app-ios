@@ -1,9 +1,14 @@
+// Gesture handler requires this side-effect import to be the first thing the
+// entry file runs, before any component imports it for its own exports —
+// so it stays separate rather than merged with the named import below.
+// eslint-disable-next-line import/no-duplicates
 import "react-native-gesture-handler";
 import "../global.css";
 
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+// eslint-disable-next-line import/no-duplicates
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

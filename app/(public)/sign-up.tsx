@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 import * as WebBrowser from "expo-web-browser";
 
 import { Button } from "@/components/Button";
@@ -12,11 +11,9 @@ import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { credentialProblem, signUpWithPassword } from "@/auth/auth-actions";
 import { WEB_LINKS } from "@/lib/config";
-import { useColors } from "@/theme/ThemeProvider";
 
 /** Create account (S16). Same rules as the website, including the 6-character floor. */
 export default function SignUp() {
-  const colors = useColors();
   const toast = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

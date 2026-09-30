@@ -1,6 +1,5 @@
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
@@ -8,11 +7,9 @@ import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { HOW_IT_WORKS } from "@/page/faq-content";
 import { useAuth } from "@/auth/AuthProvider";
-import { useColors } from "@/theme/ThemeProvider";
 
 /** How it works (S09). */
 export default function HowItWorksScreen() {
-  const colors = useColors();
   const { signedIn } = useAuth();
 
   return (

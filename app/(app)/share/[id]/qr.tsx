@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { Platform, View } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import QRCode from "react-native-qrcode-svg";
 import { File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
@@ -14,7 +13,6 @@ import { Body, H1, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
 import { useMyPage } from "@/api/queries";
 import { publicPageUrl, withShareChannel } from "@/lib/share";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * The QR code (S77), for showing someone in person — a careers fair, the end of
@@ -26,7 +24,6 @@ import { useColors } from "@/theme/ThemeProvider";
  */
 export default function QrScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const colors = useColors();
   const toast = useToast();
   const page = useMyPage(id);
   const svgRef = useRef<{ toDataURL: (callback: (data: string) => void) => void } | null>(null);

@@ -1,7 +1,5 @@
 import { Pressable, View } from "react-native";
-import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { ChevronLeft } from "lucide-react-native";
 
 import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
@@ -9,7 +7,6 @@ import { Body, H1, H3, Muted } from "@/components/Text";
 import { StyleGallery } from "@/features/builder/StyleGallery";
 import { SITE_URL } from "@/lib/config";
 import { STYLE_CATEGORY_SHORT, STYLE_FAMILIES } from "@/page/style-families";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Examples (S06).
@@ -19,7 +16,6 @@ import { useColors } from "@/theme/ThemeProvider";
  * summarise — and it is the same page a recruiter would receive.
  */
 export default function ExamplesScreen() {
-  const colors = useColors();
 
   return (
     <Screen>

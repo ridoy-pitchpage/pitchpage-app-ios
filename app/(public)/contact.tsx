@@ -1,8 +1,6 @@
-import { Pressable, View } from "react-native";
-import { router } from "expo-router";
+import { View } from "react-native";
 import * as MailComposer from "expo-mail-composer";
 import * as Clipboard from "expo-clipboard";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
@@ -10,14 +8,12 @@ import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
 import { SUPPORT_EMAIL } from "@/lib/config";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Contact (S13). The site has no form either — it is a mail link and an
  * address, on the grounds that a real person reads every message.
  */
 export default function ContactScreen() {
-  const colors = useColors();
   const toast = useToast();
 
   async function compose() {

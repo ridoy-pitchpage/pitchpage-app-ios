@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable } from "react-native";
+import { KeyboardAvoidingView, Platform } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
@@ -10,7 +9,6 @@ import { H1, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { updatePassword } from "@/auth/auth-actions";
-import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Change password (S86). New on the app — the website only offers a reset by
@@ -18,7 +16,6 @@ import { useColors } from "@/theme/ThemeProvider";
  * already know.
  */
 export default function PasswordScreen() {
-  const colors = useColors();
   const toast = useToast();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
