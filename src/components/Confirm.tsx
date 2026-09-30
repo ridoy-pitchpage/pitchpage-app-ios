@@ -92,15 +92,22 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           unstyled. Same reason as Sheet.
         */}
         <View style={vars(paletteVars(palette))} className="flex-1">
+          {/*
+            The backdrop is a sibling of the panel rather than its parent.
+            react-native-web renders a Pressable with accessibilityRole="button"
+            as a real <button>, and HTML forbids a <button> inside a <button>, so
+            wrapping the panel in the backdrop made every dialog throw on the web
+            build while looking correct on a device.
+          */}
           <Pressable
             onPress={() => close(false)}
             accessibilityLabel="Cancel"
             accessibilityRole="button"
-            className="flex-1 items-center justify-center bg-black/50 px-6"
-          >
-            {/* Swallows taps so pressing the panel does not dismiss it. */}
-            <Pressable
-              onPress={() => undefined}
+            className="absolute inset-0 bg-black/50"
+          />
+          {/* box-none so a tap beside the panel still reaches the backdrop. */}
+          <View pointerEvents="box-none" className="flex-1 items-center justify-center px-6">
+            <View
               accessibilityViewIsModal
               className="w-full max-w-[400px] gap-3 rounded-card bg-card p-5"
             >
@@ -123,8 +130,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                   />
                 )}
               </View>
-            </Pressable>
-          </Pressable>
+            </View>
+          </View>
         </View>
       </Modal>
     </ConfirmContext.Provider>
