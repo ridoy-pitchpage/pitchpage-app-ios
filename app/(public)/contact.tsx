@@ -5,6 +5,7 @@ import * as Clipboard from "expo-clipboard";
 import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
@@ -31,15 +32,7 @@ export default function ContactScreen() {
   return (
     <Screen>
       <ScreenScroll contentClassName="pt-2 gap-5">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          className="-ml-1 self-start p-1"
-        >
-          <ChevronLeft size={28} color={colors.foreground} />
-        </Pressable>
+        <BackButton />
 
         <View className="gap-2">
           <H1>Get in touch</H1>

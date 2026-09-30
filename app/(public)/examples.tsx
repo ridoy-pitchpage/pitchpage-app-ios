@@ -3,6 +3,7 @@ import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { ChevronLeft } from "lucide-react-native";
 
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { StyleGallery } from "@/features/builder/StyleGallery";
@@ -23,15 +24,7 @@ export default function ExamplesScreen() {
   return (
     <Screen>
       <ScreenScroll contentClassName="pt-2 gap-5">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          className="-ml-1 self-start p-1"
-        >
-          <ChevronLeft size={28} color={colors.foreground} />
-        </Pressable>
+        <BackButton />
 
         <View className="gap-2">
           <H1>Thirty styles</H1>

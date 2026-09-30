@@ -38,6 +38,9 @@ export function TextField({ label, hint, error, secure = false, minHeight, class
       >
         <TextInput
           {...rest}
+          // The visible Label is a sibling, not a <label for>, so without this
+          // a screen reader reaches the field and announces nothing.
+          accessibilityLabel={rest.accessibilityLabel ?? label}
           secureTextEntry={secure && !revealed}
           onFocus={(event) => {
             setFocused(true);
@@ -57,8 +60,8 @@ export function TextField({ label, hint, error, secure = false, minHeight, class
             onPress={() => setRevealed((value) => !value)}
             accessibilityRole="button"
             accessibilityLabel={revealed ? "Hide password" : "Show password"}
-            hitSlop={12}
-            className="pl-2"
+            style={{ minHeight: MIN_TAP, minWidth: MIN_TAP }}
+            className="items-center justify-center"
           >
             {revealed ? (
               <EyeOff size={20} color={colors.mutedForeground} />

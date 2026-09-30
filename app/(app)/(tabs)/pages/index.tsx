@@ -24,6 +24,7 @@ import type { PageCard as PageCardRow } from "@/api/supabase-direct";
 import { creditCount, pageSubtitle, relativeTime } from "@/lib/format";
 import { publicPageUrl } from "@/lib/config";
 import { useColors } from "@/theme/ThemeProvider";
+import { MIN_TAP } from "@/theme/tokens";
 
 /**
  * Pages (S22) — the app's home, replacing the web dashboard.
@@ -109,7 +110,9 @@ export default function PagesScreen() {
         <Pressable
           onPress={() => router.push("/(app)/(tabs)/credits")}
           accessibilityRole="button"
-          className="self-start rounded-full border border-border px-3 py-1.5"
+          accessibilityLabel="Your credits"
+          style={{ minHeight: MIN_TAP }}
+          className="justify-center self-start rounded-full border border-border px-4"
         >
           <Muted>
             {credits.isPending

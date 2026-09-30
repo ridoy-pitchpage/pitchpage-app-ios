@@ -62,6 +62,18 @@ export default function AccountScreen() {
         </Card>
 
         <View className="gap-2">
+          <H3>Your account</H3>
+          <Card className="p-0">
+            <Row label="Your name" onPress={() => router.push("/(app)/(tabs)/account/profile")} />
+            <Row
+              label="Change password"
+              onPress={() => router.push("/(app)/(tabs)/account/password")}
+              last
+            />
+          </Card>
+        </View>
+
+        <View className="gap-2">
           <H3>Appearance</H3>
           <Card className="flex-row gap-2 p-2">
             {(["system", "light", "dark"] as const).map((option) => (
@@ -96,6 +108,14 @@ export default function AccountScreen() {
             <Row label="About PitchPage" onPress={() => open(WEB_LINKS.about)} last />
           </Card>
         </View>
+
+        <Pressable
+          onPress={() => router.push("/(app)/(tabs)/account/delete")}
+          accessibilityRole="button"
+          className="min-h-[44px] justify-center rounded-control border border-border px-4 active:opacity-70"
+        >
+          <Body>Delete your account</Body>
+        </Pressable>
 
         <Pressable
           onPress={confirmSignOut}

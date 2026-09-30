@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react-native";
 import * as WebBrowser from "expo-web-browser";
 
 import { Button } from "@/components/Button";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { H1, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
@@ -56,15 +57,7 @@ export default function SignUp() {
         className="flex-1"
       >
         <ScreenScroll contentClassName="pt-4 gap-5">
-          <Pressable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={12}
-            className="-ml-1 self-start p-1"
-          >
-            <ChevronLeft size={28} color={colors.foreground} />
-          </Pressable>
+          <BackButton />
 
           <H1>Create your account</H1>
 

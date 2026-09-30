@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Select, Segmented } from "@/components/Select";
 import { ErrorState, Loading } from "@/components/States";
@@ -152,15 +153,7 @@ export default function IntakeScreen() {
         className="flex-1"
       >
         <ScreenScroll contentClassName="pt-2 gap-5">
-          <Pressable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            hitSlop={12}
-            className="-ml-1 self-start p-1"
-          >
-            <ChevronLeft size={28} color={colors.foreground} />
-          </Pressable>
+          <BackButton />
 
           <View className="gap-2">
             <H1>{copy.title}</H1>

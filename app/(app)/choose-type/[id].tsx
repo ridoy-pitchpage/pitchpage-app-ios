@@ -6,6 +6,7 @@ import * as Icons from "lucide-react-native";
 import { ChevronLeft } from "lucide-react-native";
 
 import { Card } from "@/components/Card";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
@@ -113,15 +114,7 @@ export default function ChooseTypeScreen() {
   return (
     <Screen>
       <ScreenScroll contentClassName="pt-2 gap-4">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          className="-ml-1 self-start p-1"
-        >
-          <ChevronLeft size={28} color={colors.foreground} />
-        </Pressable>
+        <BackButton />
 
         <View className="gap-2">
           <H1>What kind of pitch page?</H1>

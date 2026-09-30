@@ -6,6 +6,7 @@ import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { EmptyState, ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
@@ -79,15 +80,7 @@ export default function TrackedLinksScreen() {
   return (
     <Screen>
       <ScreenScroll contentClassName="pt-2 gap-4">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          className="-ml-1 self-start p-1"
-        >
-          <ChevronLeft size={28} color={colors.foreground} />
-        </Pressable>
+        <BackButton />
 
         <H1>Tracked links</H1>
         <Body className="text-muted-foreground">
@@ -113,6 +106,7 @@ export default function TrackedLinksScreen() {
               <TextField
                 value={label}
                 onChangeText={setLabel}
+                accessibilityLabel="Who this link is for"
                 placeholder="e.g. Acme Corp"
                 maxLength={80}
                 returnKeyType="go"

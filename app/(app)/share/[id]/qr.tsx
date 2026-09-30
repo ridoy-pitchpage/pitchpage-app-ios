@@ -7,6 +7,7 @@ import * as Sharing from "expo-sharing";
 import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, Muted } from "@/components/Text";
@@ -90,15 +91,7 @@ export default function QrScreen() {
   return (
     <Screen>
       <ScreenScroll contentClassName="pt-2 gap-5">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          className="-ml-1 self-start p-1"
-        >
-          <ChevronLeft size={28} color={colors.foreground} />
-        </Pressable>
+        <BackButton />
 
         <H1>Scan to open</H1>
         <Body className="text-muted-foreground">

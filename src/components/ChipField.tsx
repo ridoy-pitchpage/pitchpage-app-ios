@@ -94,6 +94,7 @@ export function ChipField({
           }}
           placeholder={placeholder}
           placeholderTextColor={colors.mutedForeground}
+          accessibilityLabel={label ? `${label}. Type a value and press return` : placeholder}
           returnKeyType="done"
           blurOnSubmit={false}
           maxLength={maxLength}
@@ -153,6 +154,7 @@ export function LineList({
             onChangeText={(text) => update(index, text)}
             placeholder={index === 0 ? placeholder : undefined}
             placeholderTextColor={colors.mutedForeground}
+            accessibilityLabel={label ? `${label}, ${index + 1}` : undefined}
             multiline={multiline}
             maxLength={maxLength}
             style={{ minHeight: multiline ? 72 : MIN_TAP, borderColor: colors.input }}

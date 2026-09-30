@@ -7,6 +7,7 @@ import { ChevronLeft, QrCode } from "lucide-react-native";
 import { Badge } from "@/components/Badge";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
@@ -162,15 +163,7 @@ export default function ShareScreen() {
 function BackRow() {
   const colors = useColors();
   return (
-    <Pressable
-      onPress={() => router.back()}
-      accessibilityRole="button"
-      accessibilityLabel="Go back"
-      hitSlop={12}
-      className="-ml-1 p-1"
-    >
-      <ChevronLeft size={28} color={colors.foreground} />
-    </Pressable>
+    <BackButton />
   );
 }
 

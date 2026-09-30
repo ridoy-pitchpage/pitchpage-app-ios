@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { ChevronDown, ChevronLeft, ChevronUp } from "lucide-react-native";
 
 import { Card } from "@/components/Card";
+import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { FAQ_TOPIC_NOTE, FAQ_TOPICS, FAQS } from "@/page/faq-content";
@@ -18,15 +19,7 @@ export default function FaqScreen() {
   return (
     <Screen>
       <ScreenScroll contentClassName="pt-2 gap-5">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          className="-ml-1 self-start p-1"
-        >
-          <ChevronLeft size={28} color={colors.foreground} />
-        </Pressable>
+        <BackButton />
 
         <H1>Questions, answered plainly</H1>
 

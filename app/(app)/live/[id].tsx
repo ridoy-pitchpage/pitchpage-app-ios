@@ -5,6 +5,7 @@ import * as WebBrowser from "expo-web-browser";
 import { ChevronLeft } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
+import { BackButton } from "@/components/BackButton";
 import { Screen } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, Muted } from "@/components/Text";
@@ -67,15 +68,7 @@ export default function LivePageScreen() {
   return (
     <Screen edges={["top"]}>
       <View className="flex-row items-center justify-between border-b border-border px-2 py-1">
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-          hitSlop={12}
-          className="p-1"
-        >
-          <ChevronLeft size={28} color={colors.foreground} />
-        </Pressable>
+        <BackButton />
         <Muted numberOfLines={1} className="min-w-0 flex-1 px-2">
           {row.slug}
         </Muted>
