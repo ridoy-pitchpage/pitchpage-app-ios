@@ -26,6 +26,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm test
+
       # The real proof the app still builds. It also catches a bad import or a
       # missing asset, which typecheck alone does not.
       - name: Bundle for web

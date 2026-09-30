@@ -24,9 +24,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: "portrait",
   // The New Architecture is the default in SDK 57, so it is not set here.
   userInterfaceStyle: "automatic",
-  // Placeholder artwork from the Expo template. Real icon and splash in the
-  // blue palette land in M7; the web's current PWA icons are pre-rebrand so
-  // they are not a source (master plan §19, issue W-8).
+  // PitchPage's own mark, taken from the site so the app is recognisably the
+  // same product.
+  //
+  // TODO before submitting: this is the 512px source. The App Store wants a
+  // 1024x1024 master, and upscaling will look soft on a Pro Max. It correctly
+  // has no alpha channel, which iOS requires.
   icon: "./assets/icon.png",
   assetBundlePatterns: ["**/*"],
   ios: {

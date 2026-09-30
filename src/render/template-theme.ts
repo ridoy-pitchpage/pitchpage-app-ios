@@ -123,10 +123,27 @@ export function readableAccent(accent: string, ground: string): string {
 }
 
 /** Near-black or near-white on the accent, whichever is further from it. */
+/**
+ * Text sitting on the accent fill.
+ *
+ * Near-black rather than pure black is the softer, better-looking choice on a
+ * fill, so it is the default dark ink. But the two mid-tone violets — violet
+ * #8B5CF6 and indigo #6366F1 — sit almost exactly between the two: white
+ * measures 4.23 and 4.47, near-black 4.46 and 4.23, so neither clears the 4.5
+ * WCAG needs for text this size, and a CTA label on those accents is normal
+ * body text, not large text. Pure black clears both (4.96 and 4.70), so it is
+ * the fallback when the softer pair misses. Eighteen of the twenty presets
+ * never reach it and keep the near-black.
+ */
+const AA_TEXT = 4.5;
+
 function inkOnAccent(accent: string): string {
-  return contrastRatio("#FFFFFF", accent) >= contrastRatio("#111111", accent)
-    ? "#FFFFFF"
-    : "#111111";
+  const onWhite = contrastRatio("#FFFFFF", accent);
+  const onSoftBlack = contrastRatio("#111111", accent);
+  const best = onWhite >= onSoftBlack ? "#FFFFFF" : "#111111";
+
+  if (Math.max(onWhite, onSoftBlack) >= AA_TEXT) return best;
+  return contrastRatio("#000000", accent) >= AA_TEXT ? "#000000" : best;
 }
 
 // ─── the grounds ────────────────────────────────────────────────────────────
