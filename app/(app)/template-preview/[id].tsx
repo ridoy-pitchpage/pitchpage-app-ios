@@ -62,7 +62,13 @@ export default function TemplatePreviewScreen() {
     );
   }
 
-  const url = `${SITE_URL}/sample/${family.id}`;
+  // ?screenshot=1 drops the website's sample banner — the "this is a sample,
+  // build yours free" strip with All examples and Build My Pitch Page in it.
+  // That is marketing chrome aimed at a web visitor; inside the app the person
+  // is already building, and those two controls lead out of the flow they are
+  // in. The website already supports the flag for its own gallery thumbnails.
+  const base = `${SITE_URL}/sample/${family.id}`;
+  const url = `${base}?screenshot=1`;
 
   function retry() {
     setFailed(false);
@@ -114,7 +120,9 @@ export default function TemplatePreviewScreen() {
           onHttpError={() => setFailed(true)}
           // A sample page links out to the marketing site. Staying put keeps
           // this screen about the one decision it exists for.
-          onShouldStartLoadWithRequest={(request) => request.url.startsWith(url)}
+          // Matched on the path, not the full URL: the flag is a query string,
+          // and a redirect that drops it would otherwise strand a blank screen.
+          onShouldStartLoadWithRequest={(request) => request.url.startsWith(base)}
         />
       )}
 
