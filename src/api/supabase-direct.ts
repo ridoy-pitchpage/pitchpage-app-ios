@@ -1,5 +1,6 @@
 import { supabase } from "@/auth/supabase";
 import { makeRefSlug } from "@/lib/share";
+import { PITCH_SAVE_CONFLICT } from "@/lib/errors";
 import type { Database } from "./database.types";
 
 /**
@@ -265,4 +266,127 @@ export async function amIPlatformAdmin(): Promise<boolean> {
   const { data, error } = await supabase.rpc("is_platform_admin");
   if (error) return false;
   return data === true;
+}
+
+// ─── Saving ─────────────────────────────────────────────────────────────────
+
+/**
+ * What a builder save may write. Derived from the generated Update type rather
+ * than hand-written, so the app cannot get a column's nullability wrong.
+ *
+ * Worth knowing: `bio`, `headline`, `full_name`, `slug` and `template` are NOT
+ * NULL in the database. Clearing one means writing `""`, and sending `null`
+ * would be rejected. `open_to` is a text array, not free JSON.
+ *
+ * Everything left out here is the server's: `published_at` (only the publish
+ * RPC), `user_id` and `org_id` (guarded by a trigger), `updated_at` (set by the
+ * trigger), and the supporting-document and video-master columns.
+ */
+export type SavePagePatch = Partial<
+  Pick<
+    PitchPageUpdate,
+    | "slug"
+    | "full_name"
+    | "headline"
+    | "bio"
+    | "email"
+    | "location"
+    | "linkedin_url"
+    | "template"
+    | "portrait_url"
+    | "hero_image_url"
+    | "video_url"
+    | "video_trim_start"
+    | "video_trim_end"
+    | "video_effect"
+    | "resume_url"
+    | "tagline"
+    | "primary_cta_label"
+    | "primary_cta_url"
+    | "final_cta_label"
+    | "final_cta_url"
+    | "open_to"
+    | "sections"
+    | "wizard_meta"
+    | "portfolio"
+    | "film"
+    | "listing"
+    | "credential_links"
+    | "og_image_url"
+    | "og_image_key"
+  >
+>;
+
+export type SaveResult = { updated_at: string | null; slug: string | null };
+
+/** Postgres unique-violation, which for this table means the slug is taken. */
+function isSlugConflict(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  return error.code === "23505" || /slug/i.test(error.message ?? "");
+}
+
+const SLUG_MAX_ATTEMPTS = 4;
+
+/**
+ * Save a page.
+ *
+ * Two behaviours are copied exactly from the web's `savePitchPage`, because
+ * both protect data rather than polish:
+ *
+ * 1. **Optimistic concurrency.** The update carries `expected_updated_at` as a
+ *    filter, so a second device that started from an older version updates zero
+ *    rows instead of silently overwriting the first. Zero rows is ambiguous —
+ *    the version moved on, or the row is not the caller's — so only on that
+ *    path does it pay for a second read to tell which. A rejected save also
+ *    never fires the privileged-column trigger, because that runs per row
+ *    actually updated.
+ *
+ * 2. **Slug collisions retry** with `-2`, `-3`… A slug is only sent when the
+ *    caller is deliberately changing it.
+ *
+ * The returned `updated_at` is the baseline for the caller's NEXT save: the
+ * trigger has just replaced the one it started from.
+ */
+export async function savePage(
+  id: string,
+  patch: SavePagePatch,
+  expectedUpdatedAt: string | null,
+): Promise<SaveResult> {
+  let slug = patch.slug;
+
+  for (let attempt = 0; attempt < SLUG_MAX_ATTEMPTS; attempt += 1) {
+    let write = supabase
+      .from("pitch_pages")
+      .update({ ...patch, ...(slug ? { slug } : {}) })
+      .eq("id", id);
+    if (expectedUpdatedAt) write = write.eq("updated_at", expectedUpdatedAt);
+
+    const { data, error } = await write.select("id, updated_at, slug");
+
+    if (!error) {
+      if (!data || data.length === 0) {
+        if (expectedUpdatedAt) {
+          const { data: current } = await supabase
+            .from("pitch_pages")
+            .select("id")
+            .eq("id", id)
+            .maybeSingle();
+          // The row is there and is the caller's, so the only thing that failed
+          // was the version match — something else wrote to it first.
+          if (current) throw new Error(PITCH_SAVE_CONFLICT);
+        }
+        throw new Error("Not found");
+      }
+      const row = data[0] as { updated_at?: string | null; slug?: string | null };
+      return { updated_at: row.updated_at ?? null, slug: row.slug ?? null };
+    }
+
+    // Anything other than a slug collision is a genuine failure.
+    if (!isSlugConflict(error) || !patch.slug) throw error;
+    slug = `${patch.slug}-${attempt + 2}`;
+  }
+
+  throw new Error(
+    "That address is taken and we couldn't find a free variation — please pick a slightly different one.",
+  );
 }

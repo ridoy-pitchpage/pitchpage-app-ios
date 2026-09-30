@@ -21,8 +21,11 @@ export type PageModel = {
   headline: string | null;
   bio: string | null;
   email: string | null;
+  location: string | null;
+  linkedin_url: string | null;
   template: string | null;
   portrait_url: string | null;
+  hero_image_url: string | null;
   video_url: string | null;
   primary_cta_url: string | null;
   final_cta_url: string | null;
@@ -49,8 +52,11 @@ export function toPageModel(row: PitchPageRow): PageModel {
     headline: row.headline ?? null,
     bio: row.bio ?? null,
     email: row.email ?? null,
+    location: row.location ?? null,
+    linkedin_url: row.linkedin_url ?? null,
     template: row.template ?? null,
     portrait_url: row.portrait_url ?? null,
+    hero_image_url: row.hero_image_url ?? null,
     video_url: row.video_url ?? null,
     primary_cta_url: row.primary_cta_url ?? null,
     final_cta_url: row.final_cta_url ?? null,
