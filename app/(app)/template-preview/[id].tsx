@@ -90,9 +90,19 @@ export default function TemplatePreviewScreen() {
           onRetry={retry}
         />
       ) : Platform.OS === "web" ? (
-        // react-native-webview renders an iframe on web, which pitchpage.co
-        // allows — it sets no X-Frame-Options. Same path as the live page.
-        <WebView key={attempt} source={{ uri: url }} style={{ flex: 1 }} />
+        // react-native-webview has no web build at all: it renders a red
+        // "does not support this platform" notice instead of the page. A plain
+        // iframe is the web equivalent, and pitchpage.co allows being framed —
+        // it sets no X-Frame-Options and no frame-ancestors.
+        <View className="flex-1">
+          <iframe
+            key={attempt}
+            src={url}
+            title={`${family.label} sample`}
+            onError={() => setFailed(true)}
+            style={{ border: 0, width: "100%", height: "100%" }}
+          />
+        </View>
       ) : (
         <WebView
           key={attempt}

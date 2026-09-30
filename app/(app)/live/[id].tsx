@@ -79,9 +79,16 @@ export default function LivePageScreen() {
       </View>
 
       {Platform.OS === "web" ? (
-        // react-native-webview renders an iframe on web, which pitchpage.co
-        // allows (it sets no X-Frame-Options), so this path works too.
-        <WebView source={{ uri: url }} style={{ flex: 1 }} />
+        // react-native-webview has no web build: it renders a red "does not
+        // support this platform" notice rather than the page. An iframe is the
+        // web equivalent, and the site allows being framed.
+        <View className="flex-1">
+          <iframe
+            src={url}
+            title={row.slug}
+            style={{ border: 0, width: "100%", height: "100%" }}
+          />
+        </View>
       ) : (
         <WebView
           source={{ uri: url }}
