@@ -11,7 +11,7 @@ import { useToast } from "@/components/Toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { signOut } from "@/auth/auth-actions";
 import { useMyProfile } from "@/api/queries";
-import { APP_VARIANT, APP_VERSION, SITE_URL, SUPPORT_EMAIL, WEB_LINKS } from "@/lib/config";
+import { APP_VARIANT, APP_VERSION, SUPPORT_EMAIL, WEB_LINKS } from "@/lib/config";
 import { useTheme, type Appearance } from "@/theme/ThemeProvider";
 import { useColors } from "@/theme/ThemeProvider";
 
@@ -94,7 +94,7 @@ export default function AccountScreen() {
             <Row label="Questions" onPress={() => router.push("/(public)/faq")} />
             <Row label="Examples" onPress={() => router.push("/(public)/examples")} />
             <Row label="Pricing" onPress={() => router.push("/(public)/pricing")} />
-            <Row label="Guides" onPress={() => open(`${SITE_URL}/guides`)} />
+            <Row label="Guides" onPress={() => router.push("/(app)/(tabs)/account/guides")} />
             <Row label="What we measure" onPress={() => open(WEB_LINKS.tracking)} />
             <Row label="Contact support" onPress={() => void contactSupport()} last />
           </Card>

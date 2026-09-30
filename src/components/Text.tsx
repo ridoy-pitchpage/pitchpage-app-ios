@@ -6,6 +6,15 @@ import { Text as RNText, type TextProps as RNTextProps } from "react-native";
  * Nothing here sets `allowFontScaling={false}`: every size has to hold up at
  * the largest Dynamic Type setting, and turning scaling off is how that gets
  * quietly broken.
+ *
+ * One trap. Each of these sets its own text colour, so passing a different
+ * colour class in `className` is a conflict, and on web Tailwind breaks the
+ * tie by the order it emits utilities — which follows tailwind.config.js's
+ * colour order, not the order of the classes here. `text-primary-foreground`
+ * wins because `primary-foreground` is declared after `foreground`;
+ * `text-background` silently loses because `background` is declared before it.
+ * So a colour that has to override goes in `style`, which wins everywhere,
+ * rather than in `className`.
  */
 
 type Props = RNTextProps & { className?: string };
