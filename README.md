@@ -58,14 +58,22 @@ The app signs in against the live Supabase project and works with real data:
 - **Tracked links** — one per recipient, created, copied and removed
 - **See it live** — the real published page
 - **Credits** — balance and ledger
-- **Account** — appearance (system/light/dark), help and legal links, sign out
+- **Account** — appearance (system/light/dark), profile, password, help and
+  legal links, sign out
+- **The builder** — the page IS the screen: tap any region to edit it. Details,
+  sections (add, reorder, edit, remove), all nine block types, photo and intro
+  video, and thirty style families. Drafts autosave, and a save that collides
+  with another device is detected rather than silently overwritten.
+- **Choose a type and intake** — the eight page types and their guided
+  questions, which seed the sections
+- **Guides** — all fifteen articles, in the app and readable offline
 
 Everything runs against **production**. There is no staging backend (master
 plan §24), so use a test account.
 
 ## What is not in yet
 
-The builder, Paige, media capture and analytics.
+Paige, analytics, and the company, outreach and admin areas.
 
 The web repo is read-only by instruction, so anything that needs server code
 cannot be built here: AI, Paige, analytics rollups, push notifications, buying
@@ -84,7 +92,11 @@ publishing is a database function any signed-in user may call.
 | `npm run web` | Browser preview |
 | `npm start` | Dev server, for Expo Go or a development build |
 | `npm run typecheck` | `tsc --noEmit` — must be clean before every commit |
+| `npm run lint` | ESLint. Must be clean before every commit |
+| `npm test` | Jest. The colour maths, the page-health rules, the guide copy |
 | `npm run doctor` | Checks the dependency set against the Expo SDK |
+
+CI runs the typecheck, the lint, the tests and a web bundle on every push.
 
 ## Layout
 
@@ -94,10 +106,21 @@ src/
   api/      Supabase access, query hooks, generated schema types
   auth/     client, encrypted session storage, sign-in actions
   components/  the design system
+  content/  guide copy, copied verbatim from the website
+  features/ the builder's sheets, media upload
+  page/     the page model, seeds and style families, ported from the website
+  render/   how a page is drawn: archetypes, blocks, colour maths
+  state/    the draft store and its autosave
   theme/    colour tokens, fonts, light/dark
   lib/      config, formatters, error translation
+__tests__/  unit tests
 docs/       the master plan
 ```
+
+Files under `src/page/` and `src/content/` are copied from the website rather
+than rewritten, so the app and the site cannot drift on what a page IS or on
+the words of a published article. Each says so at the top. Re-copy them whole
+rather than editing them here.
 
 ## Conventions
 
