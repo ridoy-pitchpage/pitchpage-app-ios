@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as direct from "./supabase-direct";
+import { getPageInsights } from "./analytics";
+import type { AnalyticsRange } from "@/analytics/analytics-range";
 
 /**
  * Query keys and hooks.
@@ -20,7 +22,24 @@ export const keys = {
   platformAdmin: ["platform-admin"] as const,
   publishEligibility: (id: string) => ["publish-eligibility", id] as const,
   pageLinks: (id: string) => ["page-links", id] as const,
+  insights: (id: string, range: string) => ["insights", id, range] as const,
 };
+
+/**
+ * A page's analytics. Read straight from the database with the signed-in
+ * user's client — see src/api/analytics.ts for why that needs no backend.
+ *
+ * Kept fresh for a minute: view events arrive whenever somebody opens the
+ * page, so a stale cache here is misleading in a way a stale page list is not.
+ */
+export function usePageInsights(id: string | undefined, range: AnalyticsRange) {
+  return useQuery({
+    queryKey: keys.insights(id ?? "", range),
+    queryFn: () => getPageInsights(id as string, range),
+    enabled: Boolean(id),
+    staleTime: 60_000,
+  });
+}
 
 export function usePublishEligibility(id: string | undefined, enabled = true) {
   return useQuery({
