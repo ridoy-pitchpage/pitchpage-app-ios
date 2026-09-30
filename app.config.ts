@@ -24,13 +24,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: "portrait",
   // The New Architecture is the default in SDK 57, so it is not set here.
   userInterfaceStyle: "automatic",
-  // PitchPage's own mark, taken from the site so the app is recognisably the
-  // same product.
-  //
-  // TODO before submitting: this is the 512px source. The App Store wants a
-  // 1024x1024 master, and upscaling will look soft on a Pro Max. It correctly
-  // has no alpha channel, which iOS requires.
-  icon: "./assets/icon.png",
+  // Flat, high-resolution brand artwork with no alpha channel, as iOS requires.
+  icon: "./assets/icon-v2.png",
   assetBundlePatterns: ["**/*"],
   ios: {
     supportsTablet: false, // iPhone only for 1.0 (decision Q7)
@@ -58,7 +53,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: IS_DEV ? "co.pitchpage.app.dev" : "co.pitchpage.app",
     adaptiveIcon: {
-      foregroundImage: "./assets/android-icon-foreground.png",
+      foregroundImage: "./assets/brand-mark.png",
       backgroundColor: "#F5EBDD",
     },
   },
@@ -73,9 +68,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         // Cream, the brand ground in both palettes' light mode (§19).
         backgroundColor: "#F5EBDD",
-        image: "./assets/splash-icon.png",
+        image: "./assets/brand-mark.png",
         imageWidth: 200,
-        dark: { backgroundColor: "#0A141F", image: "./assets/splash-icon.png", imageWidth: 200 },
+        dark: { backgroundColor: "#F5EBDD", image: "./assets/brand-mark.png", imageWidth: 200 },
       },
     ],
   ],

@@ -1,7 +1,12 @@
 import type { User } from "@supabase/supabase-js";
+import { Platform } from "react-native";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 
 import { SITE_URL } from "@/lib/config";
 import { supabase } from "./supabase";
+
+WebBrowser.maybeCompleteAuthSession();
 
 /**
  * Sign-in, sign-up and password reset, matching the web app's `/auth` route
@@ -51,6 +56,62 @@ export async function signInWithPassword(creds: Credentials): Promise<void> {
   });
   if (error) throw error;
   if (data.user) await ensureProfile(data.user);
+}
+
+/**
+ * Opens the provider in iOS's secure authentication sheet and hands the
+ * returned Supabase session back to the app. On web, Supabase performs the
+ * normal browser redirect itself.
+ */
+export async function signInWithProvider(provider: "google" | "apple"): Promise<boolean> {
+  const redirectTo = Linking.createURL("auth-callback");
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo,
+      skipBrowserRedirect: Platform.OS !== "web",
+    },
+  });
+  if (error) throw error;
+
+  // The browser is already navigating away; there is nothing else to do in
+  // this instance of the screen.
+  if (Platform.OS === "web") return false;
+  if (!data.url) throw new Error(`Couldn't connect to ${provider}. Please try again.`);
+
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
+    preferEphemeralSession: true,
+  });
+  if (result.type === "cancel" || result.type === "dismiss") return false;
+  if (result.type !== "success") {
+    throw new Error(`Couldn't connect to ${provider}. Please try again.`);
+  }
+
+  const returned = new URL(result.url);
+  const code = returned.searchParams.get("code");
+  if (code) {
+    const exchanged = await supabase.auth.exchangeCodeForSession(code);
+    if (exchanged.error) throw exchanged.error;
+  } else {
+    const fragment = new URLSearchParams(returned.hash.replace(/^#/, ""));
+    const accessToken = fragment.get("access_token");
+    const refreshToken = fragment.get("refresh_token");
+    const providerError = fragment.get("error_description") ?? returned.searchParams.get("error_description");
+    if (providerError) throw new Error(providerError);
+    if (!accessToken || !refreshToken) {
+      throw new Error(`Couldn't finish ${provider} sign-in. Please try again.`);
+    }
+    const session = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (session.error) throw session.error;
+  }
+
+  const { data: auth, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (auth.user) await ensureProfile(auth.user);
+  return true;
 }
 
 export type SignUpResult = { needsEmailConfirmation: boolean };

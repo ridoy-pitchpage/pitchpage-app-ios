@@ -14,28 +14,50 @@ type Props = Omit<TextInputProps, "style"> & {
   secure?: boolean;
   /** For a multiline field: how tall it starts. */
   minHeight?: number;
+  /** A decorative leading glyph that helps people scan a form quickly. */
+  icon?: React.ReactNode;
   className?: string;
 };
 
-export function TextField({ label, hint, error, secure = false, minHeight, className, ...rest }: Props) {
+export function TextField({
+  label,
+  hint,
+  error,
+  secure = false,
+  minHeight,
+  icon,
+  className,
+  ...rest
+}: Props) {
   const colors = useColors();
   const [revealed, setRevealed] = useState(false);
   const [focused, setFocused] = useState(false);
+  const fieldMinHeight = minHeight ?? MIN_TAP;
+  const multiline = Boolean(rest.multiline);
 
   return (
     <View className={["gap-1.5", className ?? ""].join(" ")}>
       {label ? <Label>{label}</Label> : null}
 
       <View
-        className="flex-row items-center rounded-control border bg-card px-3"
+        className={[
+          "flex-row rounded-control border bg-card px-3",
+          multiline ? "items-stretch" : "items-center",
+        ].join(" ")}
         style={{
-          minHeight: minHeight ?? MIN_TAP,
+          minHeight: fieldMinHeight,
           // The field edge is the only thing marking this as a control, so it
           // carries the raised `input` token (3:1) rather than the hairline.
           borderColor: error ? colors.destructive : focused ? colors.ring : colors.input,
           borderWidth: focused || error ? 2 : 1,
         }}
       >
+        {icon ? (
+          <View className="mr-2 items-center justify-center" accessibilityElementsHidden>
+            {icon}
+          </View>
+        ) : null}
+
         <TextInput
           {...rest}
           // The visible Label is a sibling, not a <label for>, so without this
@@ -51,8 +73,13 @@ export function TextField({ label, hint, error, secure = false, minHeight, class
             rest.onBlur?.(event);
           }}
           placeholderTextColor={colors.mutedForeground}
-          textAlignVertical={rest.multiline ? "top" : "center"}
-          className="flex-1 py-2.5 font-body text-[16px] text-foreground"
+          textAlignVertical={multiline ? "top" : "center"}
+          style={
+            multiline
+              ? { minHeight: Math.max(fieldMinHeight - 4, MIN_TAP), alignSelf: "stretch" }
+              : undefined
+          }
+          className="flex-1 border-0 bg-transparent py-2.5 font-body text-[16px] text-foreground outline-none"
         />
 
         {secure ? (

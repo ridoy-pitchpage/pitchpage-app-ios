@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { Modal, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
 import { vars } from "nativewind";
 import Animated, {
   useAnimatedStyle,
@@ -14,6 +14,7 @@ import { X } from "lucide-react-native";
 import { H3 } from "./Text";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { paletteVars } from "@/theme/tokens";
+import { ModalSurface, useModalSurfaceDimensions } from "./ModalSurface";
 
 /**
  * A sheet that rises from the bottom — the phone's answer to the web builder's
@@ -38,7 +39,7 @@ export function Sheet({
 }) {
   const colors = useColors();
   const { palette } = useTheme();
-  const { height } = useWindowDimensions();
+  const surface = useModalSurfaceDimensions();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -56,63 +57,65 @@ export function Sheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end">
-        <Animated.View style={[{ ...StyleSheetAbsolute, backgroundColor: "#000" }, scrimStyle]}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={onClose}
-            style={{ flex: 1 }}
-          />
-        </Animated.View>
+      <ModalSurface>
+        <View className="flex-1 justify-end">
+          <Animated.View style={[{ ...StyleSheetAbsolute, backgroundColor: "#000" }, scrimStyle]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={onClose}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
 
-        {/*
-          A Modal renders in its own root, outside the tree ThemeProvider set
-          the palette variables on, so every themed class inside would resolve
-          to nothing and the panel would come out transparent. The variables
-          have to be re-applied here.
-        */}
-        <Animated.View
-          style={[
-            panelStyle,
-            vars(paletteVars(palette)),
-            { maxHeight: height * maxHeightRatio, backgroundColor: palette.card },
-          ]}
-          className="rounded-t-[20px] border-t border-border"
-        >
-          <SafeAreaView edges={["bottom"]}>
-            {/* The grabber reads as "this can be dismissed" before anything is read. */}
-            <View className="items-center pt-2">
-              <View
-                className="h-1 w-10 rounded-full"
-                style={{ backgroundColor: colors.mutedForeground, opacity: 0.35 }}
-              />
-            </View>
-
-            {title ? (
-              <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
-                <H3 className="min-w-0 flex-1">{title}</H3>
-                <Pressable
-                  onPress={onClose}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  hitSlop={12}
-                  className="p-1"
-                >
-                  <X size={22} color={colors.mutedForeground} />
-                </Pressable>
+          {/*
+            A Modal renders in its own root, outside the tree ThemeProvider set
+            the palette variables on, so every themed class inside would resolve
+            to nothing and the panel would come out transparent. The variables
+            have to be re-applied here.
+          */}
+          <Animated.View
+            style={[
+              panelStyle,
+              vars(paletteVars(palette)),
+              { maxHeight: surface.height * maxHeightRatio, backgroundColor: palette.card },
+            ]}
+            className="rounded-t-[20px] border-t border-border"
+          >
+            <SafeAreaView edges={["bottom"]}>
+              {/* The grabber reads as "this can be dismissed" before anything is read. */}
+              <View className="items-center pt-2">
+                <View
+                  className="h-1 w-10 rounded-full"
+                  style={{ backgroundColor: colors.mutedForeground, opacity: 0.35 }}
+                />
               </View>
-            ) : null}
 
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              contentContainerClassName="px-4 pb-4 gap-2"
-            >
-              {children}
-            </ScrollView>
-          </SafeAreaView>
-        </Animated.View>
-      </View>
+              {title ? (
+                <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
+                  <H3 className="min-w-0 flex-1">{title}</H3>
+                  <Pressable
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                    hitSlop={12}
+                    className="p-1"
+                  >
+                    <X size={22} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                contentContainerClassName="px-4 pb-4 gap-2"
+              >
+                {children}
+              </ScrollView>
+            </SafeAreaView>
+          </Animated.View>
+        </View>
+      </ModalSurface>
     </Modal>
   );
 }

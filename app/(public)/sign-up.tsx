@@ -2,23 +2,38 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
-import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
-import { H1, Muted } from "@/components/Text";
+import { Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
-import { credentialProblem, signUpWithPassword } from "@/auth/auth-actions";
-import { WEB_LINKS } from "@/lib/config";
+import { GoogleSignInButton } from "@/auth/GoogleSignInButton";
+import { credentialProblem, signInWithProvider, signUpWithPassword } from "@/auth/auth-actions";
+import { AuthIntro } from "@/auth/AuthIntro";
+import { DEV_SIGN_IN, WEB_LINKS } from "@/lib/config";
+import { useColors } from "@/theme/ThemeProvider";
 
-/** Create account (S16). Same rules as the website, including the 6-character floor. */
+/**
+ * Create account (S16). Same rules as the website, including the 6-character
+ * floor.
+ *
+ * In development the form arrives filled from .env, so the throwaway account
+ * the prefilled Sign in screen expects can be made in one tap. Creating it is
+ * still an ordinary sign-up against the real backend — the same rules, the
+ * same confirmation mail, the same row in the same table.
+ */
 export default function SignUp() {
   const toast = useToast();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const colors = useColors();
+  // Captured locally: TypeScript will not narrow an imported binding.
+  const devCreds = DEV_SIGN_IN;
+  const [name, setName] = useState(devCreds ? "Test Account" : "");
+  const [email, setEmail] = useState(devCreds?.email ?? "");
+  const [password, setPassword] = useState(devCreds?.password ?? "");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   async function submit() {
     if (!name.trim()) {
@@ -47,20 +62,58 @@ export default function SignUp() {
     }
   }
 
+  async function continueWithGoogle() {
+    setGoogleBusy(true);
+    try {
+      const completed = await signInWithProvider("google");
+      if (completed) router.replace("/(app)/(tabs)/pages");
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setGoogleBusy(false);
+    }
+  }
+
   return (
     <Screen>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScreenScroll contentClassName="pt-4 gap-5">
-          <BackButton />
+        <ScreenScroll contentClassName="pt-3 gap-5">
+          <AuthIntro
+            eyebrow="Start creating"
+            title="Put your story to work."
+            description="Create a free account and turn your experience into a page people remember."
+            onBack={() =>
+              router.canGoBack() ? router.back() : router.replace("/(public)/welcome")
+            }
+          />
 
-          <H1>Create your account</H1>
+          <View
+            className="gap-4 rounded-card border border-border bg-card p-4"
+            style={{
+              shadowColor: colors.foreground,
+              shadowOpacity: 0.08,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 8 },
+            }}
+          >
+            <GoogleSignInButton
+              mode="signup"
+              loading={googleBusy}
+              onPress={() => void continueWithGoogle()}
+            />
 
-          <View className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-px flex-1 bg-border" />
+              <Muted className="text-[12px]">or use email</Muted>
+              <View className="h-px flex-1 bg-border" />
+            </View>
+
             <TextField
               label="Your name"
+              icon={<UserRound size={19} color={colors.mutedForeground} />}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -70,6 +123,7 @@ export default function SignUp() {
             />
             <TextField
               label="Email"
+              icon={<Mail size={19} color={colors.mutedForeground} />}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -80,6 +134,7 @@ export default function SignUp() {
             />
             <TextField
               label="Password"
+              icon={<LockKeyhole size={19} color={colors.mutedForeground} />}
               value={password}
               onChangeText={setPassword}
               secure
@@ -92,12 +147,10 @@ export default function SignUp() {
             />
           </View>
 
-          <Button title="Create account" loading={busy} onPress={() => void submit()} />
-
           <Muted className="text-center">
             By creating an account you agree to our{" "}
             <Muted
-              className="text-link"
+              style={{ color: colors.link }}
               accessibilityRole="link"
               onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.terms)}
             >
@@ -105,7 +158,7 @@ export default function SignUp() {
             </Muted>{" "}
             and{" "}
             <Muted
-              className="text-link"
+              style={{ color: colors.link }}
               accessibilityRole="link"
               onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.privacy)}
             >
@@ -120,10 +173,27 @@ export default function SignUp() {
             className="self-center p-2"
           >
             <Muted>
-              Already have an account? <Muted className="text-link">Sign in</Muted>
+              Already have an account?{" "}
+              <Muted style={{ color: colors.link }}>Sign in</Muted>
             </Muted>
           </Pressable>
         </ScreenScroll>
+
+        {/*
+          Pinned rather than last in the scroll. The introduction and three
+          fields are taller than a phone, so with the keyboard up the button
+          that finishes the job sat below the fold — the one thing on the
+          screen that must never need looking for.
+        */}
+        <View className="border-t border-border bg-card px-4 pb-2 pt-3">
+          <Button
+            title="Create account"
+            loading={busy}
+            disabled={googleBusy}
+            icon={<ArrowRight size={18} color={colors.primaryForeground} />}
+            onPress={() => void submit()}
+          />
+        </View>
       </KeyboardAvoidingView>
     </Screen>
   );

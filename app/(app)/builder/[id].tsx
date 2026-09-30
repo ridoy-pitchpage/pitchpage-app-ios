@@ -3,7 +3,15 @@ import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
-import { Camera, ChevronLeft, Eye, LayoutList, Palette, Pencil, UserRound } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Eye,
+  FilePenLine,
+  Images,
+  ListTree,
+  Pencil,
+  SwatchBook,
+} from "lucide-react-native";
 
 import { Button } from "@/components/Button";
 import { ErrorState, Loading } from "@/components/States";
@@ -125,7 +133,7 @@ export default function BuilderScreen() {
           setSectionsOnAdd(true);
           setSheet("sections");
         }}
-        bottomInset={96}
+        bottomInset={104}
         header={
           <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.background }}>
             <View className="flex-row items-center gap-1 border-b border-border px-2 py-1">
@@ -172,15 +180,15 @@ export default function BuilderScreen() {
         style={{ backgroundColor: colors.card }}
         className="absolute inset-x-0 bottom-0 border-t border-border"
       >
-        <View className="flex-row items-center gap-2 px-3 py-2">
+        <View className="flex-row items-center gap-1 px-2 py-2">
           <ToolbarButton
             label="Details"
-            icon={<UserRound size={19} color={colors.foreground} />}
+            icon={<FilePenLine size={19} color={colors.link} strokeWidth={2.1} />}
             onPress={() => setSheet("details")}
           />
           <ToolbarButton
             label="Sections"
-            icon={<LayoutList size={19} color={colors.foreground} />}
+            icon={<ListTree size={19} color={colors.link} strokeWidth={2.1} />}
             onPress={() => {
               setSectionsOnAdd(false);
               setSheet("sections");
@@ -188,15 +196,15 @@ export default function BuilderScreen() {
           />
           <ToolbarButton
             label="Media"
-            icon={<Camera size={19} color={colors.foreground} />}
+            icon={<Images size={19} color={colors.link} strokeWidth={2.1} />}
             onPress={() => setSheet("media")}
           />
           <ToolbarButton
             label="Style"
-            icon={<Palette size={19} color={colors.foreground} />}
+            icon={<SwatchBook size={19} color={colors.link} strokeWidth={2.1} />}
             onPress={() => setSheet("style")}
           />
-          <View className="flex-1">
+          <View className="w-[112px] pl-1">
             <Button
               title={page.published_at ? "Update" : "Publish"}
               haptic
@@ -236,16 +244,19 @@ function ToolbarButton({
   icon: React.ReactNode;
   onPress: () => void;
 }) {
+  const colors = useColors();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={{ minHeight: MIN_TAP, minWidth: 46 }}
-      className="items-center justify-center gap-0.5"
+      style={{ minHeight: 58, minWidth: MIN_TAP }}
+      className="flex-1 items-center justify-center gap-1 rounded-control active:bg-secondary"
     >
-      {icon}
-      <Muted className="text-[11px]">{label}</Muted>
+      <View className="h-7 w-7 items-center justify-center rounded-full bg-secondary">{icon}</View>
+      <Muted className="font-body-medium text-[11px]" style={{ color: colors.foreground }}>
+        {label}
+      </Muted>
     </Pressable>
   );
 }

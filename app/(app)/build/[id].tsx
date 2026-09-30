@@ -4,7 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
-import { FileText, Sparkles, Trash2 } from "lucide-react-native";
+import { BriefcaseBusiness, FileText, Globe2, Sparkles, Trash2, Upload } from "lucide-react-native";
 
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
@@ -19,6 +19,7 @@ import { keys, useMyPage } from "@/api/queries";
 import { savePage } from "@/api/supabase-direct";
 import { MEDIA_LIMITS, removeMedia, tooLargeMessage, uploadMedia } from "@/features/media/upload";
 import { useColors } from "@/theme/ThemeProvider";
+import type { Json } from "@/api/database.types";
 
 /**
  * The last step before the builder: what the page is made from.
@@ -50,6 +51,7 @@ export default function BuildScreen() {
 
   const [linkedin, setLinkedin] = useState<string | null>(null);
   const [portfolio, setPortfolio] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState<string | null>(null);
   const [busy, setBusy] = useState<"resume" | "save" | null>(null);
 
   if (page.isPending) {
@@ -76,6 +78,14 @@ export default function BuildScreen() {
   // already saved without overwriting it with a stale empty string.
   const linkedinValue = linkedin ?? row.linkedin_url ?? "";
   const portfolioValue = portfolio ?? row.primary_cta_url ?? "";
+  const savedPrompt =
+    row.wizard_meta &&
+    typeof row.wizard_meta === "object" &&
+    !Array.isArray(row.wizard_meta) &&
+    typeof row.wizard_meta.app_build_prompt === "string"
+      ? row.wizard_meta.app_build_prompt
+      : "";
+  const promptValue = prompt ?? savedPrompt;
 
   async function pickResume() {
     const result = await DocumentPicker.getDocumentAsync({
@@ -141,6 +151,7 @@ export default function BuildScreen() {
         {
           linkedin_url: linkedinValue.trim() || null,
           primary_cta_url: portfolioValue.trim() || null,
+          wizard_meta: withBuildPrompt(row.wizard_meta, promptValue),
         },
         row.updated_at,
       );
@@ -177,10 +188,31 @@ export default function BuildScreen() {
           <View className="gap-2">
             <H1>What should we build from?</H1>
             <Muted>
-              Add your CV and the links worth carrying over. Everything here is optional — you can
-              add it later from the builder.
+              Tell us what you want, then add anything useful. You can change all of it later.
             </Muted>
           </View>
+
+          <Card className="gap-3">
+            <View className="flex-row items-center gap-2">
+              <View className="h-9 w-9 items-center justify-center rounded-full bg-secondary">
+                <Sparkles size={18} color={colors.link} />
+              </View>
+              <View className="flex-1">
+                <H3>Describe the page you want</H3>
+                <Muted className="text-[12px]">Give AI a clear direction.</Muted>
+              </View>
+            </View>
+            <TextField
+              value={promptValue}
+              onChangeText={setPrompt}
+              multiline
+              minHeight={144}
+              maxLength={600}
+              placeholder="Example: Build a confident page for product design roles. Highlight my mobile work, leadership, and strongest case study."
+              accessibilityLabel="Describe the page you want"
+            />
+            <Muted className="text-right">{promptValue.length}/600</Muted>
+          </Card>
 
           <Card className="gap-3">
             <H3>Your CV</H3>
@@ -203,6 +235,7 @@ export default function BuildScreen() {
                 title="Upload your CV"
                 variant="secondary"
                 loading={busy === "resume"}
+                icon={<Upload size={17} color={colors.foreground} />}
                 onPress={() => void pickResume()}
               />
             )}
@@ -212,6 +245,7 @@ export default function BuildScreen() {
             <H3>Your links</H3>
             <TextField
               label="LinkedIn"
+              icon={<BriefcaseBusiness size={18} color={colors.mutedForeground} />}
               value={linkedinValue}
               onChangeText={setLinkedin}
               placeholder="linkedin.com/in/you"
@@ -221,6 +255,7 @@ export default function BuildScreen() {
             />
             <TextField
               label="Portfolio or website"
+              icon={<Globe2 size={18} color={colors.mutedForeground} />}
               value={portfolioValue}
               onChangeText={setPortfolio}
               placeholder="yoursite.com"
@@ -247,4 +282,9 @@ export default function BuildScreen() {
       </KeyboardAvoidingView>
     </Screen>
   );
+}
+
+function withBuildPrompt(meta: Json, prompt: string): Json {
+  const base = meta && typeof meta === "object" && !Array.isArray(meta) ? meta : {};
+  return { ...base, app_build_prompt: prompt.trim() };
 }

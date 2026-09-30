@@ -1,23 +1,26 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import { router } from "expo-router";
+import { ArrowRight, LockKeyhole, Mail } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
-import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
-import { H1, Muted } from "@/components/Text";
+import { Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
-import { credentialProblem, signInWithPassword } from "@/auth/auth-actions";
+import { GoogleSignInButton } from "@/auth/GoogleSignInButton";
+import { credentialProblem, signInWithPassword, signInWithProvider } from "@/auth/auth-actions";
+import { AuthIntro } from "@/auth/AuthIntro";
 import { DEV_SIGN_IN } from "@/lib/config";
+import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * Sign in (S15). Email and password go straight to Supabase, so this works
  * against the live accounts with no backend change.
  *
- * Continue with Apple and Continue with Google are not here yet: both currently
- * run through Lovable's OAuth broker on the web, and spike S1 decides whether
- * the app gets a native sheet or the bridge (§12).
+ * Google opens in iOS's secure authentication sheet and hands the resulting
+ * Supabase session back to the app. The provider's allowed redirect URIs still
+ * have to include this project's Supabase callback before a live login works.
  *
  * In development the fields arrive filled from EXPO_PUBLIC_DEV_EMAIL and
  * EXPO_PUBLIC_DEV_PASSWORD with a one-tap button beside them. It is the same
@@ -26,12 +29,14 @@ import { DEV_SIGN_IN } from "@/lib/config";
  */
 export default function SignIn() {
   const toast = useToast();
+  const colors = useColors();
   // Captured locally: TypeScript will not narrow an imported binding inside
   // the callback below.
   const devCreds = DEV_SIGN_IN;
   const [email, setEmail] = useState(DEV_SIGN_IN?.email ?? "");
   const [password, setPassword] = useState(DEV_SIGN_IN?.password ?? "");
   const [busy, setBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
 
   async function submit(creds: { email: string; password: string } = { email, password }) {
     const problem = credentialProblem(creds, "signin");
@@ -52,24 +57,58 @@ export default function SignIn() {
     }
   }
 
+  async function continueWithGoogle() {
+    setGoogleBusy(true);
+    try {
+      const completed = await signInWithProvider("google");
+      if (completed) router.replace("/(app)/(tabs)/pages");
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setGoogleBusy(false);
+    }
+  }
+
   return (
     <Screen>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScreenScroll contentClassName="pt-4 gap-5">
-          <BackButton
-            onPress={() =>
+        <ScreenScroll contentClassName="pt-3 gap-5">
+          <AuthIntro
+            eyebrow="Welcome back"
+            title="Keep building your next opportunity."
+            description="Sign in to edit your pages, see who viewed them, and share your best work."
+            onBack={() =>
               router.canGoBack() ? router.back() : router.replace("/(public)/welcome")
             }
           />
 
-          <H1>Welcome back</H1>
+          <View
+            className="gap-4 rounded-card border border-border bg-card p-4"
+            style={{
+              shadowColor: colors.foreground,
+              shadowOpacity: 0.08,
+              shadowRadius: 16,
+              shadowOffset: { width: 0, height: 8 },
+            }}
+          >
+            <GoogleSignInButton
+              mode="signin"
+              loading={googleBusy}
+              onPress={() => void continueWithGoogle()}
+            />
 
-          <View className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-px flex-1 bg-border" />
+              <Muted className="text-[12px]">or use email</Muted>
+              <View className="h-px flex-1 bg-border" />
+            </View>
+
             <TextField
               label="Email"
+              icon={<Mail size={19} color={colors.mutedForeground} />}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -81,6 +120,7 @@ export default function SignIn() {
             />
             <TextField
               label="Password"
+              icon={<LockKeyhole size={19} color={colors.mutedForeground} />}
               value={password}
               onChangeText={setPassword}
               secure
@@ -90,26 +130,32 @@ export default function SignIn() {
               returnKeyType="go"
               onSubmitEditing={() => void submit()}
             />
-          </View>
 
-          <Button title="Sign in" loading={busy} onPress={() => void submit()} />
+            <Pressable
+              onPress={() => router.push("/(public)/forgot-password")}
+              accessibilityRole="link"
+              className="-my-1 self-end p-2"
+            >
+              <Muted style={{ color: colors.link }}>Forgot your password?</Muted>
+            </Pressable>
 
-          {devCreds ? (
             <Button
-              title="Sign in as test user"
-              variant="secondary"
+              title="Sign in"
               loading={busy}
-              onPress={() => void submit(devCreds)}
+              disabled={googleBusy}
+              icon={<ArrowRight size={18} color={colors.primaryForeground} />}
+              onPress={() => void submit()}
             />
-          ) : null}
 
-          <Pressable
-            onPress={() => router.push("/(public)/forgot-password")}
-            accessibilityRole="link"
-            className="self-center p-2"
-          >
-            <Muted className="text-link">Forgot your password?</Muted>
-          </Pressable>
+            {devCreds ? (
+              <Button
+                title="Sign in as test user"
+                variant="secondary"
+                loading={busy}
+                onPress={() => void submit(devCreds)}
+              />
+            ) : null}
+          </View>
 
           <Pressable
             onPress={() => router.replace("/(public)/sign-up")}
@@ -117,7 +163,8 @@ export default function SignIn() {
             className="self-center p-2"
           >
             <Muted>
-              No account yet? <Muted className="text-link">Create one</Muted>
+              New to PitchPage?{" "}
+              <Muted style={{ color: colors.link }}>Create an account</Muted>
             </Muted>
           </Pressable>
         </ScreenScroll>
