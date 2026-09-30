@@ -7,22 +7,19 @@ import { Button } from "@/components/Button";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, Muted } from "@/components/Text";
 import { ErrorState, Loading } from "@/components/States";
-import { useToast } from "@/components/Toast";
 import { StyleGallery } from "@/features/builder/StyleGallery";
-import { keys, useMyPage } from "@/api/queries";
-import { savePage } from "@/api/supabase-direct";
+import { useApplyTemplate } from "@/features/builder/use-apply-template";
+import { useMyPage } from "@/api/queries";
 import { currentPitchKind } from "@/page/apply-kind";
 import {
   KIND_TO_CATEGORY,
   STYLE_CATEGORY_ORDER,
   STYLE_CATEGORY_SHORT,
   STYLE_FAMILIES,
-  encodeStyleSelection,
   resolveStyle,
   type StyleCategory,
   type StyleFamily,
 } from "@/page/style-families";
-import { useQueryClient } from "@tanstack/react-query";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 
@@ -45,8 +42,6 @@ type Filter = typeof ALL | StyleCategory;
 
 export default function TemplateScreen() {
   const colors = useColors();
-  const toast = useToast();
-  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
   const page = useMyPage(id);
 
@@ -54,14 +49,19 @@ export default function TemplateScreen() {
   const suggested = kind ? KIND_TO_CATEGORY[kind] : undefined;
 
   const [filter, setFilter] = useState<Filter | null>(null);
-  const [chosen, setChosen] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+
+  // Hooks cannot sit below the early returns, and the row is not loaded yet,
+  // so the fallback stands in until it is. Nothing can apply a template while
+  // the screen is still showing its spinner.
+  const { apply, busy } = useApplyTemplate(
+    page.data ?? { id: id ?? "", template: null, updated_at: null, wizard_meta: null },
+  );
 
   const current = useMemo(() => resolveStyle(page.data?.template), [page.data?.template]);
   // Null until the page loads, so the first render does not settle on "All"
   // before the page's own type is known.
   const active: Filter = filter ?? suggested ?? ALL;
-  const selectedId = chosen ?? current.family.id;
+  const selectedId = current.family.id;
 
   const families = useMemo(
     () => (active === ALL ? STYLE_FAMILIES : STYLE_FAMILIES.filter((f) => f.category === active)),
@@ -89,37 +89,6 @@ export default function TemplateScreen() {
 
   const row = page.data;
 
-  async function applyTemplate() {
-    const family = STYLE_FAMILIES.find((f) => f.id === selectedId) ?? current.family;
-    setBusy(true);
-    try {
-      await savePage(
-        row.id,
-        {
-          template: encodeStyleSelection(
-            family.id,
-            current.color.id,
-            family.supportsMode ? current.mode : family.defaultMode,
-          ),
-        },
-        row.updated_at,
-      );
-      await queryClient.invalidateQueries({ queryKey: keys.page(row.id) });
-      await queryClient.invalidateQueries({ queryKey: keys.pages });
-      // Next comes what goes ON the page. The kinds that ask their own
-      // questions do that first; the rest go straight to the CV and links.
-      if (kind && kind !== "job" && kind !== "other") {
-        router.push({ pathname: "/(app)/intake/[kind]/[id]", params: { kind, id: row.id } });
-      } else {
-        router.push({ pathname: "/(app)/build/[id]", params: { id: row.id } });
-      }
-    } catch (error) {
-      toast.error(error);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const filters: Filter[] = [ALL, ...STYLE_CATEGORY_ORDER];
 
   return (
@@ -130,8 +99,8 @@ export default function TemplateScreen() {
         <View className="gap-2">
           <H1>Pick a template</H1>
           <Muted>
-            How your page looks. You can change it any time from Style in the builder, so this is a
-            starting point, not a commitment.
+            How your page looks. Tap one to see the real page it makes. You can change it any time
+            from Style in the builder, so this is a starting point, not a commitment.
           </Muted>
         </View>
 
@@ -178,15 +147,20 @@ export default function TemplateScreen() {
         <StyleGallery
           families={families}
           selectedId={selectedId}
-          onSelect={(family: StyleFamily) => setChosen(family.id)}
+          onSelect={(family: StyleFamily) =>
+            router.push({
+              pathname: "/(app)/template-preview/[id]",
+              params: { id: row.id, family: family.id },
+            })
+          }
         />
       </ScreenScroll>
 
       <View className="border-t border-border bg-card px-4 py-3">
         <Button
-          title="Use this template"
+          title={`Continue with ${current.family.label}`}
           loading={busy}
-          onPress={() => void applyTemplate()}
+          onPress={() => void apply(selectedId)}
         />
       </View>
     </Screen>
