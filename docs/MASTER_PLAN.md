@@ -16,12 +16,28 @@
 > **Set 30 Sep 2026 by the owner.** Nothing in
 > `gregadosmond-oss/profile-pride-app` is to be changed. It is a reference only.
 >
-> **Part C of this plan is therefore on hold.** No app API, no render surface,
-> no universal-links file, no Apple purchase endpoint, no push tokens, no
-> account-deletion routine, no database changes. Part C stays written down as
-> the plan for when that changes; none of it is built.
+> **Corrected 30 Sep 2026, after checking the database instead of reasoning
+> about it.** Two things listed here as blocked were not.
 >
-> **What the app can still do,** using only what the website already exposes:
+> *Analytics was not blocked.* `pitch_page_views` carries an RLS policy —
+> "Owners can read their pages' view events" — so the signed-in user's own
+> client reads the same rows the website's server function reads, and
+> `get_page_analytics_rollup` is SECURITY INVOKER granted to `authenticated`.
+> The aggregation is pure TypeScript. Analytics is built, in `src/analytics/`
+> and `app/(app)/(tabs)/analytics/`.
+>
+> *Account deletion needed new SQL, which is not the same as changing the
+> website repo.* That repo's migrations never auto-apply — its own files say to
+> paste them into Lovable's SQL editor by hand — so the deletion function lives
+> in this repo at `sql/001_delete_my_account.sql` and is applied the same way.
+> The website repo is untouched. Until somebody runs it, the app falls back to
+> the emailed request; running it is what clears the App Store blocker.
+>
+> **Part C of this plan is still on hold**: no app API, no render surface, no
+> universal-links file, no Apple purchase endpoint, no push tokens. It stays
+> written down as the plan for when that changes.
+>
+> **What the app does, using only what the website already exposes:**
 >
 > - Sign in, and stay signed in, through Supabase Auth.
 > - Read and write the user's own pages — row-level security already grants a
@@ -30,26 +46,28 @@
 >   user may call, with every credit rule inside them.
 > - Read the credit balance and ledger.
 > - Create, copy and remove tracked links.
+> - Read a page's analytics, and count them the same way the website does.
 > - Show a published page by loading `pitchpage.co/p/<slug>` in a web view.
-> - Upload a résumé or document into the user's own storage folder.
+> - Upload a portrait, video, résumé or document into the user's own storage
+>   folder.
+> - Delete the account outright, once `sql/001_delete_my_account.sql` is applied.
 >
-> **What it cannot do until the constraint lifts:**
+> **What it cannot do, each checked against the grants rather than assumed:**
 >
 > | Blocked | Why | What happens instead |
 > |---|---|---|
-> | Buying credits in the app | Apple's receipt must be verified server-side before credits are granted | Credits are bought on the website; the app publishes with what the account holds |
-> | Deleting an account | Needs the service role; no function exists that a user can call | **Blocks App Store submission** (Guideline 5.1.1(v)) |
+> | Buying credits in the app | `grant_credits` is `service_role` only and explicitly revoked from `authenticated` — correctly, since a client that could grant itself credits would be a hole. Apple's receipt has to be verified server-side first. | Credits are bought on the website; the app publishes with what the account holds |
 > | Push notifications | Needs a device-token table and a sender | Visitor alerts stay email and web push |
-> | AI — building from a résumé, Paige, style suggestions, gap questions | Server code behind an API key | The app edits by hand; AI steps stay on the website |
-> | Analytics numbers | The rollups are server functions, and a user cannot read the raw view rows | Analytics stays on the website |
+> | AI — building from a résumé, Paige, style suggestions, gap questions | Server code behind an API key the app must not hold | The app edits by hand; AI steps stay on the website |
+> | Outreach sequences and sends | Sending email is server work | Stays on the website |
 > | A pixel-exact preview of a *draft* | An unpublished page has no public URL, and drawing one needs a route on the website | Review is a row per part — which is what the web's own review step is. A published page is shown for real. |
-> | Company, outreach, admin | Every one is a server function | Stays on the website |
 >
-> **Account deletion is the one hard blocker.** Any app that lets people create
-> an account must let them delete it from inside the app, and a client cannot do
-> that. Everything else above has a reasonable answer or can wait; this one
-> stops a submission outright. It is a small, self-contained change in the web
-> repo (§10.6) whenever that becomes possible.
+> **Not blocked, but not built.** The company/organization dashboard
+> (`get_org_analytics`, `get_org_outcomes`, `get_org_tracked_links` and the
+> rest) is SECURITY DEFINER granted to `authenticated`, checks `_is_org_admin`
+> itself, and so *is* callable from the app. It is a large surface for a small
+> group of admins, and is deliberately left for after 1.0 rather than
+> misreported as impossible.
 
 ---
 

@@ -67,23 +67,39 @@ The app signs in against the live Supabase project and works with real data:
 - **Choose a type and intake** — the eight page types and their guided
   questions, which seed the sections
 - **Guides** — all fifteen articles, in the app and readable offline
+- **Analytics** — views, people, a day-by-day chart, video watch-through,
+  where visitors came from and how each tracked link is doing, over four
+  periods. Counted by the website's own aggregation code, copied across.
+- **What we measure** — the tracking disclosure, in the app
+- **Delete your account** — really deletes it, once the one SQL script in
+  `sql/` has been run against the database
 
 Everything runs against **production**. There is no staging backend (master
 plan §24), so use a test account.
 
 ## What is not in yet
 
-Paige, analytics, and the company, outreach and admin areas.
+Paige and the AI steps, buying credits in the app, push notifications,
+outreach sends, and the company dashboard.
 
-The web repo is read-only by instruction, so anything that needs server code
-cannot be built here: AI, Paige, analytics rollups, push notifications, buying
-credits in the app, and account deletion. The master plan's "Standing
-constraint" section lists all of it, and which of those blocks an App Store
-submission.
+The first four need server code the app must not hold — `grant_credits`, for
+instance, is `service_role` only, and rightly so: a client that could grant
+itself credits would be a hole. The company dashboard is different: its
+functions ARE callable by a signed-in admin, so it is not blocked, just not
+built yet.
 
-What works does so because the website already grants a signed-in user
-row-level access to their own pages, credits and profile, and because
-publishing is a database function any signed-in user may call.
+The website repo is read-only by instruction and stays untouched. What works
+does so because the website already grants a signed-in user row-level access
+to their own pages, credits, profile and view events, and because publishing is
+a database function any signed-in user may call.
+
+**Before submitting:** run `sql/001_delete_my_account.sql` against the
+database. Until it is applied, deleting an account falls back to emailing a
+request, and App Store Guideline 5.1.1(v) requires deletion to finish inside
+the app. The file explains what it does and how to verify it.
+
+The master plan's "Standing constraint" section has the full list, including
+which items were checked against the database's own grants rather than assumed.
 
 ## Commands
 
@@ -115,6 +131,7 @@ src/
   lib/      config, formatters, error translation
 __tests__/  unit tests
 docs/       the master plan
+sql/        SQL this app needs that the website does not have. Apply by hand.
 ```
 
 Files under `src/page/` and `src/content/` are copied from the website rather
