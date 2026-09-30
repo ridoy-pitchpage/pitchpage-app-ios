@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, View } from "react-native";
 import * as MailComposer from "expo-mail-composer";
 import * as Clipboard from "expo-clipboard";
 
@@ -11,29 +11,35 @@ import { Body, H1, H3, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/auth/AuthProvider";
+import { signOut } from "@/auth/auth-actions";
+import { ACCOUNT_DELETE_UNAVAILABLE, deleteMyAccount } from "@/api/supabase-direct";
 import { SUPPORT_EMAIL } from "@/lib/config";
 
 /**
  * Delete account (S90).
  *
- * This is a REQUEST, not a deletion, and says so plainly. Removing the account
- * itself needs the service role, and there is no function a signed-in user can
- * call to do it — see the master plan's standing constraint. Rather than
- * pretend otherwise, or half-delete somebody's work and leave the account
- * behind, the screen sends a request that a person acts on.
+ * App Store Guideline 5.1.1(v) wants deletion started AND finished in the app,
+ * so that is what this does: it calls `delete_my_account()`, which removes the
+ * pages, the files, the credits and the account itself in one transaction, and
+ * then signs out into a signed-out app.
  *
- * This is the one item that blocks an App Store submission: Guideline 5.1.1(v)
- * requires deletion to be initiated AND completed in the app. It becomes a real
- * deletion the moment the endpoint in §10.6 exists.
+ * That function is not part of the website — it is new SQL, in
+ * sql/001_delete_my_account.sql, and somebody has to run it against the
+ * database once. Until they have, the call comes back
+ * ACCOUNT_DELETE_UNAVAILABLE and this falls back to the emailed request it used
+ * to be, saying plainly that a person will do it. Someone trying to leave
+ * should never meet a dead button, and the fallback is not good enough for
+ * review — it is what keeps the screen honest until the script is applied.
  */
 export default function DeleteAccountScreen() {
   const toast = useToast();
   const { user } = useAuth();
   const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const confirmed = typed.trim().toUpperCase() === "DELETE";
 
-  async function request() {
+  async function emailRequest() {
     const body = [
       "Please delete my PitchPage account and everything on it.",
       "",
@@ -47,12 +53,48 @@ export default function DeleteAccountScreen() {
       toast.success("No mail app — the request was copied instead");
       return;
     }
-
     await MailComposer.composeAsync({
       recipients: [SUPPORT_EMAIL],
       subject: "Delete my account",
       body,
     });
+  }
+
+  function confirmDelete() {
+    Alert.alert(
+      "Delete your account?",
+      "Your pages come offline and everything on them goes. This cannot be undone.",
+      [
+        { text: "Keep my account", style: "cancel" },
+        { text: "Delete everything", style: "destructive", onPress: () => void run() },
+      ],
+    );
+  }
+
+  async function run() {
+    setBusy(true);
+    try {
+      await deleteMyAccount();
+      // The account is gone; the session in memory is the only thing left.
+      // Signing out drops it and the app returns to its signed-out state.
+      await signOut();
+      toast.success("Your account has been deleted");
+    } catch (error) {
+      if (error instanceof Error && error.message === ACCOUNT_DELETE_UNAVAILABLE) {
+        Alert.alert(
+          "We'll do this by hand",
+          "Deleting from the app isn't switched on for this account yet. Send the request and a person will action it, then confirm by email.",
+          [
+            { text: "Not now", style: "cancel" },
+            { text: "Send the request", onPress: () => void emailRequest() },
+          ],
+        );
+        return;
+      }
+      toast.error(error);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -78,12 +120,11 @@ export default function DeleteAccountScreen() {
           </Card>
 
           <Card className="gap-2">
-            <H3>How it happens</H3>
+            <H3>This cannot be undone</H3>
             <Muted>
-              Deleting an account has to be done by us rather than from the app.
-              Send the request below and a person will action it, then confirm by
-              email. If you'd rather keep the account and just take a page
-              offline, you can do that yourself from Pages.
+              There is no way back and nothing is kept, so if you only want a
+              page offline, you can unpublish it yourself from Pages and keep
+              everything else.
             </Muted>
           </Card>
 
@@ -97,10 +138,11 @@ export default function DeleteAccountScreen() {
               placeholder="DELETE"
             />
             <Button
-              title="Request deletion"
+              title="Delete my account"
               variant="destructive"
               disabled={!confirmed}
-              onPress={() => void request()}
+              loading={busy}
+              onPress={confirmDelete}
             />
           </View>
         </ScreenScroll>

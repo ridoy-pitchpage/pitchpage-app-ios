@@ -132,7 +132,13 @@ export async function publishPage(id: string): Promise<{ published: boolean }> {
  * its `this` binding.
  */
 type UntypedRpc = {
-  rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{ error: { message: string } | null }>;
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+    // `code` is PostgREST's own error code — PGRST202 for a function
+    // that does not exist, which deleteMyAccount below has to tell apart
+    // from a real failure.
+  ) => PromiseLike<{ error: { message: string; code?: string } | null }>;
 };
 
 export async function unpublishPage(id: string): Promise<void> {
@@ -389,4 +395,28 @@ export async function savePage(
   throw new Error(
     "That address is taken and we couldn't find a free variation — please pick a slightly different one.",
   );
+}
+
+/** Thrown when `delete_my_account` is not applied to the database yet. */
+export const ACCOUNT_DELETE_UNAVAILABLE = "ACCOUNT_DELETE_UNAVAILABLE";
+
+/**
+ * Delete the signed-in user's account and everything on it, for real.
+ *
+ * Calls `delete_my_account()` — SECURITY DEFINER, granted to `authenticated`,
+ * takes no arguments and acts only on `auth.uid()`, so it cannot be aimed at
+ * anybody else. The SQL, and how to apply it, is in sql/001_delete_my_account.sql.
+ *
+ * That function is not part of the website, so a database that has not had the
+ * script run against it does not have it. PostgREST answers a missing function
+ * with PGRST202 / 42883, and this turns that into ACCOUNT_DELETE_UNAVAILABLE so
+ * the screen can offer the emailed request instead of failing at somebody who
+ * is trying to leave.
+ */
+export async function deleteMyAccount(): Promise<void> {
+  const { error } = await (supabase as unknown as UntypedRpc).rpc("delete_my_account", {});
+  if (!error) return;
+  const code = error.code ?? "";
+  if (code === "PGRST202" || code === "42883") throw new Error(ACCOUNT_DELETE_UNAVAILABLE);
+  throw error;
 }
