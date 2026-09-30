@@ -19,7 +19,40 @@ export const keys = {
   orgs: ["orgs"] as const,
   platformAdmin: ["platform-admin"] as const,
   publishEligibility: (id: string) => ["publish-eligibility", id] as const,
+  pageLinks: (id: string) => ["page-links", id] as const,
 };
+
+export function usePublishEligibility(id: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: keys.publishEligibility(id ?? ""),
+    queryFn: () => direct.getPublishEligibility(id as string),
+    enabled: Boolean(id) && enabled,
+  });
+}
+
+export function usePageLinks(pitchPageId: string | undefined) {
+  return useQuery({
+    queryKey: keys.pageLinks(pitchPageId ?? ""),
+    queryFn: () => direct.listPageLinks(pitchPageId as string),
+    enabled: Boolean(pitchPageId),
+  });
+}
+
+export function useCreatePageLink(pitchPageId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (label: string) => direct.createPageLink(pitchPageId, label),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pageLinks(pitchPageId) }),
+  });
+}
+
+export function useDeletePageLink(pitchPageId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => direct.deletePageLink(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: keys.pageLinks(pitchPageId) }),
+  });
+}
 
 export function useMyPages() {
   return useQuery({ queryKey: keys.pages, queryFn: direct.listMyPages });
@@ -86,6 +119,7 @@ export function usePublishPage() {
       void queryClient.invalidateQueries({ queryKey: keys.page(id) });
       // Publishing spends a credit, so the balance on screen is now stale.
       void queryClient.invalidateQueries({ queryKey: keys.credits });
+      void queryClient.invalidateQueries({ queryKey: keys.publishEligibility(id) });
     },
   });
 }

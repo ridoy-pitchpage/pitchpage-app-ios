@@ -2,12 +2,54 @@
 
 | | |
 |---|---|
-| **Status** | Draft for approval, 30 Sep 2026 |
+| **Status** | In build. Part C is on hold — see the constraint below. |
 | **App repo** | `ridoy-pitchpage/pitchpage-app-ios` (this repo) |
-| **Web + backend repo** | `gregadosmond-oss/profile-pride-app` (pitchpage.co) |
+| **Web + backend repo** | `gregadosmond-oss/profile-pride-app` (pitchpage.co) — **read-only** |
 | **Stack** | Expo SDK 57, React Native 0.86, TypeScript, Expo Router |
 | **Payments** | Apple In-App Purchase for credits. Stripe stays on the website. |
 | **Source of facts** | A full read-through of the web repo on 30 Sep 2026: every route, all 144 server functions, the migrations, storage and auth |
+
+---
+
+> ## Standing constraint: the web repo is read-only
+>
+> **Set 30 Sep 2026 by the owner.** Nothing in
+> `gregadosmond-oss/profile-pride-app` is to be changed. It is a reference only.
+>
+> **Part C of this plan is therefore on hold.** No app API, no render surface,
+> no universal-links file, no Apple purchase endpoint, no push tokens, no
+> account-deletion routine, no database changes. Part C stays written down as
+> the plan for when that changes; none of it is built.
+>
+> **What the app can still do,** using only what the website already exposes:
+>
+> - Sign in, and stay signed in, through Supabase Auth.
+> - Read and write the user's own pages — row-level security already grants a
+>   signed-in account exactly that.
+> - Publish and unpublish, because those are database functions any signed-in
+>   user may call, with every credit rule inside them.
+> - Read the credit balance and ledger.
+> - Create, copy and remove tracked links.
+> - Show a published page by loading `pitchpage.co/p/<slug>` in a web view.
+> - Upload a résumé or document into the user's own storage folder.
+>
+> **What it cannot do until the constraint lifts:**
+>
+> | Blocked | Why | What happens instead |
+> |---|---|---|
+> | Buying credits in the app | Apple's receipt must be verified server-side before credits are granted | Credits are bought on the website; the app publishes with what the account holds |
+> | Deleting an account | Needs the service role; no function exists that a user can call | **Blocks App Store submission** (Guideline 5.1.1(v)) |
+> | Push notifications | Needs a device-token table and a sender | Visitor alerts stay email and web push |
+> | AI — building from a résumé, Paige, style suggestions, gap questions | Server code behind an API key | The app edits by hand; AI steps stay on the website |
+> | Analytics numbers | The rollups are server functions, and a user cannot read the raw view rows | Analytics stays on the website |
+> | A pixel-exact preview of a *draft* | An unpublished page has no public URL, and drawing one needs a route on the website | Review is a row per part — which is what the web's own review step is. A published page is shown for real. |
+> | Company, outreach, admin | Every one is a server function | Stays on the website |
+>
+> **Account deletion is the one hard blocker.** Any app that lets people create
+> an account must let them delete it from inside the app, and a client cannot do
+> that. Everything else above has a reasonable answer or can wait; this one
+> stops a submission outright. It is a small, self-contained change in the web
+> repo (§10.6) whenever that becomes possible.
 
 ---
 

@@ -53,13 +53,12 @@ export default function PagesScreen() {
       return;
     }
     try {
-      const { id } = await createPage.mutateAsync(name);
+      await createPage.mutateAsync(name);
       setCreating(false);
       setNewName("");
-      // Choosing the page type is the next step and arrives in M2; until then
-      // the new draft simply appears in the list.
+      // Choosing the page type comes next, with the builder; until then the
+      // new draft simply appears in the list.
       toast.success("Draft created");
-      void id;
     } catch (error) {
       toast.error(error);
     }
@@ -243,18 +242,45 @@ function PageRow({ page }: { page: PageCardRow }) {
       <View className="flex-row flex-wrap gap-2">
         {isLive && url ? (
           <>
+            <RowAction
+              label="Share"
+              onPress={() =>
+                router.push({ pathname: "/(app)/share/[id]", params: { id: page.id } })
+              }
+            />
             <RowAction label="Copy link" onPress={() => void copyLink()} />
-            <RowAction label="View" onPress={() => void WebBrowser.openBrowserAsync(url)} />
+            <RowAction
+              label="Links"
+              onPress={() =>
+                router.push({
+                  pathname: "/(app)/(tabs)/pages/[id]/links",
+                  params: { id: page.id },
+                })
+              }
+            />
+            <RowAction
+              label="See it live"
+              onPress={() =>
+                router.push({ pathname: "/(app)/live/[id]", params: { id: page.id } })
+              }
+            />
             <RowAction label="Take offline" onPress={confirmUnpublish} />
           </>
-        ) : null}
+        ) : (
+          <RowAction
+            label="Review & publish"
+            onPress={() =>
+              router.push({ pathname: "/(app)/preview/[id]", params: { id: page.id } })
+            }
+          />
+        )}
         <RowAction label="Delete" onPress={confirmDelete} destructive />
       </View>
 
       {!isLive ? (
         <Body className="text-muted-foreground">
-          The builder arrives in the next milestone — this draft is already saved
-          to your account and shows on the website.
+          The builder arrives next. Until then you can edit this draft on
+          pitchpage.co and publish it from here.
         </Body>
       ) : null}
     </Card>

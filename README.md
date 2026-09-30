@@ -47,29 +47,35 @@ Simulator has no camera, so recording is tested on a real iPhone.
 
 ## What works today
 
-Milestone 1 is partly in. The app signs in against the live Supabase project
-and reads real data:
+The app signs in against the live Supabase project and works with real data:
 
 - Welcome, sign in, create account, forgot password
-- Your pages: the list, create a draft, copy link, view, take offline, delete
-- Credits: balance and ledger
-- Account: appearance (system/light/dark), help and legal links, sign out
+- **Your pages** — the list, create a draft, delete
+- **Review and publish** — what's on the page, the pre-publish health check,
+  and publishing, including the company-sponsored and awaiting-a-credit cases
+- **Share** — copy link, the iOS share sheet, LinkedIn, X, WhatsApp, Facebook,
+  email, and a QR code you can show someone in person
+- **Tracked links** — one per recipient, created, copied and removed
+- **See it live** — the real published page
+- **Credits** — balance and ledger
+- **Account** — appearance (system/light/dark), help and legal links, sign out
 
-Everything here runs against **production**. There is no staging backend — see
-the master plan §24 — so use a test account, not a real one.
+Everything runs against **production**. There is no staging backend (master
+plan §24), so use a test account.
 
 ## What is not in yet
 
-The builder, Paige, media capture, publishing, analytics, In-App Purchase,
-company and outreach. Each has a milestone in the plan.
+The builder, Paige, media capture and analytics.
 
-Some of it is waiting on the app API in the web repo
-(`gregadosmond-oss/profile-pride-app`, master plan Part C). Until that ships,
-the screens here read through Supabase directly, which works because the
-website already grants signed-in users row-level access to their own pages,
-credits and profile, and because publishing is a database function anyone
-signed in may call. Anything involving AI, Paige, analytics rollups, uploads or
-company permissions lives in server code and waits for the API.
+The web repo is read-only by instruction, so anything that needs server code
+cannot be built here: AI, Paige, analytics rollups, push notifications, buying
+credits in the app, and account deletion. The master plan's "Standing
+constraint" section lists all of it, and which of those blocks an App Store
+submission.
+
+What works does so because the website already grants a signed-in user
+row-level access to their own pages, credits and profile, and because
+publishing is a database function any signed-in user may call.
 
 ## Commands
 

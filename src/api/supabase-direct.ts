@@ -1,4 +1,5 @@
 import { supabase } from "@/auth/supabase";
+import { makeRefSlug } from "@/lib/share";
 import type { Database } from "./database.types";
 
 /**
@@ -174,6 +175,64 @@ export async function getMyCredits(): Promise<Credits> {
     balance: balanceResult.data?.balance ?? 0,
     transactions: ledgerResult.data ?? [],
   };
+}
+
+export type PageLinkRow = Database["public"]["Tables"]["pitch_page_links"]["Row"];
+
+/** The tracked links on one page, newest first. */
+export async function listPageLinks(pitchPageId: string): Promise<PageLinkRow[]> {
+  const { data, error } = await supabase
+    .from("pitch_page_links")
+    .select("*")
+    .eq("pitch_page_id", pitchPageId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * Create a tracked link.
+ *
+ * Published only, as on the web: a labelled link exists to be sent out, and a
+ * draft has no public URL to label. The slug carries four random characters, so
+ * a collision is rare; one retry with a fresh suffix covers it, matching the
+ * web's loop. 23505 is the unique-violation code — anything else is a real
+ * failure and is thrown.
+ */
+export async function createPageLink(
+  pitchPageId: string,
+  label: string,
+): Promise<PageLinkRow> {
+  const trimmed = label.trim();
+  if (!trimmed) throw new Error("Give the link a label (e.g. the company name).");
+
+  const { data: page, error: pageError } = await supabase
+    .from("pitch_pages")
+    .select("id, published_at")
+    .eq("id", pitchPageId)
+    .maybeSingle();
+  if (pageError) throw pageError;
+  if (!page) throw new Error("Pitch page not found.");
+  if (!page.published_at) {
+    throw new Error("Publish the page first — links track the live URL.");
+  }
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const { data, error } = await supabase
+      .from("pitch_page_links")
+      .insert({ pitch_page_id: page.id, label: trimmed, ref_slug: makeRefSlug(trimmed) })
+      .select("*")
+      .single();
+    if (!error && data) return data;
+    if (error && error.code !== "23505") throw error;
+  }
+
+  throw new Error("Couldn't create the link — please try again.");
+}
+
+export async function deletePageLink(id: string): Promise<void> {
+  const { error } = await supabase.from("pitch_page_links").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function getMyProfile(): Promise<ProfileRow | null> {
