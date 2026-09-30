@@ -151,3 +151,20 @@ export const RADIUS = { card: 12, control: 10, pill: 999 } as const;
 
 /** iOS asks for 44pt; every tappable control is at least this tall. */
 export const MIN_TAP = 44;
+
+/**
+ * The iOS layout grid, from the 393×852 spec: four stretch columns, a 16pt
+ * margin either side and a 16pt gutter between them.
+ *
+ * A two-up card spans two columns plus the gutter between them, which is why
+ * anything laying out cards derives its width from these rather than guessing
+ * a percentage — a percentage cannot know about the gutter, so it either
+ * overflows or leaves a ragged edge.
+ */
+export const GRID = { columns: 4, margin: 16, gutter: 16 } as const;
+
+/** The width of `span` columns inside a container `available` points wide. */
+export function columnSpan(available: number, span: number): number {
+  const column = (available - GRID.gutter * (GRID.columns - 1)) / GRID.columns;
+  return column * span + GRID.gutter * (span - 1);
+}

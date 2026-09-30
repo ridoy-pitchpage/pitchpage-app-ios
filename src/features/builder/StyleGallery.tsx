@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, View, type DimensionValue, type ViewStyle } from "react-native";
 import { Image } from "expo-image";
 import { Check } from "lucide-react-native";
@@ -8,6 +8,7 @@ import { encodeStyleSelection, STYLE_CATEGORY_LABELS, type StyleFamily } from "@
 import { themeForTemplate } from "@/render/template-theme";
 import { TEMPLATE_THUMBNAILS } from "@/page/template-thumbnails";
 import { useColors } from "@/theme/ThemeProvider";
+import { GRID, columnSpan } from "@/theme/tokens";
 
 /**
  * A grid of styles.
@@ -36,9 +37,20 @@ export function StyleGallery({
   action?: "select" | "open";
 }) {
   const colors = useColors();
+  // Measured rather than taken from the window: this grid is rendered inside
+  // a screen with 16pt margins in one place and inside a sheet in another,
+  // and a card sized from the window overflows the narrower of the two.
+  const [available, setAvailable] = useState(0);
+  // Two of the four columns, plus the gutter between them: two cards and one
+  // gutter then fill the row exactly.
+  const cardWidth = available > 0 ? columnSpan(available, 2) : 0;
 
   return (
-    <View className="flex-row flex-wrap" style={{ gap: 10 }}>
+    <View
+      onLayout={(event) => setAvailable(event.nativeEvent.layout.width)}
+      className="flex-row flex-wrap"
+      style={{ gap: GRID.gutter }}
+    >
       {families.map((family) => {
         const selected = family.id === selectedId;
         return (
@@ -55,7 +67,9 @@ export function StyleGallery({
               // is not announced.
               action === "open" && selected ? ", your current template" : "",
             ].join("")}
-            style={{ flexBasis: "47%", flexGrow: 1 }}
+            // Before the first layout there is nothing to derive from, so the
+            // old proportion stands in for one frame.
+            style={cardWidth > 0 ? { width: cardWidth } : { flexBasis: "47%", flexGrow: 1 }}
             className={[
               "overflow-hidden rounded-card border",
               selected ? "border-primary" : "border-border",

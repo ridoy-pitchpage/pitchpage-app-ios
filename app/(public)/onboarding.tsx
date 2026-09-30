@@ -147,7 +147,7 @@ export default function Onboarding() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="gap-3 px-5 pb-2 pt-5">
+      <ScrollView className="flex-1" contentContainerClassName="gap-3 px-4 pb-2 pt-5">
         <Dots active={active} title={step.title} />
 
         <Animated.View
@@ -172,7 +172,7 @@ export default function Onboarding() {
         </Animated.View>
       </ScrollView>
 
-      <View className="gap-2 px-5 pb-1 pt-2">
+      <View className="gap-2 px-4 pb-1 pt-2">
         <View className="flex-row gap-3">
           {active > 0 ? (
             <Button
