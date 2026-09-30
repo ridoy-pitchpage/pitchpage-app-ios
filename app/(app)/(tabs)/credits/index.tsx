@@ -1,5 +1,7 @@
 import { RefreshControl, ScrollView, View } from "react-native";
+import { router } from "expo-router";
 
+import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Screen } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
@@ -13,10 +15,11 @@ import { useColors } from "@/theme/ThemeProvider";
  * Credits (S82). The balance and the ledger read straight from the account, so
  * credits bought on the website already show here.
  *
- * Buying is M5: it goes through Apple In-App Purchase, which needs the products
- * in App Store Connect, the Paid Apps agreement active, and the verification
- * endpoint on the server (§13). There is deliberately no link out to the
- * website's checkout — App Store Guideline 3.1.1.
+ * Buying goes through Apple In-App Purchase, which needs the products in App
+ * Store Connect, the Paid Apps agreement active, and an endpoint that verifies
+ * Apple's receipt before granting (§13). The packs and the flow are on
+ * credits/buy; the purchase itself is what is waiting. There is deliberately
+ * no link out to the website's checkout — App Store Guideline 3.1.1.
  */
 export default function CreditsScreen() {
   const colors = useColors();
@@ -64,13 +67,13 @@ export default function CreditsScreen() {
           </Muted>
         </Card>
 
-        <Card className="gap-2">
-          <H3>Buying credits</H3>
-          <Body className="text-muted-foreground">
-            Buying inside the app is coming. For now you can buy credits on
-            pitchpage.co and they'll show up here straight away.
-          </Body>
-        </Card>
+        {/*
+          A real button rather than a paragraph. The old card said credits
+          could be bought on the website, which is both unhelpful — there was
+          nothing to tap — and a Guideline 3.1.1 problem, since an App Store
+          build may not point at an outside checkout for a digital good.
+        */}
+        <Button title="Buy credits" onPress={() => router.push("/(app)/(tabs)/credits/buy")} />
 
         <View className="gap-2 pt-2">
           <H3>Recent activity</H3>

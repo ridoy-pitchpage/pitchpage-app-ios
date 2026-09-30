@@ -81,7 +81,7 @@ export default function PreviewScreen() {
         void confirm({
           title: "You need a credit",
           message:
-            "Publishing a page costs one credit. You can buy credits on pitchpage.co and they'll appear here straight away.",
+            "Publishing a page costs one credit. Everything you have built is saved, so nothing is lost while you sort one out.",
           confirmLabel: "OK",
           dismissOnly: true,
         });
@@ -183,6 +183,7 @@ export default function PreviewScreen() {
             publishing={publish.isPending}
             acknowledged={healthAcknowledged}
             onPublish={attemptPublish}
+            onBuyCredits={() => router.push("/(app)/(tabs)/credits/buy")}
             onKeepEditing={() => setHealthAcknowledged(false)}
           />
         )}
@@ -227,6 +228,7 @@ function PublishCard({
   acknowledged,
   onPublish,
   onKeepEditing,
+  onBuyCredits,
 }: {
   eligibility:
     | { mode: "sponsored" | "awaiting_credit" | "paid"; org_name: string | null; credits_remaining: number }
@@ -236,6 +238,7 @@ function PublishCard({
   acknowledged: boolean;
   onPublish: () => void;
   onKeepEditing: () => void;
+  onBuyCredits: () => void;
 }) {
   if (loading || !eligibility) {
     return (
@@ -280,7 +283,9 @@ function PublishCard({
             haptic
             onPress={onPublish}
           />
-        ) : null}
+        ) : (
+          <Button title="Get a credit" variant="secondary" onPress={onBuyCredits} />
+        )}
         {acknowledged ? (
           <Button title="Keep editing" variant="ghost" onPress={onKeepEditing} />
         ) : null}
@@ -296,7 +301,7 @@ function PublishCard({
       <Muted>
         {hasCredit
           ? `Publishing uses one credit. You have ${creditCount(eligibility.credits_remaining)}.`
-          : "Publishing a page costs one credit. You can buy credits on pitchpage.co and they'll appear here straight away."}
+          : "Publishing a page costs one credit. Everything you've built is saved either way."}
       </Muted>
       {hasCredit ? (
         <>
@@ -310,7 +315,15 @@ function PublishCard({
             <Button title="Keep editing" variant="ghost" onPress={onKeepEditing} />
           ) : null}
         </>
-      ) : null}
+      ) : (
+        /*
+          With no credit this card used to end here — a heading, a sentence,
+          and nothing to press. Getting to the end of building a page and
+          finding no way forward reads as a broken screen rather than a
+          price, so the way forward is a button.
+        */
+        <Button title="Get a credit" onPress={onBuyCredits} />
+      )}
     </Card>
   );
 }
