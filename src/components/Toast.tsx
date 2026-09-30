@@ -1,8 +1,11 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
-import { AccessibilityInfo, Text, View } from "react-native";
+import { AccessibilityInfo, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { userFacingErrorMessage } from "@/lib/errors";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
+import { RADIUS, controlGradient, elevation } from "@/theme/tokens";
 
 /**
  * Brief confirmations and failures, matching where the web app reaches for a
@@ -29,6 +32,8 @@ export function useToast(): ToastValue {
 const VISIBLE_MS = 4000;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const colors = useColors();
+  const { resolved } = useTheme();
   const [toast, setToast] = useState<Toast | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nextId = useRef(0);
@@ -59,12 +64,25 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           pointerEvents="none"
           className="absolute inset-x-0 bottom-0 px-4 pb-2"
         >
-          <View
+          {/*
+            A toast is the one thing on screen that has to be read over
+            whatever is behind it, so it is the most raised surface in the
+            app — a gradient fill and a level-3 shadow. It stays opaque
+            rather than glass for the same reason: a message you have to
+            read must not take on the colour of the page under it.
+          */}
+          <LinearGradient
+            colors={controlGradient(
+              toast.tone === "error" ? colors.destructive : colors.foreground,
+              resolved,
+            )}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
             accessibilityLiveRegion="polite"
-            className={[
-              "rounded-card px-4 py-3",
-              toast.tone === "error" ? "bg-destructive" : "bg-foreground",
-            ].join(" ")}
+            style={[
+              { borderRadius: RADIUS.card, paddingHorizontal: 16, paddingVertical: 13 },
+              elevation(colors.foreground, 3),
+            ]}
           >
             <Text
               className={[
@@ -74,7 +92,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             >
               {toast.message}
             </Text>
-          </View>
+          </LinearGradient>
         </SafeAreaView>
       ) : null}
     </ToastContext.Provider>
