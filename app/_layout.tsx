@@ -15,6 +15,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as SplashScreen from "expo-splash-screen";
 
 import { AuthProvider } from "@/auth/AuthProvider";
+import { ConfirmProvider } from "@/components/Confirm";
+import { PhoneFrame } from "@/components/PhoneFrame";
 import { ToastProvider } from "@/components/Toast";
 import { ThemeProvider, useTheme } from "@/theme/ThemeProvider";
 import { useAppFonts } from "@/theme/fonts";
@@ -42,7 +44,9 @@ export default function RootLayout() {
           <ThemeProvider>
             <AuthProvider>
               <ToastProvider>
-                <AppShell />
+                <ConfirmProvider>
+                  <AppShell />
+                </ConfirmProvider>
               </ToastProvider>
             </AuthProvider>
           </ThemeProvider>
@@ -69,11 +73,14 @@ function AppShell() {
   return (
     <>
       <StatusBar style={resolved === "dark" ? "light" : "dark"} />
-      <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(public)" />
-        <Stack.Screen name="(app)" />
-      </Stack>
+      {/* Phone-shaped in a wide browser; a pass-through everywhere else. */}
+      <PhoneFrame>
+        <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(public)" />
+          <Stack.Screen name="(app)" />
+        </Stack>
+      </PhoneFrame>
     </>
   );
 }

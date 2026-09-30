@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { Badge } from "@/components/Badge";
@@ -9,6 +9,7 @@ import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
+import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { useMyPage, usePublishEligibility, usePublishPage } from "@/api/queries";
 import { sectionsForLayout, type PageSection } from "@/page/page-sections";
@@ -28,6 +29,7 @@ import { creditCount } from "@/lib/format";
 export default function PreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const page = useMyPage(id);
   const isLive = page.data?.published_at != null;
@@ -76,11 +78,13 @@ export default function PreviewScreen() {
         }
         // The RPC ran and found no credit to spend. Everything about why lives
         // in the database, so the app states the outcome rather than guessing.
-        Alert.alert(
-          "You need a credit",
-          "Publishing a page costs one credit. You can buy credits on pitchpage.co and they'll appear here straight away.",
-          [{ text: "OK" }],
-        );
+        void confirm({
+          title: "You need a credit",
+          message:
+            "Publishing a page costs one credit. You can buy credits on pitchpage.co and they'll appear here straight away.",
+          confirmLabel: "OK",
+          dismissOnly: true,
+        });
       },
       onError: (error) => toast.error(error),
     });
@@ -88,7 +92,12 @@ export default function PreviewScreen() {
 
   function attemptPublish() {
     if (empty) {
-      Alert.alert("Nothing to publish yet", EMPTY_PAGE_MESSAGE, [{ text: "OK" }]);
+      void confirm({
+        title: "Nothing to publish yet",
+        message: EMPTY_PAGE_MESSAGE,
+        confirmLabel: "OK",
+        dismissOnly: true,
+      });
       return;
     }
     if (health?.status === "needs_attention" && !healthAcknowledged) {

@@ -25,12 +25,20 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          // Explicit, because the icon and its label together need more room
-          // than the default on web, where there is no home-indicator inset to
-          // pad it out and the labels clip.
-          height: 56 + insets.bottom,
+          /*
+           * Explicit, because the icon and its label together need more room
+           * than the default.
+           *
+           * Where there is a home-indicator inset — every modern iPhone — that
+           * inset does the padding and 56 above it is the standard bar. Where
+           * there is none, which is the web preview and older Android, 56 left
+           * the label's own box squeezed to five pixels with overflow hidden,
+           * so every label rendered as a sliver of its top edge. 68 gives the
+           * 24pt icon and the 11pt label the room they actually need.
+           */
+          height: insets.bottom > 0 ? 56 + insets.bottom : 68,
           paddingTop: 6,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 6,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
         },
         tabBarLabelStyle: { fontFamily: "Manrope_500Medium", fontSize: 11 },
       }}

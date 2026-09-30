@@ -41,6 +41,30 @@ for (const route of ROUTES) {
       }
       if (!label) issues.push(`UNLABELLED <${el.tagName.toLowerCase()}>`);
     }
+
+    /*
+     * Text clipped inside its own box.
+     *
+     * The tab bar shipped for days with every label squeezed into a 5px box
+     * under overflow:hidden, so "Pages" rendered as a sliver of its own top
+     * edge. Nothing else here caught it: the page did not overflow, the
+     * contrast was right, and the tap target was the full tab. The text was
+     * simply not readable, and only a person looking at it noticed.
+     *
+     * A leaf element that hides its own overflow while its content is taller
+     * or wider than its box is that bug, and almost nothing else.
+     */
+    for (const el of document.querySelectorAll('*')) {
+      if (el.children.length > 0) continue;
+      const text = (el.textContent || '').trim();
+      if (!text) continue;
+      const cs = getComputedStyle(el);
+      if (cs.overflow !== 'hidden' && cs.overflowY !== 'hidden' && cs.overflowX !== 'hidden') continue;
+      // -webkit-line-clamp and explicit ellipsis are deliberate truncation.
+      if (cs.textOverflow === 'ellipsis' || cs.webkitLineClamp !== 'none') continue;
+      const cutV = el.scrollHeight - el.clientHeight;
+      if (cutV > 2) issues.push(`CLIPPED TEXT (${cutV}px hidden) "${text.slice(0, 24)}"`);
+    }
     return issues;
   });
 

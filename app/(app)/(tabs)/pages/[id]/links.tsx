@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 
@@ -10,6 +10,7 @@ import { Screen, ScreenScroll } from "@/components/Screen";
 import { EmptyState, ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
+import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { useCreatePageLink, useDeletePageLink, useMyPage, usePageLinks } from "@/api/queries";
 import type { PageLinkRow } from "@/api/supabase-direct";
@@ -29,6 +30,7 @@ import { relativeTime } from "@/lib/format";
 export default function TrackedLinksScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const toast = useToast();
+  const confirm = useConfirm();
 
   const page = useMyPage(id);
   const links = usePageLinks(id);
@@ -126,18 +128,20 @@ export default function TrackedLinksScreen() {
                   link={link}
                   slug={row.slug as string}
                   onDelete={() =>
-                    Alert.alert("Remove this link?", `"${link.label}" will stop working.`, [
-                      { text: "Keep it", style: "cancel" },
-                      {
-                        text: "Remove",
-                        style: "destructive",
-                        onPress: () =>
-                          deleteLink.mutate(link.id, {
-                            onSuccess: () => toast.success("Link removed"),
-                            onError: (error) => toast.error(error),
-                          }),
-                      },
-                    ])
+                    void (async () => {
+                      const ok = await confirm({
+                        title: "Remove this link?",
+                        message: `"${link.label}" will stop working.`,
+                        confirmLabel: "Remove",
+                        cancelLabel: "Keep it",
+                        destructive: true,
+                      });
+                      if (!ok) return;
+                      deleteLink.mutate(link.id, {
+                        onSuccess: () => toast.success("Link removed"),
+                        onError: (error) => toast.error(error),
+                      });
+                    })()
                   }
                 />
               ))

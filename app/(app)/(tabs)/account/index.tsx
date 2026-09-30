@@ -1,4 +1,4 @@
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as MailComposer from "expo-mail-composer";
@@ -7,6 +7,7 @@ import { ChevronRight } from "lucide-react-native";
 import { Card } from "@/components/Card";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H3, Muted } from "@/components/Text";
+import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { signOut } from "@/auth/auth-actions";
@@ -24,19 +25,18 @@ export default function AccountScreen() {
   const { user } = useAuth();
   const profile = useMyProfile();
   const toast = useToast();
+  const confirm = useConfirm();
   const { appearance, setAppearance } = useTheme();
 
-  function confirmSignOut() {
-    Alert.alert("Sign out?", "You'll need to sign in again to see your pages.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign out",
-        style: "destructive",
-        onPress: () => {
-          signOut().catch((error: unknown) => toast.error(error));
-        },
-      },
-    ]);
+  async function confirmSignOut() {
+    const ok = await confirm({
+      title: "Sign out?",
+      message: "You'll need to sign in again to see your pages.",
+      confirmLabel: "Sign out",
+      destructive: true,
+    });
+    if (!ok) return;
+    signOut().catch((error: unknown) => toast.error(error));
   }
 
   async function contactSupport() {

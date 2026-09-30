@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, View } from "react-native";
+import { KeyboardAvoidingView, Platform, View } from "react-native";
 import * as MailComposer from "expo-mail-composer";
 import * as Clipboard from "expo-clipboard";
 
@@ -9,6 +9,7 @@ import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
+import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/auth/AuthProvider";
 import { signOut } from "@/auth/auth-actions";
@@ -33,6 +34,7 @@ import { SUPPORT_EMAIL } from "@/lib/config";
  */
 export default function DeleteAccountScreen() {
   const toast = useToast();
+  const confirm = useConfirm();
   const { user } = useAuth();
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,15 +62,15 @@ export default function DeleteAccountScreen() {
     });
   }
 
-  function confirmDelete() {
-    Alert.alert(
-      "Delete your account?",
-      "Your pages come offline and everything on them goes. This cannot be undone.",
-      [
-        { text: "Keep my account", style: "cancel" },
-        { text: "Delete everything", style: "destructive", onPress: () => void run() },
-      ],
-    );
+  async function confirmDelete() {
+    const ok = await confirm({
+      title: "Delete your account?",
+      message: "Your pages come offline and everything on them goes. This cannot be undone.",
+      confirmLabel: "Delete everything",
+      cancelLabel: "Keep my account",
+      destructive: true,
+    });
+    if (ok) await run();
   }
 
   async function run() {
@@ -81,14 +83,14 @@ export default function DeleteAccountScreen() {
       toast.success("Your account has been deleted");
     } catch (error) {
       if (error instanceof Error && error.message === ACCOUNT_DELETE_UNAVAILABLE) {
-        Alert.alert(
-          "We'll do this by hand",
-          "Deleting from the app isn't switched on for this account yet. Send the request and a person will action it, then confirm by email.",
-          [
-            { text: "Not now", style: "cancel" },
-            { text: "Send the request", onPress: () => void emailRequest() },
-          ],
-        );
+        const send = await confirm({
+          title: "We'll do this by hand",
+          message:
+            "Deleting from the app isn't switched on for this account yet. Send the request and a person will action it, then confirm by email.",
+          confirmLabel: "Send the request",
+          cancelLabel: "Not now",
+        });
+        if (send) await emailRequest();
         return;
       }
       toast.error(error);

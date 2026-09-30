@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -7,6 +7,7 @@ import { File } from "expo-file-system";
 import { Camera, ImageIcon, Trash2, Video } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
+import { useConfirm } from "@/components/Confirm";
 import { Sheet } from "@/components/Sheet";
 import { Body, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
@@ -39,6 +40,7 @@ export function MediaSheet({
 }) {
   const colors = useColors();
   const toast = useToast();
+  const confirm = useConfirm();
   const page = useDraft((s) => s.page);
   const patchNow = useDraft((s) => s.patchNow);
   const [busy, setBusy] = useState<"portrait" | "video" | null>(null);
@@ -58,10 +60,12 @@ export function MediaSheet({
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(
-        source === "camera" ? "Camera access is off" : "Photo access is off",
-        "You can turn it back on in Settings if you change your mind.",
-      );
+      void confirm({
+        title: source === "camera" ? "Camera access is off" : "Photo access is off",
+        message: "You can turn it back on in Settings if you change your mind.",
+        confirmLabel: "OK",
+        dismissOnly: true,
+      });
       return;
     }
 
@@ -120,7 +124,12 @@ export function MediaSheet({
   async function pickVideo() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Photo access is off", "You can turn it back on in Settings.");
+      void confirm({
+        title: "Photo access is off",
+        message: "You can turn it back on in Settings.",
+        confirmLabel: "OK",
+        dismissOnly: true,
+      });
       return;
     }
 
@@ -166,19 +175,18 @@ export function MediaSheet({
     }
   }
 
-  function removePortrait() {
-    Alert.alert("Remove your portrait?", "You can add another one any time.", [
-      { text: "Keep it", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          const previous = page!.portrait_url;
-          await patchNow({ portrait_url: null });
-          if (previous) await removeMedia("portrait", [previous]);
-        },
-      },
-    ]);
+  async function removePortrait() {
+    const ok = await confirm({
+      title: "Remove your portrait?",
+      message: "You can add another one any time.",
+      confirmLabel: "Remove",
+      cancelLabel: "Keep it",
+      destructive: true,
+    });
+    if (!ok) return;
+    const previous = page!.portrait_url;
+    await patchNow({ portrait_url: null });
+    if (previous) await removeMedia("portrait", [previous]);
   }
 
   return (

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 
 import { Button } from "@/components/Button";
+import { useConfirm } from "@/components/Confirm";
 import { Sheet } from "@/components/Sheet";
 import { TextField } from "@/components/TextField";
 import { Muted } from "@/components/Text";
@@ -23,6 +24,7 @@ export function SectionSheet({
   sectionId: string | null;
   onClose: () => void;
 }) {
+  const confirm = useConfirm();
   const page = useDraft((s) => s.page);
   const setSections = useDraft((s) => s.setSections);
   const section = page?.sections.find((s) => s.id === sectionId) ?? null;
@@ -68,10 +70,16 @@ export function SectionSheet({
       return;
     }
 
-    Alert.alert("Remove this section?", `"${section.title}" and everything in it will go.`, [
-      { text: "Keep it", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: drop },
-    ]);
+    void (async () => {
+      const ok = await confirm({
+        title: "Remove this section?",
+        message: `"${section.title}" and everything in it will go.`,
+        confirmLabel: "Remove",
+        cancelLabel: "Keep it",
+        destructive: true,
+      });
+      if (ok) drop();
+    })();
   }
 
   return (

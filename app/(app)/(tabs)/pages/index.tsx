@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { Plus } from "lucide-react-native";
@@ -11,6 +11,7 @@ import { Screen } from "@/components/Screen";
 import { EmptyState, ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
+import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import {
   useCreatePage,
@@ -172,51 +173,42 @@ export default function PagesScreen() {
 
 function PageRow({ page }: { page: PageCardRow }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const deletePage = useDeletePage();
   const unpublish = useUnpublishPage();
   const isLive = page.published_at != null;
   const url = page.slug ? publicPageUrl(page.slug) : null;
 
-  function confirmDelete() {
-    Alert.alert(
-      "Delete this page?",
-      isLive
+  async function confirmDelete() {
+    const ok = await confirm({
+      title: "Delete this page?",
+      message: isLive
         ? "It will come offline and can't be recovered."
         : "This draft can't be recovered.",
-      [
-        { text: "Keep it", style: "cancel" },
-        {
-          text: "Delete page",
-          style: "destructive",
-          onPress: () => {
-            deletePage.mutate(page.id, {
-              onSuccess: () => toast.success("Page deleted"),
-              onError: (error) => toast.error(error),
-            });
-          },
-        },
-      ],
-    );
+      confirmLabel: "Delete page",
+      cancelLabel: "Keep it",
+      destructive: true,
+    });
+    if (!ok) return;
+    deletePage.mutate(page.id, {
+      onSuccess: () => toast.success("Page deleted"),
+      onError: (error) => toast.error(error),
+    });
   }
 
-  function confirmUnpublish() {
-    Alert.alert(
-      "Take this page offline?",
-      "The link will stop working. Publishing it again later is free.",
-      [
-        { text: "Keep it live", style: "cancel" },
-        {
-          text: "Take it offline",
-          style: "destructive",
-          onPress: () => {
-            unpublish.mutate(page.id, {
-              onSuccess: () => toast.success("Page taken offline"),
-              onError: (error) => toast.error(error),
-            });
-          },
-        },
-      ],
-    );
+  async function confirmUnpublish() {
+    const ok = await confirm({
+      title: "Take this page offline?",
+      message: "The link will stop working. Publishing it again later is free.",
+      confirmLabel: "Take it offline",
+      cancelLabel: "Keep it live",
+      destructive: true,
+    });
+    if (!ok) return;
+    unpublish.mutate(page.id, {
+      onSuccess: () => toast.success("Page taken offline"),
+      onError: (error) => toast.error(error),
+    });
   }
 
   async function copyLink() {

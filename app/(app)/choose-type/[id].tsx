@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import * as Icons from "lucide-react-native";
@@ -7,6 +7,7 @@ import * as Icons from "lucide-react-native";
 import { Card } from "@/components/Card";
 import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
+import { useConfirm } from "@/components/Confirm";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
@@ -27,6 +28,7 @@ export default function ChooseTypeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const toast = useToast();
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const page = useMyPage(id);
   const [busy, setBusy] = useState<PitchKind | null>(null);
@@ -76,34 +78,31 @@ export default function ChooseTypeScreen() {
     }
   }
 
-  function onTile(kind: PitchKind) {
+  async function onTile(kind: PitchKind) {
     const switching = existingKind != null && kind !== existingKind && hasContent;
 
     if (switching && RESEEDING_KINDS.has(kind)) {
-      Alert.alert(
-        "Switch page type and replace your sections?",
-        "This page already has content in its sections. Switching to a different type replaces those sections with a fresh set for the new type — what you've written in them won't carry over.",
-        [
-          { text: "Keep my sections", style: "cancel" },
-          {
-            text: "Switch & replace sections",
-            style: "destructive",
-            onPress: () => void choose(kind, { reseed: true }),
-          },
-        ],
-      );
+      const ok = await confirm({
+        title: "Switch page type and replace your sections?",
+        message:
+          "This page already has content in its sections. Switching to a different type replaces those sections with a fresh set for the new type — what you've written in them won't carry over.",
+        confirmLabel: "Switch & replace sections",
+        cancelLabel: "Keep my sections",
+        destructive: true,
+      });
+      if (ok) await choose(kind, { reseed: true });
       return;
     }
 
     if (switching) {
-      Alert.alert(
-        "Your current sections will come with you",
-        "This page already has sections that were set up for a different kind of pitch. This type doesn't replace them, so they'll carry over as they are — you can edit or remove any that don't fit once you're in the builder.",
-        [
-          { text: "Go back", style: "cancel" },
-          { text: "Continue", onPress: () => void choose(kind) },
-        ],
-      );
+      const ok = await confirm({
+        title: "Your current sections will come with you",
+        message:
+          "This page already has sections that were set up for a different kind of pitch. This type doesn't replace them, so they'll carry over as they are — you can edit or remove any that don't fit once you're in the builder.",
+        confirmLabel: "Continue",
+        cancelLabel: "Go back",
+      });
+      if (ok) await choose(kind);
       return;
     }
 
