@@ -10,24 +10,45 @@ requirements, milestones — is in [`docs/MASTER_PLAN.md`](docs/MASTER_PLAN.md).
 of the website's 61 routes, and what this app does about it. Read that first if
 you are wondering whether something was missed or decided against.
 
-## Getting it running on Windows
+## Running it on your own computer
 
-You do not need a Mac for this part.
+**The only thing you have to install is Node.js.** Visual Studio, VS Code and
+Git are not needed — you do not have to edit anything to run the app.
 
-1. Install [Node.js LTS](https://nodejs.org), [Git](https://git-scm.com) and
-   [VS Code](https://code.visualstudio.com).
-2. Clone and install:
-   ```bash
-   git clone https://github.com/ridoy-pitchpage/pitchpage-app-ios
-   cd pitchpage-app-ios
-   npm install
-   ```
-3. Open it in a browser:
-   ```bash
-   npm run web
-   ```
-   It serves at <http://localhost:8081>. Sign in with a real PitchPage account —
-   the app talks to the live backend.
+1. Go to [nodejs.org](https://nodejs.org) and install the **LTS** version (the
+   big green button). Accept the defaults. Node 20 or newer; 22 is what this is
+   tested on.
+2. Get this folder onto your computer: on the repository page, click the green
+   **Code** button, then **Download ZIP**, and unzip it somewhere you can find
+   again — the Desktop is fine. (`git clone` works too if you already have Git.)
+3. Open the unzipped folder and double-click:
+   - **`start-windows.bat`** on Windows
+   - **`start-mac.command`** on a Mac
+
+   The first run installs the app and takes a few minutes. After that it takes
+   seconds.
+4. Your browser opens at **<http://localhost:8081>**. If it does not open by
+   itself, type that address in yourself.
+
+**Leave the black window open while you use the app.** It *is* the app's
+server: `http://localhost:8081` only exists while it is running, so closing the
+window gives you "This site can't be reached".
+
+Windows may warn that the file is from an unknown publisher — that is because
+nobody has paid to code-sign it. Choose **More info → Run anyway**.
+
+### Doing it by hand instead
+
+```bash
+npm install
+npm run web
+```
+
+### Signing in
+
+The app talks to the **live pitchpage.co backend**, so sign in with a real
+account — and use a test one, because anything you publish is really published.
+There is no `.env` to set up; the defaults already point at production.
 
 ### On your iPhone, still from the PC
 

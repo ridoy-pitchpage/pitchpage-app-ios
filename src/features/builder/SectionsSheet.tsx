@@ -15,15 +15,31 @@ export function SectionsSheet({
   visible,
   onClose,
   onEditSection,
+  /** Open straight on the list of sections to add, skipping the summary. */
+  startOnAdd = false,
 }: {
   visible: boolean;
   onClose: () => void;
   onEditSection: (section: PageSection) => void;
+  startOnAdd?: boolean;
 }) {
   const colors = useColors();
   const page = useDraft((s) => s.page);
   const setSections = useDraft((s) => s.setSections);
   const [adding, setAdding] = useState(false);
+  const [wasVisible, setWasVisible] = useState(false);
+
+  /*
+   * Each opening decides for itself which pane to show, so arriving from the
+   * page's own "Add a section" goes straight to the picker while the toolbar
+   * button still opens the summary. Resetting on open also fixes a smaller
+   * thing: closing from the picker used to leave it there, so the next
+   * opening showed the add list instead of the sections.
+   */
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    setAdding(visible ? startOnAdd : false);
+  }
 
   if (!page) return null;
 

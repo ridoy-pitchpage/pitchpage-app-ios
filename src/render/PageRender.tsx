@@ -5,10 +5,11 @@ import { Pencil } from "lucide-react-native";
 
 import { BlockBody, SectionHeading } from "./blocks";
 import { Reveal } from "./Reveal";
-import { TYPE_SPECS, themeForTemplate, type TemplateTheme } from "./template-theme";
-import { sectionsForLayout, type PageSection } from "@/page/page-sections";
+import { RADIUS_FOR, TYPE_SPECS, themeForTemplate, type TemplateTheme } from "./template-theme";
+import { MAX_SECTIONS, sectionsForLayout, type PageSection } from "@/page/page-sections";
 import type { PageModel } from "@/page/page-model";
 import { SITE_URL } from "@/lib/config";
+import { MIN_TAP } from "@/theme/tokens";
 
 /**
  * A pitch page, drawn natively.
@@ -40,6 +41,7 @@ export function PageRender({
   header,
   /** Extra space at the bottom, so a sheet does not cover the last section. */
   bottomInset = 0,
+  onAddSection,
 }: {
   page: PageModel;
   editable?: boolean;
@@ -47,6 +49,8 @@ export function PageRender({
   onEditHero?: () => void;
   header?: React.ReactNode;
   bottomInset?: number;
+  /** Offered at the end of the page while editing. */
+  onAddSection?: () => void;
 }) {
   const theme = useMemo(() => themeForTemplate(page.template), [page.template]);
   const sections = useMemo(() => sectionsForLayout(page), [page]);
@@ -177,7 +181,23 @@ export function PageRender({
             </Reveal>
           ))}
 
-          {sections.length === 0 ? (
+          {/*
+            A page with two sections used to end in a screenful of empty
+            ground, with the only way to add anything hidden in the toolbar.
+            The invitation now sits where the eye already is — at the end of
+            what you have written — and is drawn in the page's own theme
+            rather than the app's, because it is standing in for the section
+            it would create.
+
+            It is not shown once the page is full: an affordance that cannot
+            do anything is worse than none.
+          */}
+          {/*
+            Preview mode gets words instead of a control: there is nothing to
+            tap here, but a page that is genuinely empty must not preview as a
+            blank screen that reads as broken.
+          */}
+          {!editable && sections.length === 0 ? (
             <Text
               style={{
                 color: theme.inkMuted,
@@ -188,6 +208,54 @@ export function PageRender({
             >
               Nothing on your page yet. Add a section and it appears here.
             </Text>
+          ) : null}
+
+          {editable && onAddSection && sections.length < MAX_SECTIONS ? (
+            <Pressable
+              onPress={onAddSection}
+              accessibilityRole="button"
+              accessibilityLabel={
+                sections.length === 0
+                  ? "Add your first section"
+                  : "Add another section to your page"
+              }
+              style={({ pressed }) => ({
+                minHeight: MIN_TAP,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                paddingVertical: 22,
+                borderRadius: RADIUS_FOR[theme.archetype],
+                borderWidth: 1,
+                borderStyle: "dashed",
+                borderColor: theme.line,
+                opacity: pressed ? 0.6 : 1,
+              })}
+            >
+              <Text
+                style={{
+                  color: theme.accentText,
+                  fontFamily: spec.bodyFamily,
+                  fontSize: 15,
+                  lineHeight: 23,
+                }}
+              >
+                + Add a section
+              </Text>
+              {sections.length === 0 ? (
+                <Text
+                  style={{
+                    color: theme.inkMuted,
+                    fontFamily: spec.bodyFamily,
+                    fontSize: 13,
+                    lineHeight: 19,
+                    textAlign: "center",
+                  }}
+                >
+                  Nothing on your page yet — whatever you add appears here.
+                </Text>
+              ) : null}
+            </Pressable>
           ) : null}
         </View>
       </ScrollView>

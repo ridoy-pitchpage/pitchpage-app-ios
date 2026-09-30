@@ -1,0 +1,4 @@
+# Windows batch files must keep CRLF endings or cmd.exe mis-parses them,
+# whatever the checkout platform does by default.
+*.bat text eol=crlf
+*.command text eol=lf

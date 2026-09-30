@@ -25,3 +25,6 @@ coverage/
 
 # e2e screenshots
 .e2e-out/
+
+# local walkthrough screenshots
+.walkthrough/

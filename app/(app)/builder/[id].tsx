@@ -50,6 +50,8 @@ export default function BuilderScreen() {
 
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [sheet, setSheet] = useState<"none" | "details" | "sections" | "style" | "media">("none");
+  /** Whether the Sections sheet should open on its "add" pane. */
+  const [sectionsOnAdd, setSectionsOnAdd] = useState(false);
   const [sectionId, setSectionId] = useState<string | null>(null);
 
   // Load the row into the draft store once, and only when it is a different
@@ -119,6 +121,10 @@ export default function BuilderScreen() {
         editable={editing}
         onEditHero={() => setSheet("details")}
         onEditSection={(section) => setSectionId(section.id)}
+        onAddSection={() => {
+          setSectionsOnAdd(true);
+          setSheet("sections");
+        }}
         bottomInset={96}
         header={
           <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.background }}>
@@ -175,7 +181,10 @@ export default function BuilderScreen() {
           <ToolbarButton
             label="Sections"
             icon={<LayoutList size={19} color={colors.foreground} />}
-            onPress={() => setSheet("sections")}
+            onPress={() => {
+              setSectionsOnAdd(false);
+              setSheet("sections");
+            }}
           />
           <ToolbarButton
             label="Media"
@@ -209,6 +218,7 @@ export default function BuilderScreen() {
         visible={sheet === "sections"}
         onClose={() => setSheet("none")}
         onEditSection={(section) => setSectionId(section.id)}
+        startOnAdd={sectionsOnAdd}
       />
       <StylePicker visible={sheet === "style"} onClose={() => setSheet("none")} />
       <MediaSheet visible={sheet === "media"} onClose={() => setSheet("none")} />
