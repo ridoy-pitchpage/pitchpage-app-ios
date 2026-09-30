@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Token values live in src/theme/tokens.ts and are applied at runtime through
+ * NativeWind's vars() by ThemeProvider, which is what makes light/dark work on
+ * native. This block only seeds the web target, so the very first paint before
+ * the provider mounts is already cream rather than white.
+ */
+:root {
+  --pp-background: #f5ebdd;
+  --pp-foreground: #413333;
+  --pp-card: #fffdf9;
+  --pp-card-foreground: #413333;
+  --pp-popover: #fffdf9;
+  --pp-popover-foreground: #413333;
+  --pp-muted: #ede0ce;
+  --pp-muted-foreground: #6b5a52;
+  --pp-secondary: #ede0ce;
+  --pp-secondary-foreground: #413333;
+  --pp-primary: #0d47a1;
+  --pp-primary-foreground: #ffffff;
+  --pp-accent: #f2765e;
+  --pp-accent-foreground: #332424;
+  --pp-destructive: #a32017;
+  --pp-destructive-foreground: #ffffff;
+  --pp-border: rgba(65, 51, 51, 0.16);
+  --pp-input: rgba(65, 51, 51, 0.6);
+  --pp-ring: #2196f3;
+}

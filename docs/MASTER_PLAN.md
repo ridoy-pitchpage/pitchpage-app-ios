@@ -5,7 +5,7 @@
 | **Status** | Draft for approval, 30 Sep 2026 |
 | **App repo** | `ridoy-pitchpage/pitchpage-app-ios` (this repo) |
 | **Web + backend repo** | `gregadosmond-oss/profile-pride-app` (pitchpage.co) |
-| **Stack** | Expo SDK 57, React Native 0.87, TypeScript, Expo Router |
+| **Stack** | Expo SDK 57, React Native 0.86, TypeScript, Expo Router |
 | **Payments** | Apple In-App Purchase for credits. Stripe stays on the website. |
 | **Source of facts** | A full read-through of the web repo on 30 Sep 2026: every route, all 144 server functions, the migrations, storage and auth |
 
@@ -132,7 +132,7 @@ Three rules shape the plan:
 
 | # | Decision | Why |
 |---|---|---|
-| D1 | **Expo SDK 57 + React Native 0.87 + TypeScript + Expo Router** | Gives a browser preview on Windows and iOS builds in the cloud (EAS) without a Mac. It uses the same React and TypeScript as the website, and its file-based routes work like TanStack Router's. |
+| D1 | **Expo SDK 57 + React Native 0.86 + TypeScript + Expo Router** | Gives a browser preview on Windows and iOS builds in the cloud (EAS) without a Mac. It uses the same React and TypeScript as the website, and its file-based routes work like TanStack Router's. |
 | D2 | **Development builds from M2 onward** (Expo Go is enough for M0–M1) | In-App Purchase, native Sign in with Apple and our video module need native code that Expo Go doesn't include |
 | D3 | **A new REST API in the web repo, `/api/app/v1/*`, made of thin adapters over the existing server functions** | Server functions use build-generated IDs and a private wire format, so a native app can't call them reliably. Adapters keep a single copy of every business rule. |
 | D4 | **Page previews through a new web "render surface" (`/app-render`), shown in a WebView** | Previews are pixel-identical to the live page. We don't duplicate 40 layouts × 20 colours × light/dark. |
@@ -1266,7 +1266,7 @@ Versions are the current ones on npm (30 Sep 2026). They're re-checked when the 
 
 | Area | Package | Version | Use |
 |---|---|---|---|
-| Core | `expo`, `react-native`, `react`, `typescript` | 57.0.x, 0.87.x, 19.x | App runtime |
+| Core | `expo`, `react-native`, `react`, `typescript` | 57.0.x, 0.86.x, 19.x | App runtime |
 | Navigation | `expo-router` | 57.0.x | File routes, typed routes, protected routes |
 | Styling | `nativewind` + `tailwindcss` 3.4 | 4.2.x | Tailwind classes. NativeWind 5 (which uses Tailwind 4 like the website) is still a release candidate. |
 | Data | `@tanstack/react-query`, `zod`, `zustand` | 5.x, –, – | Server cache, validation, the builder draft store |

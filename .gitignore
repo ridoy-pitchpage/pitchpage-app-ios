@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native builds (managed by EAS / prebuild — never committed)
+/ios
+/android
+
+# Env: only .env.example is tracked
+.env
+.env.local
+.env.*.local
+
+# macOS / editors
+.DS_Store
+*.tsbuildinfo
+
+# Testing
+coverage/
