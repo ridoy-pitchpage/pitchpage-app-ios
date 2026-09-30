@@ -4,6 +4,7 @@ import { WebView } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
 
 import { Button } from "@/components/Button";
+import { TopBar } from "@/components/TopBar";
 import { BackButton } from "@/components/BackButton";
 import { Screen } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
@@ -64,7 +65,7 @@ export default function LivePageScreen() {
 
   return (
     <Screen edges={["top"]}>
-      <View className="flex-row items-center justify-between border-b border-border px-2 py-1">
+      <TopBar className="justify-between">
         <BackButton />
         <Muted numberOfLines={1} className="min-w-0 flex-1 px-2">
           {row.slug}
@@ -76,7 +77,7 @@ export default function LivePageScreen() {
         >
           <Body className="text-link">Open in Safari</Body>
         </Pressable>
-      </View>
+      </TopBar>
 
       {Platform.OS === "web" ? (
         // react-native-webview has no web build: it renders a red "does not

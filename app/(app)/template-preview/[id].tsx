@@ -6,6 +6,7 @@ import { WebView } from "react-native-webview";
 import { ActionBar } from "@/components/ActionBar";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
+import { TopBar } from "@/components/TopBar";
 import { Screen } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, Muted } from "@/components/Text";
@@ -85,7 +86,7 @@ export default function TemplatePreviewScreen() {
 
   return (
     <Screen edges={["top"]}>
-      <View className="flex-row items-center gap-2 border-b border-border px-2 py-1">
+      <TopBar>
         <BackButton label="Back to templates" />
         <View className="min-w-0 flex-1">
           <Body numberOfLines={1} className="font-body-medium">
@@ -95,7 +96,7 @@ export default function TemplatePreviewScreen() {
             {STYLE_CATEGORY_SHORT[family.category]}
           </Muted>
         </View>
-      </View>
+      </TopBar>
 
       {failed ? (
         <ErrorState

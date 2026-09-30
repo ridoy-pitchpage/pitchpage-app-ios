@@ -14,6 +14,7 @@ import {
 } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
+import { TopBar } from "@/components/TopBar";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
@@ -136,7 +137,7 @@ export default function BuilderScreen() {
         bottomInset={104}
         header={
           <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.background }}>
-            <View className="flex-row items-center gap-1 border-b border-border px-2 py-1">
+            <TopBar className="gap-1">
               <Pressable
                 onPress={() => void leave()}
                 accessibilityRole="button"
@@ -170,7 +171,7 @@ export default function BuilderScreen() {
                 )}
                 <Body className="text-[14px]">{editing ? "Preview" : "Edit"}</Body>
               </Pressable>
-            </View>
+            </TopBar>
           </SafeAreaView>
         }
       />
