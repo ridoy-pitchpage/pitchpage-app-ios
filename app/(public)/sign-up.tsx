@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react-native";
 
+import { ActionBar } from "@/components/ActionBar";
 import { Button } from "@/components/Button";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Muted } from "@/components/Text";
@@ -185,7 +186,7 @@ export default function SignUp() {
           that finishes the job sat below the fold — the one thing on the
           screen that must never need looking for.
         */}
-        <View className="border-t border-border bg-card px-4 pb-2 pt-3">
+        <ActionBar>
           <Button
             title="Create account"
             loading={busy}
@@ -193,7 +194,7 @@ export default function SignUp() {
             icon={<ArrowRight size={18} color={colors.primaryForeground} />}
             onPress={() => void submit()}
           />
-        </View>
+        </ActionBar>
       </KeyboardAvoidingView>
     </Screen>
   );

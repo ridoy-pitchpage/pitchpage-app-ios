@@ -3,6 +3,7 @@ import { Platform, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { WebView } from "react-native-webview";
 
+import { ActionBar } from "@/components/ActionBar";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { Screen } from "@/components/Screen";
@@ -133,14 +134,14 @@ export default function TemplatePreviewScreen() {
         />
       )}
 
-      <View className="border-t border-border bg-card px-4 py-3">
+      <ActionBar>
         <Button
           title="Use this template"
           loading={busy}
           haptic
           onPress={() => void apply(family.id)}
         />
-      </View>
+      </ActionBar>
     </Screen>
   );
 }

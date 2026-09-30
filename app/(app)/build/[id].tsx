@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
 import { BriefcaseBusiness, FileText, Globe2, Sparkles, Trash2, Upload } from "lucide-react-native";
 
+import { ActionBar } from "@/components/ActionBar";
 import { BackButton } from "@/components/BackButton";
 import { fileSize } from "@/features/media/local-file";
 import { Button } from "@/components/Button";
@@ -266,7 +267,7 @@ export default function BuildScreen() {
           </Card>
         </ScreenScroll>
 
-        <View className="gap-2 border-t border-border bg-card px-4 py-3">
+        <ActionBar className="gap-2">
           <Button
             title="Build my page with AI"
             loading={busy === "save"}
@@ -278,7 +279,7 @@ export default function BuildScreen() {
             variant="secondary"
             onPress={() => void saveAndBuild()}
           />
-        </View>
+        </ActionBar>
       </KeyboardAvoidingView>
     </Screen>
   );

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
+import { ActionBar } from "@/components/ActionBar";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { Screen, ScreenScroll } from "@/components/Screen";
@@ -164,13 +165,13 @@ export default function TemplateScreen() {
         />
       </ScreenScroll>
 
-      <View className="border-t border-border bg-card px-4 py-3">
+      <ActionBar>
         <Button
           title={`Continue with ${current.family.label}`}
           loading={busy}
           onPress={() => void apply(selectedId)}
         />
-      </View>
+      </ActionBar>
     </Screen>
   );
 }
