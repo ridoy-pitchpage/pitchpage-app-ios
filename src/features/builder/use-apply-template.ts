@@ -6,7 +6,12 @@ import { useToast } from "@/components/Toast";
 import { keys } from "@/api/queries";
 import { savePage } from "@/api/supabase-direct";
 import { currentPitchKind } from "@/page/apply-kind";
-import { STYLE_FAMILIES, encodeStyleSelection, resolveStyle } from "@/page/style-families";
+import {
+  DEFAULT_TEMPLATE,
+  STYLE_FAMILIES,
+  encodeStyleSelection,
+  resolveStyle,
+} from "@/page/style-families";
 
 /**
  * Save a template choice, then go wherever the page goes next.
@@ -37,16 +42,27 @@ export function useApplyTemplate(row: TemplateTarget) {
       const current = resolveStyle(row.template);
       const family = STYLE_FAMILIES.find((f) => f.id === familyId) ?? current.family;
 
+      // A page still on the starting style is not carrying a colour anyone
+      // chose, so it takes the family's own. Otherwise picking Pitch Deck —
+      // whose sample is green — left the page the default blue, and the
+      // screen after looked like nothing had happened.
+      //
+      // A colour someone did pick is kept: choosing a template changes the
+      // layout, not their mind about the colour.
+      const untouched = !row.template || row.template === DEFAULT_TEMPLATE;
+      const colorId = untouched ? family.defaultColor : current.color.id;
+      const mode = untouched
+        ? family.defaultMode
+        : family.supportsMode
+          ? current.mode
+          : family.defaultMode;
+
       setBusy(true);
       try {
         await savePage(
           row.id,
           {
-            template: encodeStyleSelection(
-              family.id,
-              current.color.id,
-              family.supportsMode ? current.mode : family.defaultMode,
-            ),
+            template: encodeStyleSelection(family.id, colorId, mode),
           },
           row.updated_at,
         );
