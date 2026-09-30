@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 import { resolveStyle, type ColorPreset, type StyleFamily } from "@/page/style-families";
 
 /**
@@ -195,6 +197,13 @@ export type TypeSpec = {
   eyebrowUppercase: boolean;
 };
 
+/** The platform's own monospace face. */
+const MONO = Platform.select({
+  ios: "Menlo",
+  android: "monospace",
+  default: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+}) as string;
+
 export const TYPE_SPECS: Record<Archetype, TypeSpec> = {
   editorial: {
     displayFamily: "Sora_600SemiBold",
@@ -211,8 +220,10 @@ export const TYPE_SPECS: Record<Archetype, TypeSpec> = {
     eyebrowUppercase: true,
   },
   console: {
-    displayFamily: "Menlo",
-    bodyFamily: "Menlo",
+    // Menlo exists on Apple platforms only; elsewhere naming it falls through
+    // to the browser default, which is a serif — the opposite of the intent.
+    displayFamily: MONO,
+    bodyFamily: MONO,
     displayUppercase: false,
     displayTracking: -0.5,
     eyebrowUppercase: true,

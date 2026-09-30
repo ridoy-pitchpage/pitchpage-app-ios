@@ -53,12 +53,10 @@ export default function PagesScreen() {
       return;
     }
     try {
-      await createPage.mutateAsync(name);
+      const { id } = await createPage.mutateAsync(name);
       setCreating(false);
       setNewName("");
-      // Choosing the page type comes next, with the builder; until then the
-      // new draft simply appears in the list.
-      toast.success("Draft created");
+      router.push({ pathname: "/(app)/choose-type/[id]", params: { id } });
     } catch (error) {
       toast.error(error);
     }
@@ -243,6 +241,12 @@ function PageRow({ page }: { page: PageCardRow }) {
         {isLive && url ? (
           <>
             <RowAction
+              label="Edit"
+              onPress={() =>
+                router.push({ pathname: "/(app)/builder/[id]", params: { id: page.id } })
+              }
+            />
+            <RowAction
               label="Share"
               onPress={() =>
                 router.push({ pathname: "/(app)/share/[id]", params: { id: page.id } })
@@ -267,22 +271,25 @@ function PageRow({ page }: { page: PageCardRow }) {
             <RowAction label="Take offline" onPress={confirmUnpublish} />
           </>
         ) : (
-          <RowAction
-            label="Review & publish"
-            onPress={() =>
-              router.push({ pathname: "/(app)/preview/[id]", params: { id: page.id } })
-            }
-          />
+          <>
+            <RowAction
+              label="Edit"
+              onPress={() =>
+                router.push({ pathname: "/(app)/builder/[id]", params: { id: page.id } })
+              }
+            />
+            <RowAction
+              label="Review & publish"
+              onPress={() =>
+                router.push({ pathname: "/(app)/preview/[id]", params: { id: page.id } })
+              }
+            />
+          </>
         )}
         <RowAction label="Delete" onPress={confirmDelete} destructive />
       </View>
 
-      {!isLive ? (
-        <Body className="text-muted-foreground">
-          The builder arrives next. Until then you can edit this draft on
-          pitchpage.co and publish it from here.
-        </Body>
-      ) : null}
+
     </Card>
   );
 }

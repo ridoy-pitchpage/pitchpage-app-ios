@@ -33,6 +33,8 @@ export type PageModel = {
   updated_at: string | null;
   org_id: string | null;
   sections: PageSection[];
+  /** Untyped by design: the builder reads a few known keys out of it. */
+  wizard_meta: Record<string, unknown> | null;
   portfolio: PagePortfolio;
   film: PageFilm;
   listing: Record<string, unknown> | null;
@@ -64,6 +66,7 @@ export function toPageModel(row: PitchPageRow): PageModel {
     updated_at: row.updated_at ?? null,
     org_id: row.org_id ?? null,
     sections: clampSections(row.sections),
+    wizard_meta: asObject(row.wizard_meta),
     portfolio: asObject(row.portfolio) as PagePortfolio,
     film: asObject(row.film) as PageFilm,
     listing: asObject(row.listing),

@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Modal, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { vars } from "nativewind";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -11,7 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
 
 import { H3 } from "./Text";
-import { useColors } from "@/theme/ThemeProvider";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
+import { paletteVars } from "@/theme/tokens";
 
 /**
  * A sheet that rises from the bottom — the phone's answer to the web builder's
@@ -35,6 +37,7 @@ export function Sheet({
   maxHeightRatio?: number;
 }) {
   const colors = useColors();
+  const { palette } = useTheme();
   const { height } = useWindowDimensions();
   const progress = useSharedValue(0);
 
@@ -63,9 +66,19 @@ export function Sheet({
           />
         </Animated.View>
 
+        {/*
+          A Modal renders in its own root, outside the tree ThemeProvider set
+          the palette variables on, so every themed class inside would resolve
+          to nothing and the panel would come out transparent. The variables
+          have to be re-applied here.
+        */}
         <Animated.View
-          style={[panelStyle, { maxHeight: height * maxHeightRatio }]}
-          className="rounded-t-[20px] border-t border-border bg-card"
+          style={[
+            panelStyle,
+            vars(paletteVars(palette)),
+            { maxHeight: height * maxHeightRatio, backgroundColor: palette.card },
+          ]}
+          className="rounded-t-[20px] border-t border-border"
         >
           <SafeAreaView edges={["bottom"]}>
             {/* The grabber reads as "this can be dismissed" before anything is read. */}

@@ -12,10 +12,12 @@ type Props = Omit<TextInputProps, "style"> & {
   error?: string | null;
   /** Adds the show/hide control and starts obscured. */
   secure?: boolean;
+  /** For a multiline field: how tall it starts. */
+  minHeight?: number;
   className?: string;
 };
 
-export function TextField({ label, hint, error, secure = false, className, ...rest }: Props) {
+export function TextField({ label, hint, error, secure = false, minHeight, className, ...rest }: Props) {
   const colors = useColors();
   const [revealed, setRevealed] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -27,7 +29,7 @@ export function TextField({ label, hint, error, secure = false, className, ...re
       <View
         className="flex-row items-center rounded-control border bg-card px-3"
         style={{
-          minHeight: MIN_TAP,
+          minHeight: minHeight ?? MIN_TAP,
           // The field edge is the only thing marking this as a control, so it
           // carries the raised `input` token (3:1) rather than the hairline.
           borderColor: error ? colors.destructive : focused ? colors.ring : colors.input,
@@ -46,6 +48,7 @@ export function TextField({ label, hint, error, secure = false, className, ...re
             rest.onBlur?.(event);
           }}
           placeholderTextColor={colors.mutedForeground}
+          textAlignVertical={rest.multiline ? "top" : "center"}
           className="flex-1 py-2.5 font-body text-[16px] text-foreground"
         />
 
