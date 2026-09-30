@@ -18,12 +18,20 @@ export function StyleGallery({
   selectedId,
   onSelect,
   footer,
+  action = "select",
 }: {
   families: readonly StyleFamily[];
   selectedId?: string;
   onSelect: (family: StyleFamily) => void;
   /** Optional second line under the name. */
   footer?: (family: StyleFamily) => string;
+  /**
+   * What a tap does. "select" settles the choice here, which is a radio to
+   * VoiceOver; "open" goes somewhere else, which is a button. The template
+   * picker opens a preview, and calling that a radio would promise a choice
+   * the tap does not actually make.
+   */
+  action?: "select" | "open";
 }) {
   const colors = useColors();
 
@@ -35,9 +43,16 @@ export function StyleGallery({
           <Pressable
             key={family.id}
             onPress={() => onSelect(family)}
-            accessibilityRole={selectedId !== undefined ? "radio" : "button"}
-            accessibilityState={selectedId !== undefined ? { selected } : undefined}
-            accessibilityLabel={`${family.label}, ${STYLE_CATEGORY_LABELS[family.category]}`}
+            accessibilityRole={action === "select" && selectedId !== undefined ? "radio" : "button"}
+            accessibilityState={
+              action === "select" && selectedId !== undefined ? { selected } : undefined
+            }
+            accessibilityLabel={[
+              `${family.label}, ${STYLE_CATEGORY_LABELS[family.category]}`,
+              // The tick is the only thing marking the current one, and a tick
+              // is not announced.
+              action === "open" && selected ? ", your current template" : "",
+            ].join("")}
             style={{ flexBasis: "47%", flexGrow: 1 }}
             className={[
               "overflow-hidden rounded-card border",

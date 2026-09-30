@@ -147,6 +147,7 @@ export default function TemplateScreen() {
         <StyleGallery
           families={families}
           selectedId={selectedId}
+          action="open"
           onSelect={(family: StyleFamily) =>
             router.push({
               pathname: "/(app)/template-preview/[id]",
