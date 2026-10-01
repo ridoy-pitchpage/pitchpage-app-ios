@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +20,8 @@ import { Body, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
 import { keys, useMyPage } from "@/api/queries";
 import { PageRender } from "@/render/PageRender";
+import { RenderSurface, type SurfaceTarget } from "@/render/RenderSurface";
+import { toPublicData } from "@/render/to-public-data";
 import { DetailsSheet } from "@/features/builder/DetailsSheet";
 import { SectionSheet } from "@/features/builder/SectionSheet";
 import { SectionsSheet } from "@/features/builder/SectionsSheet";
@@ -70,6 +72,14 @@ export default function BuilderScreen() {
   }, [query.data, draftId, load]);
 
   useEffect(() => startDraftAutosaveOnBackground(), []);
+
+  // The draft in the shape the website's renderer takes. Memoised: the
+  // builder re-renders on every save-state change, and each new object would
+  // otherwise re-send an identical page to /app-render.
+  const publicData = useMemo(
+    () => (page ? toPublicData(page, query.data) : null),
+    [page, query.data],
+  );
 
   useEffect(
     () => () => {
@@ -125,14 +135,20 @@ export default function BuilderScreen() {
 
   return (
     <View className="flex-1">
-      <PageRender
-        page={page}
-        editable={editing}
-        onEditHero={() => setSheet("details")}
-        onEditSection={(section) => setSectionId(section.id)}
-        onAddSection={() => {
-          setSectionsOnAdd(true);
-          setSheet("sections");
+      {/*
+        The website's own rendering of the draft, so the builder looks exactly
+        like the template that was picked. PageRender stays as the fallback:
+        it is what shows until /app-render answers, and the whole time if it
+        never does — before it is published, offline, or on a slow first
+        load — so this screen is never blank.
+      */}
+      <RenderSurface
+        page={publicData!}
+        editing={editing}
+        onTap={(target: SurfaceTarget) => {
+          if (target.kind === "section") setSectionId(target.sectionId);
+          else if (target.kind === "details") setSheet("details");
+          else setSheet("media");
         }}
         bottomInset={104}
         header={
@@ -173,6 +189,18 @@ export default function BuilderScreen() {
               </Pressable>
             </TopBar>
           </SafeAreaView>
+        }
+        fallback={
+          <PageRender
+            page={page}
+            editable={editing}
+            onEditHero={() => setSheet("details")}
+            onEditSection={(section) => setSectionId(section.id)}
+            onAddSection={() => {
+              setSectionsOnAdd(true);
+              setSheet("sections");
+            }}
+          />
         }
       />
 

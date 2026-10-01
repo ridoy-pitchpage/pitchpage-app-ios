@@ -1,0 +1,205 @@
+import { useCallback, useEffect, useRef, useState, type ElementRef, type ReactNode } from "react";
+import { Platform, StyleSheet, View } from "react-native";
+import { WebView, type WebViewMessageEvent } from "react-native-webview";
+
+import { RENDER_URL } from "@/lib/config";
+import type { PublicData } from "./to-public-data";
+
+/**
+ * A page, drawn by the website's own layouts.
+ *
+ * The app draws pages itself everywhere else, through five archetypes for
+ * thirty families, so the builder could not show the template that had been
+ * picked: the picker previewed the website's rendering, and the screen after it
+ * switched to the app's approximation. This draws the page through
+ * /app-render instead, which renders PublicPitchView — the same component a
+ * published page uses — from the draft the builder is holding.
+ *
+ * THE FALLBACK IS NOT OPTIONAL. A push to the website does not deploy it;
+ * someone publishes by hand in Lovable. Until /app-render answers, and
+ * whenever it cannot (offline, an old site, a slow first load), the app's own
+ * renderer is on screen, so the builder is never blank. The website's version
+ * replaces it only after the route says it is ready, and only then.
+ *
+ *   ready  ->  the app sends { render, page, editing }  ->  the page draws
+ *   tap    ->  the app opens its own editor for what was tapped
+ */
+
+export type SurfaceTarget =
+  | { kind: "section"; sectionId: string }
+  | { kind: "details" }
+  | { kind: "video" };
+
+type State = "connecting" | "live" | "unavailable";
+
+/** Long enough for a cold first load on a phone; short enough not to matter. */
+const READY_TIMEOUT_MS = 8000;
+/** Typing re-renders the page; one per pause is plenty. */
+const SEND_DEBOUNCE_MS = 150;
+
+const RENDER_ORIGIN = (() => {
+  try {
+    return new URL(RENDER_URL).origin;
+  } catch {
+    return "";
+  }
+})();
+
+function parse(raw: unknown): { type: string; target?: SurfaceTarget } | null {
+  let data = raw;
+  if (typeof data === "string") {
+    try {
+      data = JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+  if (typeof data !== "object" || data === null) return null;
+  const message = data as { type?: unknown; target?: unknown };
+  if (typeof message.type !== "string") return null;
+  if (message.type !== "tap") return { type: message.type };
+
+  const target = message.target as { kind?: unknown; sectionId?: unknown } | undefined;
+  if (target?.kind === "section" && typeof target.sectionId === "string") {
+    return { type: "tap", target: { kind: "section", sectionId: target.sectionId } };
+  }
+  if (target?.kind === "details" || target?.kind === "video") {
+    return { type: "tap", target: { kind: target.kind } };
+  }
+  return null;
+}
+
+export function RenderSurface({
+  page,
+  editing,
+  onTap,
+  fallback,
+  header,
+  bottomInset = 0,
+}: {
+  page: PublicData;
+  editing: boolean;
+  onTap?: (target: SurfaceTarget) => void;
+  /** What shows until the website's rendering is ready, and if it never is. */
+  fallback: ReactNode;
+  header?: ReactNode;
+  /** Room left for a toolbar floating over the bottom of the page. */
+  bottomInset?: number;
+}) {
+  const [state, setState] = useState<State>("connecting");
+  const ready = useRef(false);
+  const frame = useRef<HTMLIFrameElement | null>(null);
+  const webview = useRef<ElementRef<typeof WebView> | null>(null);
+  // Held in a ref so a parent re-rendering with a new closure does not
+  // re-bind the message listener — and drop a tap mid-flight. Updated in an
+  // effect, never during render, so a render React throws away cannot leave
+  // a stale handler behind.
+  const tapRef = useRef(onTap);
+  useEffect(() => {
+    tapRef.current = onTap;
+  }, [onTap]);
+
+  const send = useCallback(
+    (message: Record<string, unknown>) => {
+      const payload = JSON.stringify(message);
+      if (Platform.OS === "web") {
+        frame.current?.contentWindow?.postMessage(payload, RENDER_ORIGIN || "*");
+      } else {
+        // Delivered as a real MessageEvent, which is what the route listens
+        // for. JSON.stringify twice: once for the payload, once to make it a
+        // safe JavaScript string literal inside the injected script.
+        webview.current?.injectJavaScript(
+          `window.dispatchEvent(new MessageEvent("message",{data:${JSON.stringify(payload)}}));true;`,
+        );
+      }
+    },
+    [],
+  );
+
+  const handle = useCallback((raw: unknown) => {
+    const message = parse(raw);
+    if (!message) return;
+    if (message.type === "ready") {
+      ready.current = true;
+      setState("live");
+    } else if (message.type === "tap" && message.target) {
+      tapRef.current?.(message.target);
+    } else if (message.type === "error") {
+      setState("unavailable");
+    }
+  }, []);
+
+  // Give up, quietly, if the route never says it is ready — which is exactly
+  // what happens before it has been published.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!ready.current) setState("unavailable");
+    }, READY_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // The iframe answers through window messages. Only ITS messages, from ITS
+  // origin, are trusted: anything else on the page could post a "tap".
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.current?.contentWindow) return;
+      if (RENDER_ORIGIN && event.origin !== RENDER_ORIGIN) return;
+      handle(event.data);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [handle]);
+
+  // Every change to the draft re-renders the page, once the route can hear it.
+  useEffect(() => {
+    if (state !== "live") return;
+    const timer = setTimeout(() => send({ type: "render", page, editing }), SEND_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [state, page, editing, send]);
+
+  const live = state === "live";
+
+  return (
+    <View style={{ flex: 1 }}>
+      {header}
+      <View style={{ flex: 1, paddingBottom: bottomInset }}>
+        {state !== "unavailable" ? (
+          // Mounted while connecting, but invisible: it has to load to say it
+          // is ready, and display:none would stop some browsers loading it.
+          <View
+            style={[StyleSheet.absoluteFill, { bottom: bottomInset, opacity: live ? 1 : 0 }]}
+            pointerEvents={live ? "auto" : "none"}
+            accessibilityElementsHidden={!live}
+            importantForAccessibility={live ? "auto" : "no-hide-descendants"}
+          >
+            {Platform.OS === "web" ? (
+              <iframe
+                ref={frame}
+                src={RENDER_URL}
+                title="Your page"
+                style={{ border: 0, width: "100%", height: "100%" }}
+              />
+            ) : (
+              <WebView
+                ref={webview}
+                source={{ uri: RENDER_URL }}
+                onMessage={(event: WebViewMessageEvent) => handle(event.nativeEvent.data)}
+                onError={() => setState("unavailable")}
+                onHttpError={() => setState("unavailable")}
+                // The page draws in place; nothing in it may navigate the view
+                // somewhere else, in edit mode or out of it.
+                onShouldStartLoadWithRequest={(request: { url: string }) =>
+                  request.url.startsWith(RENDER_URL)
+                }
+                style={{ flex: 1, backgroundColor: "transparent" }}
+              />
+            )}
+          </View>
+        ) : null}
+
+        {!live ? <View style={StyleSheet.absoluteFill}>{fallback}</View> : null}
+      </View>
+    </View>
+  );
+}
