@@ -3,6 +3,7 @@ import { Redirect, Stack } from "expo-router";
 import { useAuth } from "@/auth/AuthProvider";
 import { Screen } from "@/components/Screen";
 import { Loading } from "@/components/States";
+import { RenderWarmup } from "@/render/RenderSurface";
 
 /**
  * The signed-in guard, matching the web's `_authenticated` route: no session
@@ -26,8 +27,13 @@ export default function AppLayout() {
   if (!signedIn) return <Redirect href="/(public)/welcome" />;
 
   return (
-    <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
-      <Stack.Screen name="(tabs)" />
-    </Stack>
+    <>
+      <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+      {/* Pre-loads the website's renderer, so a page opens on its real template
+          without a cold load. See RenderWarmup. */}
+      <RenderWarmup />
+    </>
   );
 }

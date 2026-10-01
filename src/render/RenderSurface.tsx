@@ -34,7 +34,7 @@ export type SurfaceTarget =
 type State = "connecting" | "live" | "unavailable";
 
 /** Long enough for a cold first load on a phone; short enough not to matter. */
-const READY_TIMEOUT_MS = 10000;
+const READY_TIMEOUT_MS = 20000;
 
 /**
  * Whether /app-render answered the last time anything asked, for as long as
@@ -245,6 +245,72 @@ export function RenderSurface({
           <View style={StyleSheet.absoluteFill}>{fallback}</View>
         ) : null}
       </View>
+    </View>
+  );
+}
+
+/**
+ * Loads /app-render once, invisibly, as soon as somebody is signed in.
+ *
+ * Two jobs. It warms the cache, so that by the time a page is opened the
+ * website's renderer is already downloaded and the builder shows the real
+ * template almost at once rather than after a cold load. And it answers the
+ * question RenderSurface would otherwise answer with a loader: can the
+ * website draw pages at all? If it cannot — offline, or before /app-render is
+ * published — the builder learns that here, in the background, and opens
+ * straight onto the app's own rendering instead of keeping someone waiting.
+ *
+ * It removes itself once it knows. WKWebView instances share one cache, so
+ * what it loaded stays useful after it has gone.
+ */
+export function RenderWarmup() {
+  const [done, setDone] = useState(sessionAvailability !== "unknown");
+  const frame = useRef<HTMLIFrameElement | null>(null);
+
+  const settle = useCallback((result: "available" | "unavailable") => {
+    // A surface that already heard from the route knows better than this does.
+    if (sessionAvailability === "unknown") sessionAvailability = result;
+    setDone(true);
+  }, []);
+
+  useEffect(() => {
+    if (done) return;
+    const timer = setTimeout(() => settle("unavailable"), READY_TIMEOUT_MS);
+    if (Platform.OS !== "web") return () => clearTimeout(timer);
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.current?.contentWindow) return;
+      if (RENDER_ORIGIN && event.origin !== RENDER_ORIGIN) return;
+      if (parse(event.data)?.type === "ready") settle("available");
+    };
+    window.addEventListener("message", onMessage);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("message", onMessage);
+    };
+  }, [done, settle]);
+
+  if (done) return null;
+
+  return (
+    <View
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{ position: "absolute", width: 1, height: 1, opacity: 0, left: -10, top: -10 }}
+    >
+      {Platform.OS === "web" ? (
+        <iframe ref={frame} src={RENDER_URL} title="" aria-hidden style={{ border: 0, width: 1, height: 1 }} />
+      ) : (
+        <WebView
+          source={{ uri: RENDER_URL }}
+          onMessage={(event: WebViewMessageEvent): void => {
+            if (parse(event.nativeEvent.data)?.type === "ready") settle("available");
+          }}
+          onError={(): void => settle("unavailable")}
+          onHttpError={(): void => settle("unavailable")}
+          style={{ width: 1, height: 1 }}
+        />
+      )}
     </View>
   );
 }
