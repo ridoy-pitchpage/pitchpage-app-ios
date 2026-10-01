@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ElementRef, type ReactNode } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
 import { RENDER_URL } from "@/lib/config";
 import type { PublicData } from "./to-public-data";
+import { themeForTemplate } from "./template-theme";
 
 /**
  * A page, drawn by the website's own layouts.
@@ -33,7 +34,19 @@ export type SurfaceTarget =
 type State = "connecting" | "live" | "unavailable";
 
 /** Long enough for a cold first load on a phone; short enough not to matter. */
-const READY_TIMEOUT_MS = 8000;
+const READY_TIMEOUT_MS = 10000;
+
+/**
+ * Whether /app-render answered the last time anything asked, for as long as
+ * the app is running.
+ *
+ * A loading state is only acceptable if it is brief. Before /app-render is
+ * published, every builder open would otherwise sit on the loader for the
+ * whole timeout and then fall back — so once one attempt has failed, later
+ * ones go straight to the fallback. Cleared by a restart, which is when a
+ * newly published website would be found.
+ */
+let sessionAvailability: "unknown" | "available" | "unavailable" = "unknown";
 /** Typing re-renders the page; one per pause is plenty. */
 const SEND_DEBOUNCE_MS = 150;
 
@@ -86,7 +99,12 @@ export function RenderSurface({
   /** Room left for a toolbar floating over the bottom of the page. */
   bottomInset?: number;
 }) {
-  const [state, setState] = useState<State>("connecting");
+  const [state, setState] = useState<State>(() =>
+    sessionAvailability === "unavailable" ? "unavailable" : "connecting",
+  );
+  // Decided once, at mount: a surface already known to be unreachable is not
+  // loaded at all, so it cannot answer late and swap the page under somebody.
+  const [mountSurface] = useState(() => sessionAvailability !== "unavailable");
   const ready = useRef(false);
   const frame = useRef<HTMLIFrameElement | null>(null);
   const webview = useRef<ElementRef<typeof WebView> | null>(null);
@@ -121,6 +139,7 @@ export function RenderSurface({
     if (!message) return;
     if (message.type === "ready") {
       ready.current = true;
+      sessionAvailability = "available";
       setState("live");
     } else if (message.type === "tap" && message.target) {
       tapRef.current?.(message.target);
@@ -133,7 +152,10 @@ export function RenderSurface({
   // what happens before it has been published.
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!ready.current) setState("unavailable");
+      if (!ready.current) {
+        sessionAvailability = "unavailable";
+        setState("unavailable");
+      }
     }, READY_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, []);
@@ -159,12 +181,13 @@ export function RenderSurface({
   }, [state, page, editing, send]);
 
   const live = state === "live";
+  const { ground, inkMuted } = themeForTemplate(page.template);
 
   return (
     <View style={{ flex: 1 }}>
       {header}
       <View style={{ flex: 1, paddingBottom: bottomInset }}>
-        {state !== "unavailable" ? (
+        {mountSurface ? (
           // Mounted while connecting, but invisible: it has to load to say it
           // is ready, and display:none would stop some browsers loading it.
           <View
@@ -198,7 +221,29 @@ export function RenderSurface({
           </View>
         ) : null}
 
-        {!live ? <View style={StyleSheet.absoluteFill}>{fallback}</View> : null}
+        {/*
+          While connecting: a loader, NOT the app's own rendering. Showing the
+          approximation first and then swapping to the real template is the
+          worst of both — the screen visibly changes design under the person
+          looking at it. The loader is painted in the template's own ground, so
+          the page arrives as a fade rather than a flash.
+        */}
+        {state === "connecting" ? (
+          <View
+            style={[StyleSheet.absoluteFill, { backgroundColor: ground }]}
+            className="items-center justify-center gap-3"
+            accessibilityRole="progressbar"
+            accessibilityLabel="Loading your page"
+          >
+            <ActivityIndicator color={inkMuted} />
+            <Text style={{ color: inkMuted, fontSize: 13 }}>Loading your template…</Text>
+          </View>
+        ) : null}
+
+        {/* Only when the website cannot draw it: offline, or not yet published. */}
+        {state === "unavailable" ? (
+          <View style={StyleSheet.absoluteFill}>{fallback}</View>
+        ) : null}
       </View>
     </View>
   );
