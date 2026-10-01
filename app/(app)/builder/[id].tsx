@@ -46,7 +46,10 @@ import { MIN_TAP } from "@/theme/tokens";
  * document with a few aspects, and the toolbar addresses them by name.
  */
 export default function BuilderScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `mode=preview` opens straight onto the finished page — the Pages list
+  // uses it so "Preview" shows what was built rather than the publish
+  // checklist, which is still one tap away under Publish.
+  const { id, mode: initialMode } = useLocalSearchParams<{ id: string; mode?: string }>();
   const colors = useColors();
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -59,7 +62,9 @@ export default function BuilderScreen() {
   const status = useDraft((s) => s.status);
   const draftId = useDraft((s) => s.pageId);
 
-  const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [mode, setMode] = useState<"edit" | "preview">(
+    initialMode === "preview" ? "preview" : "edit",
+  );
   const [sheet, setSheet] = useState<"none" | "details" | "sections" | "style" | "media">("none");
   /** Whether the Sections sheet should open on its "add" pane. */
   const [sectionsOnAdd, setSectionsOnAdd] = useState(false);
