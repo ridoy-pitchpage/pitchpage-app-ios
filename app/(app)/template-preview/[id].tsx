@@ -45,6 +45,7 @@ export default function TemplatePreviewScreen() {
       wizard_meta: null,
       sections: null,
       portrait_url: null,
+      email: null,
     },
   );
 

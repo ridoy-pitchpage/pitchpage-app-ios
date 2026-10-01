@@ -71,7 +71,12 @@ function normalize(type, d) {
         caption: S(d.caption, 120),
       };
     case "cta":
-      return { heading: S(d.heading, 120), sub: S(d.sub, 200), label: S(d.label, 60), url: S(d.url, 400), email: S(d.email, 200) };
+      // The copy is kept and the contact details are NOT. Every sample routes
+      // to a persona that does not exist — jaylen.reed@example.com, a mailto,
+      // a cal.com link — and a seed carrying them would publish a real
+      // person's page with its Contact button pointing at nobody. The app
+      // fills the owner's own address in when it seeds.
+      return { heading: S(d.heading, 120), sub: S(d.sub, 200), label: S(d.label, 60), url: "", email: "" };
     default:
       return {};
   }

@@ -1,6 +1,8 @@
 import { sectionsForEditing, sectionsForLayout, clampSections } from "@/page/page-sections";
 import { STYLE_FAMILIES } from "@/page/style-families";
 import { TEMPLATE_SEEDS } from "@/page/template-seeds";
+import { seedSections } from "@/page/apply-template-seed";
+import { buildSeedSections } from "@/page/page-types";
 
 /**
  * A seeded page has to look the same while it is being edited and while it is
@@ -19,18 +21,16 @@ import { TEMPLATE_SEEDS } from "@/page/template-seeds";
 
 const seeded = STYLE_FAMILIES.map((f) => f.id).filter((id) => TEMPLATE_SEEDS[id]);
 
+/**
+ * A page built the way the app builds one: the type step's outline, then the
+ * template's seed over it, with the owner's address carried through. Raw
+ * seeds are not a page anybody can have — their Contact section is stripped
+ * of the sample persona's address on purpose, so on its own it is empty.
+ */
 function pageFor(familyId: string) {
-  const seed = TEMPLATE_SEEDS[familyId]!;
   return {
     sections: clampSections(
-      seed.sections.map((s, index) => ({
-        id: `${familyId}-${index}`,
-        title: s.title,
-        blockType: s.blockType,
-        data: s.data,
-        order: index,
-        visible: true,
-      })),
+      seedSections(familyId, buildSeedSections("job", "owner@example.org"), "owner@example.org"),
     ),
   };
 }
@@ -52,7 +52,10 @@ describe("template seeds", () => {
   it("survives clamping — nothing is dropped for being malformed", () => {
     for (const familyId of seeded) {
       const seed = TEMPLATE_SEEDS[familyId]!;
-      expect(pageFor(familyId).sections).toHaveLength(seed.sections.length);
+      // The owner's Contact section stands in for the sample's, so the count
+      // is unchanged — unless the sample had none, when it is appended.
+      const hasCta = seed.sections.some((s) => s.blockType === "cta");
+      expect(pageFor(familyId).sections).toHaveLength(seed.sections.length + (hasCta ? 0 : 1));
     }
   });
 

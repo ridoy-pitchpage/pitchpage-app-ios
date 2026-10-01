@@ -62,6 +62,7 @@ export default function TemplateScreen() {
       wizard_meta: null,
       sections: null,
       portrait_url: null,
+      email: null,
     },
   );
 

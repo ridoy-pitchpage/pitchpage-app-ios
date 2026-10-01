@@ -5,9 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/Toast";
 import { keys } from "@/api/queries";
 import { savePage, type SavePagePatch } from "@/api/supabase-direct";
-import { currentPitchKind, hasSectionContent } from "@/page/apply-kind";
-import { clampSections, type PageSection } from "@/page/page-sections";
-import { freshId } from "@/page/page-types";
+import { currentPitchKind } from "@/page/apply-kind";
+import { clampSections } from "@/page/page-sections";
+import { ownerHasWritten, seedSections } from "@/page/apply-template-seed";
 import { TEMPLATE_SEEDS } from "@/page/template-seeds";
 import {
   DEFAULT_TEMPLATE,
@@ -35,27 +35,8 @@ type TemplateTarget = {
   wizard_meta: unknown;
   sections: unknown;
   portrait_url: string | null;
+  email: string | null;
 };
-
-/**
- * The family's sample content, with ids of its own.
- *
- * Fresh ids rather than the website's: two pages seeded from the same
- * family would otherwise carry the same section ids, and section-level
- * analytics key on them.
- */
-function seedSections(familyId: string): PageSection[] | null {
-  const seed = TEMPLATE_SEEDS[familyId];
-  if (!seed?.sections.length) return null;
-  return seed.sections.map((section, index) => ({
-    id: freshId(),
-    title: section.title,
-    blockType: section.blockType,
-    data: section.data,
-    order: index,
-    visible: true,
-  }));
-}
 
 export function useApplyTemplate(row: TemplateTarget) {
   const toast = useToast();
@@ -85,9 +66,10 @@ export function useApplyTemplate(row: TemplateTarget) {
       // A template arrives with its own example content, but only onto a page
       // that has none. Anything typed already outranks a sample, and a second
       // trip through the picker must never overwrite it.
-      const seeded = hasSectionContent(clampSections(row.sections))
+      const existing = clampSections(row.sections);
+      const seeded = ownerHasWritten(existing)
         ? null
-        : seedSections(family.id);
+        : seedSections(family.id, existing, row.email);
       const seedPortrait = TEMPLATE_SEEDS[family.id]?.portraitUrl ?? null;
 
       setBusy(true);
@@ -124,6 +106,7 @@ export function useApplyTemplate(row: TemplateTarget) {
     },
     [
       queryClient,
+      row.email,
       row.id,
       row.portrait_url,
       row.sections,
