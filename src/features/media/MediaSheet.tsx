@@ -256,9 +256,6 @@ export function MediaSheet({
             icon={<Video size={17} color={colors.foreground} />}
             onPress={() => void pickVideo()}
           />
-          <Muted>
-            Recording in the app, trimming and background effects are coming.
-          </Muted>
         </View>
       </View>
     </Sheet>
