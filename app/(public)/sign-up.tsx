@@ -10,8 +10,9 @@ import { Screen, ScreenScroll } from "@/components/Screen";
 import { Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
+import { AppleSignInButton } from "@/auth/AppleSignInButton";
 import { GoogleSignInButton } from "@/auth/GoogleSignInButton";
-import { credentialProblem, signInWithProvider, signUpWithPassword } from "@/auth/auth-actions";
+import { credentialProblem, signInWithApple, signInWithProvider, signUpWithPassword } from "@/auth/auth-actions";
 import { AuthIntro } from "@/auth/AuthIntro";
 import { DEV_SIGN_IN, WEB_LINKS } from "@/lib/config";
 import { useColors } from "@/theme/ThemeProvider";
@@ -35,6 +36,7 @@ export default function SignUp() {
   const [password, setPassword] = useState(devCreds?.password ?? "");
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [appleBusy, setAppleBusy] = useState(false);
 
   async function submit() {
     if (!name.trim()) {
@@ -60,6 +62,18 @@ export default function SignUp() {
       toast.error(error);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function continueWithApple() {
+    setAppleBusy(true);
+    try {
+      const completed = await signInWithApple();
+      if (completed) router.replace("/(app)/(tabs)/pages");
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setAppleBusy(false);
     }
   }
 
@@ -100,6 +114,13 @@ export default function SignUp() {
               shadowOffset: { width: 0, height: 8 },
             }}
           >
+            {/* Above Google, not below: guideline 4.8 wants an equivalent option,
+                and Apple's own guidance that it be no less prominent. */}
+            <AppleSignInButton
+              mode="signup"
+              busy={appleBusy || googleBusy}
+              onPress={() => void continueWithApple()}
+            />
             <GoogleSignInButton
               mode="signup"
               loading={googleBusy}

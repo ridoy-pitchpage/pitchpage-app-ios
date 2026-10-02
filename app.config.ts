@@ -30,6 +30,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: false, // iPhone only for 1.0 (decision Q7)
     bundleIdentifier: IS_DEV ? "co.pitchpage.app.dev" : "co.pitchpage.app",
+    // The Sign in with Apple entitlement (guideline 4.8 — Google is offered).
+    usesAppleSignIn: true,
     associatedDomains: ["applinks:pitchpage.co", "webcredentials:pitchpage.co"],
     config: {
       // Nothing in the app tracks people across other companies' apps or sites,
@@ -97,6 +99,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   web: { bundler: "metro", output: "single", favicon: "./assets/favicon.png" },
   plugins: [
+    "expo-apple-authentication",
     "expo-router",
     "expo-font",
     "expo-web-browser",

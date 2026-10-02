@@ -8,8 +8,9 @@ import { Screen, ScreenScroll } from "@/components/Screen";
 import { Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
+import { AppleSignInButton } from "@/auth/AppleSignInButton";
 import { GoogleSignInButton } from "@/auth/GoogleSignInButton";
-import { credentialProblem, signInWithPassword, signInWithProvider } from "@/auth/auth-actions";
+import { credentialProblem, signInWithPassword, signInWithApple, signInWithProvider } from "@/auth/auth-actions";
 import { AuthIntro } from "@/auth/AuthIntro";
 import { DEV_SIGN_IN } from "@/lib/config";
 import { useColors } from "@/theme/ThemeProvider";
@@ -37,6 +38,7 @@ export default function SignIn() {
   const [password, setPassword] = useState(DEV_SIGN_IN?.password ?? "");
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [appleBusy, setAppleBusy] = useState(false);
 
   async function submit(creds: { email: string; password: string } = { email, password }) {
     const problem = credentialProblem(creds, "signin");
@@ -54,6 +56,18 @@ export default function SignIn() {
       toast.error(error);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function continueWithApple() {
+    setAppleBusy(true);
+    try {
+      const completed = await signInWithApple();
+      if (completed) router.replace("/(app)/(tabs)/pages");
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setAppleBusy(false);
     }
   }
 
@@ -94,6 +108,13 @@ export default function SignIn() {
               shadowOffset: { width: 0, height: 8 },
             }}
           >
+            {/* Above Google, not below: guideline 4.8 wants an equivalent option,
+                and Apple's own guidance that it be no less prominent. */}
+            <AppleSignInButton
+              mode="signin"
+              busy={appleBusy || googleBusy}
+              onPress={() => void continueWithApple()}
+            />
             <GoogleSignInButton
               mode="signin"
               loading={googleBusy}

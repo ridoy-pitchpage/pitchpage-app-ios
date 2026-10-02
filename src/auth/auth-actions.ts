@@ -2,6 +2,8 @@ import type { User } from "@supabase/supabase-js";
 import { Platform } from "react-native";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as Crypto from "expo-crypto";
 
 import { SITE_URL } from "@/lib/config";
 import { supabase } from "./supabase";
@@ -111,6 +113,76 @@ export async function signInWithProvider(provider: "google" | "apple"): Promise<
   const { data: auth, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   if (auth.user) await ensureProfile(auth.user);
+  return true;
+}
+
+/**
+ * Sign in with Apple, through the system sheet — the native path, not a web
+ * redirect.
+ *
+ * App Store guideline 4.8: an app offering Google sign-in must offer an
+ * equivalent privacy-preserving option, and this is it. Apple returns an
+ * identity token, which Supabase verifies directly (signInWithIdToken), so no
+ * browser round trip is involved.
+ *
+ * The nonce: a random value goes to Supabase raw and to Apple hashed. Apple
+ * signs the hash into the token, Supabase hashes the raw value and checks they
+ * match — which is what stops a token captured from one sign-in being replayed
+ * into another.
+ *
+ * Apple sends the person's name exactly once, on the first sign-in to this app,
+ * and never again. It is saved to the account then, or it is lost.
+ *
+ * Needs the Apple provider switched on in Supabase, with this app's bundle id
+ * as an authorised client. Until it is, this fails with Supabase's own error,
+ * which reaches the person through userFacingErrorMessage like any other.
+ */
+export async function signInWithApple(): Promise<boolean> {
+  const rawNonce = Array.from(Crypto.getRandomBytes(32), (b) =>
+    b.toString(16).padStart(2, "0"),
+  ).join("");
+  const hashedNonce = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    rawNonce,
+  );
+
+  let credential: AppleAuthentication.AppleAuthenticationCredential;
+  try {
+    credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
+  } catch (error) {
+    // Closing the sheet is a choice, not a failure.
+    if ((error as { code?: string }).code === "ERR_REQUEST_CANCELED") return false;
+    throw error;
+  }
+
+  if (!credential.identityToken) {
+    throw new Error("Apple didn't complete the sign-in. Please try again.");
+  }
+
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider: "apple",
+    token: credential.identityToken,
+    nonce: rawNonce,
+  });
+  if (error) throw error;
+
+  const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+    .filter(Boolean)
+    .join(" ");
+  if (fullName) {
+    // Only on the first sign-in does Apple include it; keep it while we can.
+    await supabase.auth.updateUser({ data: { full_name: fullName } });
+  }
+
+  const { data, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  if (data.user) await ensureProfile(data.user);
   return true;
 }
 
