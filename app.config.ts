@@ -36,6 +36,44 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       // so there is no App Tracking Transparency prompt (master plan §21).
       usesNonExemptEncryption: false,
     },
+    /*
+     * Apple rejects an upload whose binary calls a "required reason" API without
+     * declaring why (ITMS-91053). These four are reached by React Native itself
+     * and by the Expo modules this app ships — storage, file system, image
+     * picking, timing — so they are declared here for the whole app, each with
+     * the reason that matches how it is used:
+     *
+     *   UserDefaults    CA92.1  read and written only by this app
+     *   FileTimestamp   C617.1  files inside the app container
+     *                   3B52.1  files the person picked themselves
+     *   SystemBootTime  35F9.1  measuring elapsed time, never identity
+     *   DiskSpace       E174.1  checking there is room before writing
+     *                   85F4.1  so a too-large upload can say so
+     *
+     * Tracking is false: nothing here follows anyone across other companies'
+     * apps or sites, which is also why there is no ATT prompt.
+     */
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyAccessedAPITypes: [
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryUserDefaults",
+          NSPrivacyAccessedAPITypeReasons: ["CA92.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp",
+          NSPrivacyAccessedAPITypeReasons: ["C617.1", "3B52.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPITypeReasons: ["35F9.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryDiskSpace",
+          NSPrivacyAccessedAPITypeReasons: ["E174.1", "85F4.1"],
+        },
+      ],
+    },
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSCameraUsageDescription:
