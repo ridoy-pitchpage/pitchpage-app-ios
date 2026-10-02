@@ -1,4 +1,5 @@
 import { blockIsEmpty, sectionsForLayout, type PageSection } from "./page-sections";
+import { isSampleQuote } from "./sample-content";
 
 /**
  * The pre-publish health nudge, ported from `src/lib/page-health.ts` in the web
@@ -77,6 +78,19 @@ export function checkPageHealth(page: PageHealthInput): PageHealth {
     has(ctaData.email);
   if (!hasContactPath) {
     issues.push({ id: "cta", label: "Add a way for people to contact you" });
+  }
+
+  // App-only, on purpose: the website never seeds a testimonial, so its own
+  // check has nothing to look for. A quote still reading "Their name" is the
+  // template's placeholder, not somebody vouching for the owner.
+  const sampleQuoteLeft = (page.sections ?? []).some(
+    (s) =>
+      s.visible !== false &&
+      s.blockType === "quote_list" &&
+      ((s.data as { items?: Array<Record<string, unknown>> }).items ?? []).some(isSampleQuote),
+  );
+  if (sampleQuoteLeft) {
+    issues.push({ id: "sample-quote", label: "Replace the sample testimonial, or remove it" });
   }
 
   return { status: issues.length === 0 ? "ready" : "needs_attention", issues };

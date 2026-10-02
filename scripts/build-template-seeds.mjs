@@ -37,6 +37,12 @@ const MAX_SECTIONS = 16;
 // quote) and omit a few optionals (a heading on a tag list), so each block is
 // reshaped to exactly the app's key set here rather than cast past the
 // compiler and left to fail a zod parse at save time.
+const SAMPLE_QUOTE = {
+  quote: "Add a line from someone who has worked with you — their words, copied exactly.",
+  name: "Their name",
+  role: "Their role",
+};
+
 const S = (v, max) => String(v ?? "").slice(0, max);
 const A = (v, cap, map) => (Array.isArray(v) ? v.slice(0, cap).map(map) : []);
 
@@ -59,7 +65,11 @@ function normalize(type, d) {
     case "cards":
       return { items: A(d.items, 20, (i) => ({ title: S(i.title, 80), body: S(i.body, 320), icon: S(i.icon, 24) })) };
     case "quote_list":
-      return { items: A(d.items, 6, (i) => ({ quote: S(i.quote, 400), name: S(i.name, 80), role: S(i.role, 120) })) };
+      // The sample's quotes are signed by people who do not exist. Seeded onto a
+      // real page they become a fabricated endorsement under the owner's name, so
+      // the section keeps its place and says what belongs there instead. Same
+      // strings as SAMPLE_QUOTE in src/page/sample-content.ts; the test checks.
+      return { items: [{ ...SAMPLE_QUOTE }] };
     case "logo_row":
       return { heading: S(d.heading, 80), names: A(d.names, 12, (x) => S(x, 60)) };
     case "tag_list":
@@ -84,7 +94,7 @@ function normalize(type, d) {
 
 const seeds = {};
 let withPortrait = 0;
-let dropped = 0;
+
 
 for (const id of families) {
   const persona = dump[id];
@@ -104,16 +114,14 @@ for (const id of families) {
   // Only a path the site actually serves. The rest are /src/assets/… — real
   // files inside the website's bundle, with no public URL to point at, so
   // linking them would give every page a broken image.
-  const portrait =
-    typeof persona.portrait_url === "string" && persona.portrait_url.startsWith("/people/")
-      ? persona.portrait_url
-      : null;
+  // No portrait is ever seeded. The few samples with a servable photo show a
+  // real-looking stranger, and seeded as the page's portrait that face would be
+  // published as the owner. The publish check already asks for their own.
+  const portrait = null;
   if (portrait) withPortrait += 1;
-  else if (persona.portrait_url) dropped += 1;
 
   seeds[id] = { portraitUrl: portrait, sections };
 }
-
 const body = Object.entries(seeds)
   .map(([id, seed]) => `  ${JSON.stringify(id)}: ${JSON.stringify(seed)},`)
   .join("\n");
@@ -146,5 +154,5 @@ ${body}
 
 const bytes = readFileSync("src/page/template-seeds.ts").length;
 console.log(`${Object.keys(seeds).length} families seeded`);
-console.log(`  portraits kept: ${withPortrait}, dropped as unservable: ${dropped}`);
+console.log(`  portraits seeded: ${withPortrait} (by design — see the note above portrait)`);
 console.log(`  ${(bytes / 1024).toFixed(0)} KB`);

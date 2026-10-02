@@ -1,5 +1,6 @@
 import { checkPageHealth, pageIsEmpty } from "@/page/page-health";
 import { buildSeedSections } from "@/page/page-types";
+import { SAMPLE_QUOTE } from "@/page/sample-content";
 
 const base = {
   headline: "Staff engineer",
@@ -49,5 +50,32 @@ describe("page health", () => {
 
   it("does not call a page with only a video empty", () => {
     expect(pageIsEmpty({ template: "corporate__blue__light", sections: [], video_url: "https://x/v.mp4" })).toBe(false);
+  });
+});
+
+describe("the sample testimonial", () => {
+  const quote = (name: string, words: string) => ({
+    id: "q",
+    title: "What people say",
+    blockType: "quote_list" as const,
+    order: 0,
+    visible: true,
+    data: { items: [{ quote: words, name, role: "VP Sales" }] },
+  });
+
+  it("is named before publishing while it is still the placeholder", () => {
+    const health = checkPageHealth({
+      ...base,
+      sections: [quote(SAMPLE_QUOTE.name, SAMPLE_QUOTE.quote)],
+    });
+    expect(health.issues.map((i) => i.id)).toContain("sample-quote");
+  });
+
+  it("is not flagged once a real quote has replaced it", () => {
+    const health = checkPageHealth({
+      ...base,
+      sections: [quote("Dana Whitfield", "Shipped the migration a quarter early.")],
+    });
+    expect(health.issues.map((i) => i.id)).not.toContain("sample-quote");
   });
 });

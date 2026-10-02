@@ -3,6 +3,7 @@ import { STYLE_FAMILIES } from "@/page/style-families";
 import { TEMPLATE_SEEDS } from "@/page/template-seeds";
 import { seedSections } from "@/page/apply-template-seed";
 import { buildSeedSections } from "@/page/page-types";
+import { SAMPLE_QUOTE } from "@/page/sample-content";
 
 /**
  * A seeded page has to look the same while it is being edited and while it is
@@ -59,10 +60,26 @@ describe("template seeds", () => {
     }
   });
 
-  it("links a portrait only where the website actually serves one", () => {
+  // A stranger's face seeded as somebody's portrait would be published as them.
+  it("seeds no portrait — the owner uploads their own", () => {
     for (const familyId of seeded) {
-      const portrait = TEMPLATE_SEEDS[familyId]!.portraitUrl;
-      if (portrait !== null) expect(portrait).toMatch(/^\/people\//);
+      expect(TEMPLATE_SEEDS[familyId]!.portraitUrl).toBeNull();
     }
+  });
+
+  // A sample quote is signed by somebody who does not exist; seeded, it would
+  // publish as a real endorsement. Every testimonial must be the placeholder.
+  it("seeds testimonials only as the placeholder, never as an invented person", () => {
+    let checked = 0;
+    for (const familyId of seeded) {
+      for (const section of TEMPLATE_SEEDS[familyId]!.sections) {
+        if (section.blockType !== "quote_list") continue;
+        const items = (section.data as { items: Array<Record<string, string>> }).items;
+        expect(items).toEqual([{ ...SAMPLE_QUOTE }]);
+        checked += 1;
+      }
+    }
+    // Not vacuous: plenty of the samples do carry a testimonial section.
+    expect(checked).toBeGreaterThan(5);
   });
 });

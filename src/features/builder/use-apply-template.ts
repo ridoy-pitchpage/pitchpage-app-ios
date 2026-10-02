@@ -8,7 +8,6 @@ import { savePage, type SavePagePatch } from "@/api/supabase-direct";
 import { currentPitchKind } from "@/page/apply-kind";
 import { clampSections } from "@/page/page-sections";
 import { ownerHasWritten, seedSections } from "@/page/apply-template-seed";
-import { TEMPLATE_SEEDS } from "@/page/template-seeds";
 import {
   DEFAULT_TEMPLATE,
   STYLE_FAMILIES,
@@ -70,7 +69,6 @@ export function useApplyTemplate(row: TemplateTarget) {
       const seeded = ownerHasWritten(existing)
         ? null
         : seedSections(family.id, existing, row.email);
-      const seedPortrait = TEMPLATE_SEEDS[family.id]?.portraitUrl ?? null;
 
       setBusy(true);
       try {
@@ -81,11 +79,7 @@ export function useApplyTemplate(row: TemplateTarget) {
             ...(seeded
               ? { sections: seeded as unknown as SavePagePatch["sections"] }
               : {}),
-            // Only where the sample has a portrait the site actually serves,
-            // and only when the page has none of its own.
-            ...(seeded && seedPortrait && !row.portrait_url
-              ? { portrait_url: seedPortrait }
-              : {}),
+
           },
           row.updated_at,
         );
@@ -108,7 +102,6 @@ export function useApplyTemplate(row: TemplateTarget) {
       queryClient,
       row.email,
       row.id,
-      row.portrait_url,
       row.sections,
       row.template,
       row.updated_at,
