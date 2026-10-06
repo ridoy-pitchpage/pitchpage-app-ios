@@ -13,6 +13,7 @@ import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
 import { AppleSignInButton } from "@/auth/AppleSignInButton";
 import { GoogleSignInButton } from "@/auth/GoogleSignInButton";
+import { OFFER_APPLE_SIGN_IN, OFFER_GOOGLE_SIGN_IN } from "@/auth/sign-in-options";
 import { credentialProblem, signInWithPassword, signInWithApple, signInWithProvider } from "@/auth/auth-actions";
 import { AuthIntro } from "@/auth/AuthIntro";
 import { DEV_SIGN_IN } from "@/lib/config";
@@ -104,26 +105,34 @@ export default function SignIn() {
           />
 
           <MotionEntrance index={1} className="gap-5">
-            <View className="gap-3" pointerEvents={busy || googleBusy || appleBusy ? "none" : "auto"}>
-              {/* Above Google, not below: guideline 4.8 wants an equivalent option,
-                  and Apple's own guidance that it be no less prominent. */}
-              <AppleSignInButton
-                mode="signin"
-                busy={busy || appleBusy || googleBusy}
-                onPress={() => void continueWithApple()}
-              />
-              <GoogleSignInButton
-                mode="signin"
-                loading={googleBusy}
-                onPress={() => void continueWithGoogle()}
-              />
-            </View>
+            {OFFER_APPLE_SIGN_IN || OFFER_GOOGLE_SIGN_IN ? (
+              <>
+                <View className="gap-3" pointerEvents={busy || googleBusy || appleBusy ? "none" : "auto"}>
+                  {/* Above Google, not below: guideline 4.8 wants an equivalent option,
+                      and Apple's own guidance that it be no less prominent. */}
+                  {OFFER_APPLE_SIGN_IN ? (
+                    <AppleSignInButton
+                      mode="signin"
+                      busy={busy || appleBusy || googleBusy}
+                      onPress={() => void continueWithApple()}
+                    />
+                  ) : null}
+                  {OFFER_GOOGLE_SIGN_IN ? (
+                    <GoogleSignInButton
+                      mode="signin"
+                      loading={googleBusy}
+                      onPress={() => void continueWithGoogle()}
+                    />
+                  ) : null}
+                </View>
 
-            <View className="flex-row items-center gap-3">
-              <View className="h-px flex-1 bg-border" />
-              <Muted className="text-[12px]">or sign in with email</Muted>
-              <View className="h-px flex-1 bg-border" />
-            </View>
+                <View className="flex-row items-center gap-3">
+                  <View className="h-px flex-1 bg-border" />
+                  <Muted className="text-[12px]">or sign in with email</Muted>
+                  <View className="h-px flex-1 bg-border" />
+                </View>
+              </>
+            ) : null}
 
             <Card flat className="gap-4 p-5">
               <TextField
