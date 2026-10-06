@@ -109,9 +109,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       {
         // Cream, the brand ground in both palettes' light mode (§19).
         backgroundColor: "#F5EBDD",
-        image: "./assets/brand-mark.png",
+        // brand-mark.png is 128px, for the small in-app logo; drawn 200pt wide
+        // here it is 600px on a 3x screen, so the splash has its own.
+        image: "./assets/splash-mark.png",
         imageWidth: 200,
-        dark: { backgroundColor: "#F5EBDD", image: "./assets/brand-mark.png", imageWidth: 200 },
+        dark: { backgroundColor: "#F5EBDD", image: "./assets/splash-mark.png", imageWidth: 200 },
       },
     ],
   ],
