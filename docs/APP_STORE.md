@@ -7,6 +7,12 @@ listing and review notes below say so.
 
 Character limits were counted, not estimated.
 
+**Status, 6 Oct 2026:** Greg has created the App Store Connect record
+("PitchPage", SKU `pitchpage-ios-01`), entered the listing text, keywords,
+category and URLs, and certified the age rating at 4+. What is left in App
+Store Connect is the App Privacy answers (§2), the review notes and demo
+account (§3), the screenshots (§5) and choosing the build.
+
 ---
 
 ## 1. App information
@@ -196,27 +202,47 @@ caption above them; that is allowed as long as the app's real screen is shown.
 
 ## 6. Build and submit
 
-Once the Apple Developer account and an Expo account exist:
+### On a Mac, with Xcode — how PitchPage builds
+
+The Apple side is in place: team `S53D2H48PD`, the App ID `co.pitchpage.app`
+with Sign in with Apple and Associated Domains, and the App Store Connect
+record. The config already carries the team, so nothing needs choosing in
+Xcode. The Mac needs Xcode and CocoaPods; the release command installs the
+pods itself.
+
+```bash
+npm ci
+IOS_BUILD_NUMBER=1 npm run ios:release
+open ios/PitchPage.xcworkspace
+```
+
+In Xcode, pick **Any iOS Device (arm64)**, then **Product → Archive**, then
+**Distribute App → App Store Connect → Upload**. The build appears in
+TestFlight after Apple processes it.
+
+- **Every upload needs a higher build number:** `IOS_BUILD_NUMBER=2 npm run
+  ios:release` for the second, and so on. `ios:release` regenerates the
+  project from scratch each time, so a number typed into Xcode does not
+  survive it.
+- **Never upload from a plain `npx expo prebuild`.** Without the release
+  command the project comes out as "PitchPage Dev", `co.pitchpage.app.dev`,
+  which matches no App ID.
+
+### Or with EAS, Expo's build service
 
 ```bash
 npm install -g eas-cli
 eas login
 eas init
-```
-
-`eas init` prints a project ID. The config reads it from `EAS_PROJECT_ID`;
-the simplest thing is to write it into `app.config.ts` under `extra.eas`.
-
-```bash
 eas build --platform ios --profile production
 eas submit --platform ios --latest
 ```
 
-The first build asks to sign in with the Apple ID and creates the
-certificates, the `co.pitchpage.app` identifier and its Sign in with Apple and
-Associated Domains capabilities. Submitting puts the build in TestFlight: test
-it there on a real iPhone first (§7), then pick it on the version page in App
-Store Connect and **Add for Review**.
+`eas init` prints a project ID for `extra.eas` in `app.config.ts`. EAS keeps
+its own build numbers.
+
+Either way: test the TestFlight build on a real iPhone first (§7), then pick
+it on the version page in App Store Connect and **Add for Review**.
 
 ---
 
