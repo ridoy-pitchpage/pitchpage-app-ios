@@ -1,8 +1,9 @@
 # App Store submission pack — PitchPage 1.0
 
-Everything App Store Connect asks for, ready to paste. Sections marked
-**[decide]** depend on how credits are sold (see §3) and must match the build
-that is submitted.
+Everything App Store Connect asks for, ready to paste. Credits are bought on
+pitchpage.co through a link in the app, which Apple allows on the United
+States storefront only — so the app is offered in the US only, and the
+listing and review notes below say so.
 
 Character limits were counted, not estimated.
 
@@ -22,7 +23,7 @@ Character limits were counted, not estimated.
 | Privacy Policy URL | `https://pitchpage.co/privacy` (live) |
 | Copyright | `2026 <the legal entity that owns PitchPage>` |
 | Price | Free |
-| Availability **[decide]** | All countries if the app sells nothing; **United States only** if it links to the website to buy credits |
+| Availability | **United States only.** The app links to the website to buy credits, which no other storefront allows. Adding a country needs In-App Purchase first |
 
 **Keywords** (99 of 100 — words already in the name and subtitle are left out,
 because Apple indexes those anyway):
@@ -63,7 +64,7 @@ SEE WHAT HAPPENS NEXT
 Analytics show when people came, where they came from, whether they watched your intro video, and which tracked link brought them.
 
 FREE TO BUILD
-Building and editing are free, with every style. Publishing a page uses one credit from your PitchPage account, and credits never expire.
+Building and editing are free, with every style. Publishing a page uses one credit, credits are bought on pitchpage.co, and they never expire.
 
 YOURS TO CONTROL
 Sign in with Apple, Google or email. Drafts are not public until you publish, and you can delete your account and everything on it from inside the app.
@@ -114,7 +115,7 @@ Password: <demo account password>
 
 **Contact:** the owner's name, phone number and email.
 
-**Notes** — paste this, filling in the bracket **[decide]**:
+**Notes** — paste this:
 
 ```
 DEMO ACCOUNT
@@ -129,9 +130,7 @@ HOW TO TRY IT
 6. Account → Delete your account removes the account and all of its data at once (Guideline 5.1.1(v)).
 
 CREDITS
-PitchPage is free to download and free to build with. Publishing a page uses one credit from the person's PitchPage account, and credits already on an account work in the app.
-[OPTION A — the app sells nothing:] The app does not sell credits and does not link to or mention any other way to buy them. It is a free companion to the paid PitchPage web service, which hosts the published pages (Guideline 3.1.3(f)).
-[OPTION B — US storefront with a link:] The app is available on the United States storefront only. "Buy credits" opens pitchpage.co in Safari, as Guideline 3.1.1(a) permits for US storefront apps.
+PitchPage is free to download and free to build with. Publishing a page uses one credit from the person's PitchPage account. Credits are sold on the PitchPage website: Credits → "Buy credits on pitchpage.co" opens pitchpage.co in Safari, as Guideline 3.1.1(a) permits for apps on the United States storefront, and this app is offered on the United States storefront only. Nothing is sold inside the app. PitchPage is a free companion to the paid PitchPage web service, which hosts the published pages (Guideline 3.1.3(f)). The demo account already has credits, so no purchase is needed to review publishing.
 
 OTHER NOTES
 • The page itself is drawn with the same layout code the published page uses, inside a web view, so what the builder shows is exactly what visitors see. Sign-in, editing, camera and photo capture, sharing, QR codes and analytics are native.
