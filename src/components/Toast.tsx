@@ -81,7 +81,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             accessibilityLiveRegion="polite"
             style={[
               { borderRadius: RADIUS.card, paddingHorizontal: 16, paddingVertical: 13 },
-              elevation(colors.foreground, 3),
+              elevation("#000000", 3),
             ]}
           >
             <Text

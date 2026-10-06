@@ -5,7 +5,7 @@ import { vars } from "nativewind";
 import { Button } from "./Button";
 import { Body, H3 } from "./Text";
 import { useTheme } from "@/theme/ThemeProvider";
-import { paletteVars } from "@/theme/tokens";
+import { elevation, paletteVars } from "@/theme/tokens";
 import { ModalSurface } from "./ModalSurface";
 
 /**
@@ -105,7 +105,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <View pointerEvents="box-none" className="flex-1 items-center justify-center px-6">
               <View
                 accessibilityViewIsModal
-                className="w-full max-w-[400px] gap-3 rounded-card bg-card p-5"
+                className="w-full max-w-[400px] gap-3 rounded-card border border-border p-5"
+                style={[{ backgroundColor: palette.card }, elevation("#000000", 3)]}
               >
                 <H3>{options?.title}</H3>
                 {options?.message ? (

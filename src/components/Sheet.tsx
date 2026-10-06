@@ -57,7 +57,7 @@ export function Sheet({
   const scrimStyle = useAnimatedStyle(() => ({ opacity: progress.value * 0.45 }));
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <ModalSurface>
         <View className="flex-1 justify-end">
           <Animated.View style={[{ ...StyleSheetAbsolute, backgroundColor: "#000" }, scrimStyle]}>
@@ -83,7 +83,7 @@ export function Sheet({
               // Cast upward, not down: the sheet is above the page, so its
               // shadow belongs on the edge that meets it.
               {
-                ...elevation(palette.foreground, 3),
+                ...elevation("#000000", 3),
                 shadowOffset: { width: 0, height: -10 },
               },
             ]}
@@ -95,14 +95,6 @@ export function Sheet({
               end={{ x: 0, y: 1 }}
             >
             <SafeAreaView edges={["bottom"]}>
-              {/* The grabber reads as "this can be dismissed" before anything is read. */}
-              <View className="items-center pt-2">
-                <View
-                  className="h-1 w-10 rounded-full"
-                  style={{ backgroundColor: colors.mutedForeground, opacity: 0.35 }}
-                />
-              </View>
-
               {title ? (
                 <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
                   <H3 className="min-w-0 flex-1">{title}</H3>
@@ -111,7 +103,7 @@ export function Sheet({
                     accessibilityRole="button"
                     accessibilityLabel="Close"
                     hitSlop={12}
-                    className="p-1"
+                    style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}
                   >
                     <X size={22} color={colors.mutedForeground} />
                   </Pressable>
@@ -119,6 +111,7 @@ export function Sheet({
               ) : null}
 
               <ScrollView
+                showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 contentContainerClassName="px-4 pb-4 gap-2"
               >

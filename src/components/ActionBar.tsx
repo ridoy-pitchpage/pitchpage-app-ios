@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { GLASS } from "@/theme/tokens";
@@ -18,19 +19,20 @@ import { GLASS } from "@/theme/tokens";
  * because a fallback painted opaque on the wrong ground looks worse than no
  * blur, and because Android and the web preview have no equivalent.
  *
- * It does NOT add a bottom safe-area inset: every screen using it already
- * sits inside a Screen with the bottom edge, and adding it twice leaves a
- * visible band under the button.
+ * Set safeBottom when the parent Screen does not own the bottom safe area.
  */
 export function ActionBar({
   children,
   className,
+  safeBottom = false,
 }: {
   children: ReactNode;
   className?: string;
+  safeBottom?: boolean;
 }) {
   const colors = useColors();
   const { resolved } = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
@@ -45,7 +47,12 @@ export function ActionBar({
           style={[StyleSheet.absoluteFill, { backgroundColor: colors.card, opacity: 0.94 }]}
         />
       )}
-      <View className={["px-4 pb-2 pt-3", className ?? ""].join(" ")}>{children}</View>
+      <View
+        style={{ paddingBottom: 12 + (safeBottom ? insets.bottom : 0) }}
+        className={["px-4 pt-3", className ?? ""].join(" ")}
+      >
+        {children}
+      </View>
     </View>
   );
 }

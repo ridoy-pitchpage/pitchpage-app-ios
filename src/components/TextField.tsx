@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import { Pressable, TextInput, View, type TextInputProps } from "react-native";
 import { Eye, EyeOff } from "lucide-react-native";
 
 import { Label, Muted } from "./Text";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
-import { mix , MIN_TAP } from "@/theme/tokens";
+import { mix, MIN_TAP } from "@/theme/tokens";
 
 type Props = Omit<TextInputProps, "style"> & {
   label?: string;
+  inputRef?: Ref<TextInput>;
   hint?: string;
   error?: string | null;
   /** Adds the show/hide control and starts obscured. */
@@ -21,6 +22,7 @@ type Props = Omit<TextInputProps, "style"> & {
 
 export function TextField({
   label,
+  inputRef,
   hint,
   error,
   secure = false,
@@ -33,7 +35,7 @@ export function TextField({
   const { resolved } = useTheme();
   const [revealed, setRevealed] = useState(false);
   const [focused, setFocused] = useState(false);
-  const fieldMinHeight = minHeight ?? MIN_TAP;
+  const fieldMinHeight = Math.max(minHeight ?? 52, MIN_TAP);
   const multiline = Boolean(rest.multiline);
 
   return (
@@ -49,15 +51,12 @@ export function TextField({
           minHeight: fieldMinHeight,
           // The field edge is the only thing marking this as a control, so it
           // carries the raised `input` token (3:1) rather than the hairline.
-          borderColor: error ? colors.destructive : focused ? colors.ring : colors.input,
-          borderWidth: focused || error ? 2 : 1,
+          borderColor: error ? colors.destructive : focused ? colors.link : colors.input,
+          borderWidth: 1.5,
           // A field is a well, not a card: it sits a shade BELOW the surface
           // around it rather than level with it, which is what stops a form
           // reading as a stack of identical white boxes.
-          backgroundColor: mix(colors.card, colors.foreground, resolved === "dark" ? 0.06 : 0.035),
-          // The focus ring is drawn outside the border so the field does not
-          // change size when it takes focus.
-          ...(focused ? { shadowColor: colors.ring, shadowOpacity: 0.28, shadowRadius: 8, shadowOffset: { width: 0, height: 0 } } : null),
+          backgroundColor: mix(colors.card, colors.foreground, resolved === "dark" ? 0.035 : 0.015),
         }}
       >
         {icon ? (
@@ -68,6 +67,7 @@ export function TextField({
 
         <TextInput
           {...rest}
+          ref={inputRef}
           // The visible Label is a sibling, not a <label for>, so without this
           // a screen reader reaches the field and announces nothing.
           accessibilityLabel={rest.accessibilityLabel ?? label}
@@ -84,7 +84,7 @@ export function TextField({
           textAlignVertical={multiline ? "top" : "center"}
           style={
             multiline
-              ? { minHeight: Math.max(fieldMinHeight - 4, MIN_TAP), alignSelf: "stretch" }
+              ? { minHeight: Math.max(fieldMinHeight - 3, MIN_TAP), alignSelf: "stretch" }
               : undefined
           }
           className="flex-1 border-0 bg-transparent py-2.5 font-body text-[16px] text-foreground outline-none"

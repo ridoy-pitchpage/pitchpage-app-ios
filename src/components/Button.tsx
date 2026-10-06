@@ -1,22 +1,23 @@
 import { ActivityIndicator, Pressable, Text, View, type PressableProps } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 import { useColors, useTheme } from "@/theme/ThemeProvider";
-import { MIN_TAP, RADIUS, controlGradient, elevation, shade } from "@/theme/tokens";
+import { MIN_TAP, RADIUS, mix, shade } from "@/theme/tokens";
 
 /**
  * The one button. Variants match how the web app uses colour: primary for the
  * action a screen exists for, secondary for the alternative, ghost for
  * navigation, destructive for anything that removes something.
  *
- * A filled variant is a gradient rather than a flat fill, and carries a
- * shadow tinted with the palette's own foreground. Both are derived from the
- * token, not picked: the fill is the same colour with light falling across
- * it, which is what separates a control that looks pressed-in from one that
- * looks painted on. A neutral black shadow over a cream ground is the single
- * thing that makes an interface look cheap, so the shadow is warm on cream
- * and cold on navy without either being a new value.
+ * Subtle tonal fill and a short press response provide emphasis without
+ * shadows. Labels wrap and the control grows with the user's text size.
  */
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
@@ -35,13 +36,6 @@ type Props = Omit<PressableProps, "children" | "style"> & {
   haptic?: boolean;
 };
 
-const LABEL: Record<ButtonVariant, string> = {
-  primary: "text-primary-foreground",
-  secondary: "text-foreground",
-  ghost: "text-primary",
-  destructive: "text-destructive-foreground",
-};
-
 export function Button({
   title,
   variant = "primary",
@@ -52,25 +46,37 @@ export function Button({
   haptic = false,
   disabled,
   onPress,
+  onPressIn,
+  onPressOut,
   className,
   ...rest
 }: Props) {
   const colors = useColors();
   const { resolved } = useTheme();
   const isDisabled = disabled === true || loading;
-  const height = size === "lg" ? 52 : MIN_TAP;
+  const height = size === "lg" ? 54 : MIN_TAP + 8;
 
   const filled = variant === "primary" || variant === "destructive";
   const base = variant === "destructive" ? colors.destructive : colors.primary;
-  const gradient = controlGradient(base, resolved);
+  const gradient: [string, string] =
+    variant === "primary"
+      ? [mix(base, colors.ring, resolved === "dark" ? 0.04 : 0.12), base]
+      : [shade(base, 0.04), base];
   // The spinner and any icon sit ON the fill, so they take the paired
   // foreground rather than a colour of their own.
   const onFill =
     variant === "destructive" ? colors.destructiveForeground : colors.primaryForeground;
   const spinner = filled ? onFill : colors.mutedForeground;
+  const pressScale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pressScale.value }],
+  }));
 
   return (
-    <Pressable
+    <Animated.View
+      style={[fullWidth ? { width: "100%" } : { alignSelf: "flex-start" }, pressStyle]}
+    >
+      <Pressable
       {...rest}
       accessibilityRole="button"
       accessibilityState={{ disabled: isDisabled, busy: loading }}
@@ -80,7 +86,26 @@ export function Button({
         if (haptic) void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress?.(event);
       }}
-      style={({ pressed }) => [
+      onPressIn={(event) => {
+        // Reanimated SharedValue is intentionally mutable inside event handlers.
+        // eslint-disable-next-line react-hooks/immutability
+        pressScale.value = withSpring(0.985, {
+          damping: 25,
+          stiffness: 400,
+          reduceMotion: ReduceMotion.System,
+        });
+        onPressIn?.(event);
+      }}
+      onPressOut={(event) => {
+        // eslint-disable-next-line react-hooks/immutability
+        pressScale.value = withSpring(1, {
+          damping: 23,
+          stiffness: 340,
+          reduceMotion: ReduceMotion.System,
+        });
+        onPressOut?.(event);
+      }}
+      style={[
         {
           minHeight: height,
           borderRadius: RADIUS.control,
@@ -88,10 +113,6 @@ export function Button({
           // both light and dark without inventing a fifth colour.
           opacity: isDisabled ? 0.4 : 1,
         },
-        // A pressed control sinks: the shadow goes with it rather than the
-        // whole button fading, which is what a flat opacity press looks like.
-        filled && !isDisabled ? elevation(colors.foreground, pressed ? 1 : 2) : null,
-        pressed && !isDisabled ? { transform: [{ scale: 0.985 }] } : null,
         fullWidth ? { width: "100%" } : { alignSelf: "flex-start" },
       ]}
       className={className}
@@ -112,9 +133,12 @@ export function Button({
             <>
               {icon ? <View>{icon}</View> : null}
               <Text
-                numberOfLines={1}
-                className={`font-body-bold text-[16px] ${LABEL[variant]}`}
-                style={filled ? { color: onFill } : undefined}
+                className="font-body-bold text-[16px]"
+                style={{
+                  color: filled ? onFill : variant === "ghost" ? colors.link : colors.foreground,
+                  flexShrink: 1,
+                  textAlign: "center",
+                }}
               >
                 {title}
               </Text>
@@ -122,7 +146,8 @@ export function Button({
           )}
         </GradientOrPlain>
       )}
-    </Pressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -160,6 +185,7 @@ function GradientOrPlain({
     justifyContent: "center" as const,
     gap: 8,
     paddingHorizontal: 20,
+    paddingVertical: 12,
   };
 
   if (filled) {
@@ -167,7 +193,7 @@ function GradientOrPlain({
       <LinearGradient
         colors={pressed ? [shade(gradient[0], -0.06), shade(gradient[1], -0.06)] : gradient}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        end={{ x: 1, y: 1 }}
         style={[inner, { overflow: "hidden" }]}
       >
         {children}

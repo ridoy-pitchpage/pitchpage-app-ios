@@ -54,6 +54,7 @@ export function ScreenScroll({
       {...rest}
       keyboardShouldPersistTaps="handled"
       contentInsetAdjustmentBehavior="automatic"
+      showsVerticalScrollIndicator={false}
       className="flex-1"
       contentContainerClassName={["px-4 pb-10 gap-4", contentClassName ?? ""].join(" ")}
     >
