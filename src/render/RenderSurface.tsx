@@ -211,9 +211,10 @@ export function RenderSurface({
                 onError={() => setState("unavailable")}
                 onHttpError={() => setState("unavailable")}
                 // The page draws in place; nothing in it may navigate the view
-                // somewhere else, in edit mode or out of it.
-                onShouldStartLoadWithRequest={(request: { url: string }) =>
-                  request.url.startsWith(RENDER_URL)
+                // somewhere else, in edit mode or out of it. Frames inside it
+                // are not the view: a film clip from YouTube loads in one.
+                onShouldStartLoadWithRequest={(request: { url: string; isTopFrame?: boolean }) =>
+                  request.url.startsWith(RENDER_URL) || request.isTopFrame === false
                 }
                 style={{ flex: 1, backgroundColor: "transparent" }}
               />
