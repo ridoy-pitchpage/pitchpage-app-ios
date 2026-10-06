@@ -5,8 +5,9 @@
 import "react-native-gesture-handler";
 import "../global.css";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Stack } from "expo-router";
+import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
 // eslint-disable-next-line import/no-duplicates
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -57,8 +58,23 @@ export default function RootLayout() {
 }
 
 function AppShell() {
-  const { resolved, loading: themeLoading } = useTheme();
+  const { resolved, palette, loading: themeLoading } = useTheme();
   const { loaded: fontsLoaded } = useAppFonts();
+  const navigationTheme = useMemo(() => {
+    const base = resolved === "dark" ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: palette.primary,
+        background: palette.background,
+        card: palette.card,
+        text: palette.foreground,
+        border: palette.border,
+        notification: palette.primary,
+      },
+    };
+  }, [resolved, palette]);
 
   useEffect(() => {
     // Hold the splash until the fonts and the stored appearance are in, so the
@@ -74,6 +90,7 @@ function AppShell() {
     <>
       <StatusBar style={resolved === "dark" ? "light" : "dark"} />
       {/* Phone-shaped in a wide browser; a pass-through everywhere else. */}
+      <NavigationThemeProvider value={navigationTheme}>
       <PhoneFrame>
         <Stack screenOptions={{ headerShown: false, animation: "slide_from_right" }}>
           <Stack.Screen name="index" />
@@ -81,6 +98,7 @@ function AppShell() {
           <Stack.Screen name="(app)" />
         </Stack>
       </PhoneFrame>
+      </NavigationThemeProvider>
     </>
   );
 }

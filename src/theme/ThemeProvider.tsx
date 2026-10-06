@@ -86,21 +86,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * Signed-out screens wear the marketing palette, which has no dark mode — the
- * web gives marketing pages no toggle, and a new user should meet the same
- * surface they just left on the website (§19).
- */
+/** Keep the public palette and JS color values in sync in either appearance. */
 export function SiteSurface({ children }: { children: ReactNode }) {
+  const parent = useTheme();
+  const palette = parent.resolved === "dark" ? appDark : site;
+  const value = useMemo<ThemeValue>(() => ({ ...parent, palette }), [parent, palette]);
+
   return (
-    <View style={[{ flex: 1 }, vars(paletteVars(site))]} className="bg-background">
-      {children}
-    </View>
+    <ThemeContext.Provider value={value}>
+      <View style={[{ flex: 1 }, vars(paletteVars(palette))]} className="bg-background">
+        {children}
+      </View>
+    </ThemeContext.Provider>
   );
 }
 
 /** The palette a given surface wears, for code outside the React tree. */
 export function paletteFor(surface: Surface, resolved: "light" | "dark"): Palette {
-  if (surface === "site") return site;
+  if (surface === "site") return resolved === "dark" ? appDark : site;
   return resolved === "dark" ? appDark : appLight;
 }

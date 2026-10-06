@@ -91,10 +91,9 @@ export const appDark: Palette = {
 };
 
 /**
- * Signed-out screens (welcome, sign-in, examples, pricing…), matching the
- * marketing site. It has one palette only: the web gives marketing pages no
- * dark mode, and the app follows so a signed-out screen looks like the site a
- * new user just came from.
+ * Signed-out screens in light appearance (welcome, sign-in, examples,
+ * pricing…), matching the marketing site. SiteSurface uses appDark for those
+ * screens in dark appearance so their controls and text remain legible.
  */
 export const site: Palette = {
   ...appLight,

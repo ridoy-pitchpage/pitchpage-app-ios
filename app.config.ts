@@ -113,7 +113,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         // here it is 600px on a 3x screen, so the splash has its own.
         image: "./assets/splash-mark.png",
         imageWidth: 200,
-        dark: { backgroundColor: "#F5EBDD", image: "./assets/splash-mark.png", imageWidth: 200 },
+        // Mirror appDark.background: Expo's config loader cannot import the
+        // app's TypeScript modules. app-config.test.ts guards against drift.
+        dark: { backgroundColor: "#0A141F", image: "./assets/splash-mark.png", imageWidth: 200 },
       },
     ],
   ],

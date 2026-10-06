@@ -3,9 +3,8 @@ import { Stack } from "expo-router";
 import { SiteSurface } from "@/theme/ThemeProvider";
 
 /**
- * Signed-out screens wear the marketing palette, which has no dark mode — the
- * web gives marketing pages no toggle, and someone arriving from the website
- * should meet the surface they just left (§19).
+ * Signed-out screens use the marketing palette in light appearance and the
+ * app's accessible navy palette in dark appearance.
  */
 export default function PublicLayout() {
   return (
