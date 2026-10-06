@@ -64,9 +64,13 @@ export default function HelpScreen() {
 
         <View className="gap-2">
           <H3>Get in touch</H3>
+          {/*
+            No "About PitchPage" link to the website here, deliberately: that
+            page shows the web price and a "Buy one now" button, and an app that
+            does not sell credits itself may show neither (Guideline 3.1.1).
+          */}
           <Card className="p-0">
-            <Row label="Contact support" hint={SUPPORT_EMAIL} onPress={() => void contactSupport()} />
-            <Row label="About PitchPage" onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.about)} last />
+            <Row label="Contact support" hint={SUPPORT_EMAIL} onPress={() => void contactSupport()} last />
           </Card>
         </View>
       </ScreenScroll>
