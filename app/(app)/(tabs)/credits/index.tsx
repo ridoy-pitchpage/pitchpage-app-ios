@@ -15,11 +15,9 @@ import { useColors } from "@/theme/ThemeProvider";
  * Credits (S82). The balance and the ledger read straight from the account, so
  * credits bought on the website already show here.
  *
- * Buying goes through Apple In-App Purchase, which needs the products in App
- * Store Connect, the Paid Apps agreement active, and an endpoint that verifies
- * Apple's receipt before granting (§13). The packs and the flow are on
- * credits/buy; the purchase itself is what is waiting. There is deliberately
- * no link out to the website's checkout — App Store Guideline 3.1.1.
+ * Buying is on pitchpage.co, in Safari, which the US storefront allows
+ * (credits/buy and src/features/credits/web-checkout.ts). In-App Purchase
+ * comes before any other storefront (§13).
  */
 export default function CreditsScreen() {
   const colors = useColors();

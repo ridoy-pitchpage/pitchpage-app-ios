@@ -66,8 +66,10 @@ export default function HelpScreen() {
           <H3>Get in touch</H3>
           {/*
             No "About PitchPage" link to the website here, deliberately: that
-            page shows the web price and a "Buy one now" button, and an app that
-            does not sell credits itself may show neither (Guideline 3.1.1).
+            page shows the web price and a "Buy one now" button. The US
+            storefront allows it, but the app's one way into buying is Credits,
+            which says where it goes first (web-checkout.ts) — and no other
+            storefront allows a link like that at all (Guideline 3.1.1).
           */}
           <Card className="p-0">
             <Row label="Contact support" hint={SUPPORT_EMAIL} onPress={() => void contactSupport()} last />

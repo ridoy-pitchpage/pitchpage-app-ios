@@ -69,9 +69,12 @@ credentials, 300 gallery images, 100 film clips.
 the server issued. The server writes the token's data, never the client's copy.
 Do not add a way for anything else to approve an edit.
 
-**No link to web checkout.** Credits are bought through In-App Purchase
-(Guideline 3.1.1). Credits bought on the website still work in the app; that is
-allowed because the app also sells them.
+**Credits are bought on pitchpage.co, and the app is US-only because of it.**
+The app opens the website's credits page in Safari, where the Stripe checkout
+runs (`src/features/credits/web-checkout.ts`); Guideline 3.1.1(a) allows that
+link on the United States storefront and nowhere else. Never put a checkout
+inside the app — no card form, no Stripe sheet, no web view of the checkout.
+Offering the app on any other storefront needs In-App Purchase first (§13).
 
 **Do not reimplement server logic.** If a rule lives in a server function, the
 app calls it. Slug collision retries, credit spending, company consent, staff
