@@ -33,6 +33,10 @@ const FIELD_DEBOUNCE_MS = 800;
 
 export type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error" | "conflict";
 
+export function hasUnsavedChanges(status: SaveStatus): boolean {
+  return status !== "idle" && status !== "saved";
+}
+
 type DraftState = {
   pageId: string | null;
   page: PageModel | null;
@@ -51,12 +55,14 @@ type DraftState = {
   patchNow: (patch: SavePagePatch) => Promise<void>;
   /** Replace the section list. Debounced, or immediate with `now`. */
   setSections: (sections: PageSection[], options?: { now?: boolean }) => void;
-  /** Write anything outstanding. Safe to call when there is nothing to do. */
-  flush: () => Promise<void>;
+  /** True only when this draft has finished saving without errors or conflicts. */
+  flush: () => Promise<boolean>;
 };
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let inFlight: Promise<void> | null = null;
+// A late response must never update a different page or a signed-out session.
+let revision = 0;
 
 function cancelDebounce() {
   if (debounceTimer) {
@@ -71,6 +77,7 @@ export const useDraft = create<DraftState>((set, get) => {
     const { pageId, dirty, baseline, status } = get();
     if (!pageId || status === "conflict") return;
     if (Object.keys(dirty).length === 0) return;
+    const writingRevision = revision;
 
     // Claim this batch before awaiting, so edits made during the write are
     // collected for the next one instead of being dropped by the reset below.
@@ -78,6 +85,7 @@ export const useDraft = create<DraftState>((set, get) => {
 
     try {
       const result = await savePage(pageId, dirty, baseline);
+      if (writingRevision !== revision) return;
       set({ status: "saved", baseline: result.updated_at, lastError: null });
 
       // Something changed while that was in flight.
@@ -86,10 +94,10 @@ export const useDraft = create<DraftState>((set, get) => {
         await write();
       }
     } catch (error) {
+      if (writingRevision !== revision) return;
       if (isSaveConflictError(error)) {
-        // Deliberately does not restore `dirty`: once the versions have
-        // diverged there is nothing safe to retry, and the user reloads.
-        set({ status: "conflict", lastError: error });
+        // Preserve the local work, but do not retry against a stale baseline.
+        set((s) => ({ status: "conflict", lastError: error, dirty: { ...dirty, ...s.dirty } }));
         return;
       }
       // Put the batch back in front of anything newer so no edit is lost.
@@ -122,6 +130,7 @@ export const useDraft = create<DraftState>((set, get) => {
 
     load: (row) => {
       cancelDebounce();
+      revision += 1;
       set({
         pageId: row.id,
         page: toPageModel(row),
@@ -134,6 +143,7 @@ export const useDraft = create<DraftState>((set, get) => {
 
     clear: () => {
       cancelDebounce();
+      revision += 1;
       set({ pageId: null, page: null, baseline: null, status: "idle", dirty: {}, lastError: null });
     },
 
@@ -167,12 +177,18 @@ export const useDraft = create<DraftState>((set, get) => {
 
     flush: async () => {
       cancelDebounce();
+      const flushingRevision = revision;
       // Chain onto whatever is running so two writes never overlap.
-      const run = (inFlight ?? Promise.resolve()).then(write);
-      inFlight = run.finally(() => {
-        if (inFlight === run) inFlight = null;
+      const run = (inFlight ?? Promise.resolve()).then(() => {
+        if (flushingRevision === revision) return write();
       });
-      await inFlight;
+      inFlight = run;
+      try {
+        await run;
+      } finally {
+        if (inFlight === run) inFlight = null;
+      }
+      return flushingRevision === revision && !hasUnsavedChanges(get().status);
     },
   };
 });
