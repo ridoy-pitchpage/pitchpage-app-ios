@@ -1,21 +1,43 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import * as Icons from "lucide-react-native";
+import {
+  Briefcase, Building2, Check, ChevronRight, GraduationCap, Home, Megaphone,
+  Shapes, Trophy, Wrench, type LucideIcon,
+} from "lucide-react-native";
 
 import { Card } from "@/components/Card";
+import { MotionEntrance } from "@/components/MotionEntrance";
 import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { useConfirm } from "@/components/Confirm";
 import { ErrorState, Loading } from "@/components/States";
-import { Body, H1, H3, Muted } from "@/components/Text";
+import { H1, H3, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
 import { keys, useMyPage } from "@/api/queries";
 import { clampSections } from "@/page/page-sections";
 import { PITCH_KIND_TILES, RESEEDING_KINDS, type PitchKind } from "@/page/page-types";
 import { applyPitchKind, currentPitchKind, hasSectionContent, reseedForKind } from "@/page/apply-kind";
 import { useColors } from "@/theme/ThemeProvider";
+import { mix } from "@/theme/tokens";
+
+const TYPE_GROUPS: ReadonlyArray<{ title: string; kinds: readonly PitchKind[] }> = [
+  { title: "Personal goals", kinds: ["job", "university", "athlete"] },
+  { title: "Business & property", kinds: ["real-estate", "listing", "contractor", "sales"] },
+  { title: "Your own idea", kinds: ["other"] },
+];
+
+const TYPE_ICONS: Record<PitchKind, LucideIcon> = {
+  job: Briefcase,
+  university: GraduationCap,
+  athlete: Trophy,
+  "real-estate": Home,
+  listing: Building2,
+  contractor: Wrench,
+  sales: Megaphone,
+  other: Shapes,
+};
 
 /**
  * Choose page type (S27).
@@ -112,52 +134,77 @@ export default function ChooseTypeScreen() {
 
   return (
     <Screen>
-      <ScreenScroll contentClassName="pt-2 gap-4">
-        <BackButton />
-
-        <View className="gap-2">
-          <H1>What kind of pitch page?</H1>
-          <Body className="text-muted-foreground">
-            Pick a type to get started. You can always change styles later.
-          </Body>
+      <ScreenScroll contentClassName="pt-2 gap-5">
+        <View className="flex-row items-center justify-between gap-3">
+          <BackButton />
+          <Muted className="min-w-0 flex-1 text-right font-body-bold text-[12px]" style={{ color: colors.link }}>
+            SET UP YOUR PAGE · 1 OF 3
+          </Muted>
         </View>
 
-        <View className="gap-3">
-          {PITCH_KIND_TILES.map((tile) => {
-            // The icon set is the same one the published page uses, so a tile
-            // and its page agree.
-            const Icon = (Icons as unknown as Record<string, Icons.LucideIcon>)[tile.icon] ?? Icons.Shapes;
-            const isCurrent = existingKind === tile.key;
+        <MotionEntrance>
+          <View className="gap-3">
+            <View
+              className="flex-row gap-1.5"
+              accessibilityRole="progressbar"
+              accessibilityLabel="Page type. Step 1 of 3: page type, design, content."
+              accessibilityValue={{ min: 1, max: 3, now: 1 }}
+            >
+              {[0, 1, 2].map((step) => (
+                <View key={step} className="h-1 flex-1 rounded-full"
+                  style={{ backgroundColor: step === 0 ? colors.primary : colors.muted }} />
+              ))}
+            </View>
+            <H1>What’s your page for?</H1>
+            <Muted>Choose a starting point. We’ll set up the sections that fit your goal.</Muted>
+          </View>
+        </MotionEntrance>
 
-            return (
-              <Pressable
-                key={tile.key}
-                onPress={() => onTile(tile.key)}
-                disabled={busy != null}
-                accessibilityRole="button"
-                accessibilityLabel={`${tile.title}. ${tile.description}`}
-                accessibilityState={{ selected: isCurrent, disabled: busy != null }}
-              >
-                <Card
-                  className={[
-                    "flex-row items-start gap-3",
-                    isCurrent ? "border-primary" : "",
-                    busy === tile.key ? "opacity-50" : "",
-                  ].join(" ")}
-                >
-                  <View className="mt-0.5">
-                    <Icon size={22} color={colors.primary} />
-                  </View>
-                  <View className="min-w-0 flex-1 gap-1">
-                    <H3>{tile.title}</H3>
-                    <Muted>{tile.description}</Muted>
-                    {isCurrent ? <Muted className="text-link">Current type</Muted> : null}
-                  </View>
-                </Card>
-              </Pressable>
-            );
-          })}
-        </View>
+        {TYPE_GROUPS.map((group, groupIndex) => (
+          <MotionEntrance key={group.title} index={groupIndex + 1}>
+            <View className="gap-2">
+              <Muted className="px-1 font-body-bold text-[12px]">{group.title}</Muted>
+              <Card flat style={{ padding: 0 }} className="overflow-hidden">
+                {group.kinds.map((kind, index) => {
+                  const tile = PITCH_KIND_TILES.find((item) => item.key === kind)!;
+                  const Icon = TYPE_ICONS[tile.key];
+                  const isCurrent = existingKind === tile.key;
+
+                  return (
+                    <Pressable
+                      key={tile.key}
+                      onPress={() => void onTile(tile.key)}
+                      disabled={busy != null}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${tile.title}. ${tile.description}`}
+                      accessibilityState={{ selected: isCurrent, disabled: busy != null, busy: busy === tile.key }}
+                      style={({ pressed }) => ({
+                        minHeight: 84,
+                        padding: 16,
+                        borderBottomWidth: index === group.kinds.length - 1 ? 0 : 1,
+                        borderBottomColor: colors.border,
+                        backgroundColor: pressed ? colors.secondary : isCurrent ? mix(colors.card, colors.primary, 0.06) : undefined,
+                      })}
+                      className="flex-row items-center gap-3"
+                    >
+                      <View className="h-11 w-11 items-center justify-center rounded-control"
+                        style={{ backgroundColor: mix(colors.card, colors.primary, 0.1) }}>
+                        <Icon size={22} color={colors.link} strokeWidth={1.8} />
+                      </View>
+                      <View className="min-w-0 flex-1 gap-1">
+                        <H3>{tile.title}</H3>
+                        <Muted>{tile.description}</Muted>
+                      </View>
+                      {busy === tile.key ? <ActivityIndicator color={colors.primary} /> : isCurrent ? (
+                        <Check size={20} color={colors.primary} />
+                      ) : <ChevronRight size={18} color={colors.mutedForeground} />}
+                    </Pressable>
+                  );
+                })}
+              </Card>
+            </View>
+          </MotionEntrance>
+        ))}
       </ScreenScroll>
     </Screen>
   );

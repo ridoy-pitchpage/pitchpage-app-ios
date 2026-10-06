@@ -14,6 +14,7 @@ import { useMyPage } from "@/api/queries";
 import { useApplyTemplate } from "@/features/builder/use-apply-template";
 import { FAMILY_BY_ID, STYLE_CATEGORY_SHORT } from "@/page/style-families";
 import { SITE_URL } from "@/lib/config";
+import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * One template, as the website actually draws it.
@@ -32,6 +33,7 @@ import { SITE_URL } from "@/lib/config";
 export default function TemplatePreviewScreen() {
   const { id, family: familyId } = useLocalSearchParams<{ id: string; family: string }>();
   const page = useMyPage(id);
+  const colors = useColors();
   // Remounting the WebView is the only reliable way to retry a failed load.
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
@@ -87,15 +89,18 @@ export default function TemplatePreviewScreen() {
 
   return (
     <Screen edges={["top"]}>
-      <TopBar>
+      <TopBar className="gap-3 px-3 py-2">
         <BackButton label="Back to templates" />
         <View className="min-w-0 flex-1">
-          <Body numberOfLines={1} className="font-body-medium">
+          <Body className="font-body-bold">
             {family.label}
           </Body>
-          <Muted numberOfLines={1} className="text-[12px]">
-            {STYLE_CATEGORY_SHORT[family.category]}
+          <Muted className="text-[12px]">
+            {STYLE_CATEGORY_SHORT[family.category]} · Sample page
           </Muted>
+        </View>
+        <View className="rounded-full bg-secondary px-3 py-2">
+          <Muted className="font-body-bold text-[12px]" style={{ color: colors.link }}>2 / 3</Muted>
         </View>
       </TopBar>
 
@@ -136,7 +141,8 @@ export default function TemplatePreviewScreen() {
         />
       )}
 
-      <ActionBar>
+      <ActionBar safeBottom className="gap-2">
+        <Muted className="text-center">Your content comes next.</Muted>
         <Button
           title="Use this template"
           loading={busy}

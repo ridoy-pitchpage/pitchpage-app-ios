@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
 import { ActionBar } from "@/components/ActionBar";
@@ -98,22 +98,35 @@ export default function TemplateScreen() {
 
   const row = page.data;
 
-  const filters: Filter[] = [ALL, ...STYLE_CATEGORY_ORDER];
+  const filters: Filter[] = [
+    ALL,
+    ...(suggested ? [suggested] : []),
+    ...STYLE_CATEGORY_ORDER.filter((category) => category !== suggested),
+  ];
 
   return (
     <Screen edges={["top"]}>
       <ScreenScroll contentClassName="pt-2 gap-5">
-        <BackButton />
-
-        <View className="gap-2">
-          <H1>Pick a template</H1>
-          <Muted>
-            How your page looks. Tap one to see the real page it makes. You can change it any time
-            from Style in the builder, so this is a starting point, not a commitment.
+        <View className="flex-row items-center justify-between gap-3">
+          <BackButton />
+          <Muted className="min-w-0 flex-1 text-right font-body-bold text-[12px]" style={{ color: colors.link }}>
+            SET UP YOUR PAGE · 2 OF 3
           </Muted>
         </View>
 
-        <View className="flex-row flex-wrap gap-2">
+        <View className="gap-3">
+          <View className="flex-row gap-1.5" accessibilityRole="progressbar"
+            accessibilityLabel="Design. Step 2 of 3: page type, design, content."
+            accessibilityValue={{ min: 1, max: 3, now: 2 }}>
+            {[0, 1, 2].map((step) => <View key={step} className="h-1 flex-1 rounded-full"
+              style={{ backgroundColor: step < 2 ? colors.primary : colors.muted }} />)}
+          </View>
+          <H1>Find your look</H1>
+          <Muted>Tap a design to explore the real page. You can change your choice later.</Muted>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8 }} accessibilityLabel="Template categories">
           {filters.map((name) => {
             const on = active === name;
             const label = name === ALL ? "All" : STYLE_CATEGORY_SHORT[name];
@@ -128,28 +141,27 @@ export default function TemplateScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Show ${label} templates, ${count} of them`}
                 accessibilityState={{ selected: on }}
-                style={{ minHeight: MIN_TAP }}
+                style={{ minHeight: MIN_TAP, paddingVertical: 10 }}
                 className={[
                   "justify-center rounded-control border px-3",
-                  on ? "border-foreground bg-foreground" : "border-border bg-card",
+                  on ? "border-primary bg-primary" : "border-border bg-card",
                 ].join(" ")}
               >
                 {/* Colour as a style, not a class — see Text.tsx on why. */}
                 <Body
                   className={on ? "font-body-medium" : ""}
-                  style={{ color: on ? colors.background : colors.foreground }}
+                  style={{ color: on ? colors.primaryForeground : colors.foreground }}
                 >
                   {label}
                 </Body>
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
 
         {suggested && active === suggested ? (
           <Muted>
-            These suit a {STYLE_CATEGORY_SHORT[suggested].toLowerCase()} page. Tap All to see every
-            template.
+            Recommended for your {STYLE_CATEGORY_SHORT[suggested].toLowerCase()} page.
           </Muted>
         ) : null}
 
@@ -166,7 +178,7 @@ export default function TemplateScreen() {
         />
       </ScreenScroll>
 
-      <ActionBar>
+      <ActionBar safeBottom>
         <Button
           title={`Continue with ${current.family.label}`}
           loading={busy}

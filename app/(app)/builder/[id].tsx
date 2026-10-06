@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,7 +28,7 @@ import { SectionSheet } from "@/features/builder/SectionSheet";
 import { SectionsSheet } from "@/features/builder/SectionsSheet";
 import { StylePicker } from "@/features/builder/StylePicker";
 import { MediaSheet } from "@/features/media/MediaSheet";
-import { saveLabel, startDraftAutosaveOnBackground, useDraft } from "@/state/draft-store";
+import { hasUnsavedChanges, saveLabel, startDraftAutosaveOnBackground, useDraft } from "@/state/draft-store";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 
@@ -54,13 +55,27 @@ export default function BuilderScreen() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const query = useMyPage(id);
+  const navigation = useNavigation();
+  const leaving = useRef(false);
 
   const load = useDraft((s) => s.load);
-  const clear = useDraft((s) => s.clear);
   const flush = useDraft((s) => s.flush);
   const page = useDraft((s) => s.page);
   const status = useDraft((s) => s.status);
   const draftId = useDraft((s) => s.pageId);
+
+  // Covers the header, the iOS back gesture, and other navigation removals.
+  usePreventRemove(draftId === id && hasUnsavedChanges(status), ({ data }) => {
+    if (leaving.current) return;
+    leaving.current = true;
+    void (async () => {
+      if (await flush()) {
+        navigation.dispatch(data.action);
+      } else {
+        toast.error(new Error("Your changes aren't saved yet. Stay here and try again when you're connected."));
+      }
+    })().finally(() => { leaving.current = false; });
+  });
 
   const [mode, setMode] = useState<"edit" | "preview">(
     initialMode === "preview" ? "preview" : "edit",
@@ -69,6 +84,7 @@ export default function BuilderScreen() {
   /** Whether the Sections sheet should open on its "add" pane. */
   const [sectionsOnAdd, setSectionsOnAdd] = useState(false);
   const [sectionId, setSectionId] = useState<string | null>(null);
+  const [toolbarHeight, setToolbarHeight] = useState(0);
 
   // Load the row into the draft store once, and only when it is a different
   // page — re-loading on every refetch would discard unsaved keystrokes.
@@ -88,31 +104,35 @@ export default function BuilderScreen() {
 
   useEffect(
     () => () => {
-      void flush();
-      clear();
+      // Never clear before the asynchronous save completes. Keep a failed
+      // draft in memory so reopening this editor can recover it.
+      if (useDraft.getState().pageId === id) {
+        void flush().then((saved) => {
+          if (!saved) return;
+          void queryClient.invalidateQueries({ queryKey: keys.page(id ?? "") });
+          void queryClient.invalidateQueries({ queryKey: keys.pages });
+        });
+      }
     },
-    [flush, clear],
+    [flush, id, queryClient],
   );
 
-  async function leave() {
-    await flush();
-    await queryClient.invalidateQueries({ queryKey: keys.page(id ?? "") });
-    await queryClient.invalidateQueries({ queryKey: keys.pages });
+  function leave() {
     router.back();
-  }
-
-  if (query.isPending || !page) {
-    return (
-      <View className="flex-1 bg-background">
-        <Loading label="Opening your page…" />
-      </View>
-    );
   }
 
   if (query.isError) {
     return (
       <View className="flex-1 bg-background">
         <ErrorState error={query.error} onRetry={() => void query.refetch()} />
+      </View>
+    );
+  }
+
+  if (query.isPending || !page) {
+    return (
+      <View className="flex-1 bg-background">
+        <Loading label="Opening your page…" />
       </View>
     );
   }
@@ -127,9 +147,10 @@ export default function BuilderScreen() {
         </Muted>
         <Button
           title="Reload"
-          onPress={() => {
-            clear();
-            void query.refetch();
+          onPress={async () => {
+            const result = await query.refetch();
+            if (result.isError) toast.error(result.error);
+            else if (result.data) load(result.data);
           }}
         />
       </View>
@@ -155,10 +176,10 @@ export default function BuilderScreen() {
           else if (target.kind === "details") setSheet("details");
           else setSheet("media");
         }}
-        bottomInset={104}
+        bottomInset={toolbarHeight}
         header={
           <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.background }}>
-            <TopBar className="gap-1">
+            <TopBar className="flex-wrap gap-2 px-3 py-2">
               <Pressable
                 onPress={() => void leave()}
                 accessibilityRole="button"
@@ -170,20 +191,37 @@ export default function BuilderScreen() {
                 <ChevronLeft size={26} color={colors.foreground} />
               </Pressable>
 
-              <View className="min-w-0 flex-1">
+              <View className="min-w-[100px] flex-1">
                 <Body numberOfLines={1} className="text-[15px]">
                   {page.full_name || "Your page"}
                 </Body>
-                {/* Live save state, so nobody has to wonder whether it stuck. */}
-                <Muted className="text-[12px]">{saveLabel(status) || "Up to date"}</Muted>
+                <Muted className="text-[12px]">{editing ? "Page editor" : "Page preview"}</Muted>
               </View>
 
+              <Button
+                title={page.published_at ? "Update" : "Publish"}
+                fullWidth={false}
+                haptic
+                onPress={async () => {
+                  if (!(await flush())) {
+                    toast.error(new Error("Your last change hasn't saved yet."));
+                    return;
+                  }
+                  router.push({ pathname: "/(app)/preview/[id]", params: { id: page.id } });
+                }}
+              />
+            </TopBar>
+
+            <View className="flex-row flex-wrap items-center justify-between gap-2 px-4 pb-2 pt-1">
+              <Muted className="min-w-0 flex-1 text-[12px]" accessibilityLiveRegion="polite">
+                {saveLabel(status) || "All changes saved"}
+              </Muted>
               <Pressable
                 onPress={() => setMode(editing ? "preview" : "edit")}
                 accessibilityRole="button"
                 accessibilityLabel={editing ? "Preview your page" : "Back to editing"}
                 style={{ minHeight: MIN_TAP }}
-                className="flex-row items-center gap-1.5 rounded-control border border-border px-3"
+                className="flex-row items-center gap-2 rounded-full border border-border bg-card px-3"
               >
                 {editing ? (
                   <Eye size={16} color={colors.foreground} />
@@ -192,13 +230,14 @@ export default function BuilderScreen() {
                 )}
                 <Body className="text-[14px]">{editing ? "Preview" : "Edit"}</Body>
               </Pressable>
-            </TopBar>
+            </View>
           </SafeAreaView>
         }
         fallback={
           <PageRender
             page={page}
             editable={editing}
+            bottomInset={toolbarHeight}
             onEditHero={() => setSheet("details")}
             onEditSection={(section) => setSectionId(section.id)}
             onAddSection={() => {
@@ -211,18 +250,22 @@ export default function BuilderScreen() {
 
       <SafeAreaView
         edges={["bottom"]}
-        style={{ backgroundColor: colors.card }}
-        className="absolute inset-x-0 bottom-0 border-t border-border"
+        className="absolute inset-x-0 bottom-0"
+        onLayout={(event) => setToolbarHeight(event.nativeEvent.layout.height)}
       >
-        <View className="flex-row items-center gap-1 px-2 py-2">
+        <View
+          className="mx-3 mb-2 flex-row items-stretch gap-2 rounded-[22px] border border-border bg-card p-2"
+        >
           <ToolbarButton
             label="Details"
-            icon={<FilePenLine size={19} color={colors.link} strokeWidth={2.1} />}
+            active={sheet === "details"}
+            icon={<FilePenLine size={20} color={colors.link} strokeWidth={2.1} />}
             onPress={() => setSheet("details")}
           />
           <ToolbarButton
             label="Sections"
-            icon={<ListTree size={19} color={colors.link} strokeWidth={2.1} />}
+            active={sheet === "sections"}
+            icon={<ListTree size={20} color={colors.link} strokeWidth={2.1} />}
             onPress={() => {
               setSectionsOnAdd(false);
               setSheet("sections");
@@ -230,28 +273,16 @@ export default function BuilderScreen() {
           />
           <ToolbarButton
             label="Media"
-            icon={<Images size={19} color={colors.link} strokeWidth={2.1} />}
+            active={sheet === "media"}
+            icon={<Images size={20} color={colors.link} strokeWidth={2.1} />}
             onPress={() => setSheet("media")}
           />
           <ToolbarButton
             label="Style"
-            icon={<SwatchBook size={19} color={colors.link} strokeWidth={2.1} />}
+            active={sheet === "style"}
+            icon={<SwatchBook size={20} color={colors.link} strokeWidth={2.1} />}
             onPress={() => setSheet("style")}
           />
-          <View className="w-[112px] pl-1">
-            <Button
-              title={page.published_at ? "Update" : "Publish"}
-              haptic
-              onPress={async () => {
-                await flush();
-                if (status === "error") {
-                  toast.error(new Error("Your last change hasn't saved yet."));
-                  return;
-                }
-                router.push({ pathname: "/(app)/preview/[id]", params: { id: page.id } });
-              }}
-            />
-          </View>
         </View>
       </SafeAreaView>
 
@@ -272,10 +303,12 @@ export default function BuilderScreen() {
 function ToolbarButton({
   label,
   icon,
+  active,
   onPress,
 }: {
   label: string;
   icon: React.ReactNode;
+  active: boolean;
   onPress: () => void;
 }) {
   const colors = useColors();
@@ -284,11 +317,12 @@ function ToolbarButton({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
-      style={{ minHeight: 58, minWidth: MIN_TAP }}
-      className="flex-1 items-center justify-center gap-1 rounded-control active:bg-secondary"
+      accessibilityState={{ expanded: active }}
+      style={{ minHeight: 64, minWidth: MIN_TAP, backgroundColor: active ? colors.secondary : undefined }}
+      className="min-w-0 flex-1 items-center justify-center gap-1 rounded-control px-1 py-2 active:bg-secondary"
     >
-      <View className="h-7 w-7 items-center justify-center rounded-full bg-secondary">{icon}</View>
-      <Muted className="font-body-medium text-[11px]" style={{ color: colors.foreground }}>
+      <View className="h-7 w-7 items-center justify-center">{icon}</View>
+      <Muted className="text-center font-body-bold text-[12px]" style={{ color: colors.foreground }}>
         {label}
       </Muted>
     </Pressable>
