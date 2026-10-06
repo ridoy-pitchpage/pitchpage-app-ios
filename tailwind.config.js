@@ -63,7 +63,10 @@ module.exports = {
         "body-medium": ["Manrope_500Medium"],
         "body-bold": ["Manrope_700Bold"],
       },
-      borderRadius: { card: "12px", control: "10px" },
+      // Softer than the web's 12/10: a phone holds a card at arm's length,
+      // and iOS has moved to noticeably rounder surfaces. Kept in step with
+      // RADIUS in src/theme/tokens.ts.
+      borderRadius: { card: "18px", control: "14px" },
     },
   },
   plugins: [],

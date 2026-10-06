@@ -113,6 +113,20 @@ export async function installStubs(ctx) {
     }
     return json(route, []);
   });
+  // The builder draws a page through pitchpage.co/app-render whenever the site
+  // answers (src/render/RenderSurface.tsx). That route is live now, so without
+  // this the suites would load the real site, never reach network idle, and
+  // stop being offline. The stub reports an error, and the builder falls back
+  // to drawing the page itself, exactly as it does offline. It says so three
+  // times, because a frame can load before the builder is listening; the
+  // builder treats every repeat the same.
+  await ctx.route('https://pitchpage.co/app-render**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'text/html',
+      body: '<script>const say = () => parent.postMessage(JSON.stringify({ type: "error", message: "stubbed in e2e" }), "*"); say(); setTimeout(say, 250); setTimeout(say, 1000);</script>',
+    }),
+  );
   // Seed a session so the signed-in routes render without a sign-in step.
   await ctx.addInitScript(([s]) => {
     try { window.localStorage.setItem('sb-ervsfjyuhtnepigfgskh-auth-token', s); } catch {}

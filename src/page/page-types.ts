@@ -68,7 +68,7 @@ export const RESEEDING_KINDS = new Set<PitchKind>([
   "listing",
 ]);
 
-/** Every kind except university skips the résumé upload step. */
+/** Every kind except university skips the resume upload step. */
 export const SKIPS_RESUME_UPLOAD = new Set<PitchKind>([
   "athlete",
   "real-estate",
@@ -226,7 +226,7 @@ export const LISTING_CTA_LABEL: Record<ListingAudience, string> = {
 
 // ─── building the sections ──────────────────────────────────────────────────
 
-function freshId(): string {
+export function freshId(): string {
   const cryptoRef = globalThis.crypto as { randomUUID?: () => string } | undefined;
   if (typeof cryptoRef?.randomUUID === "function") return cryptoRef.randomUUID();
   return `sec-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;

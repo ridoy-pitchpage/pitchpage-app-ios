@@ -33,9 +33,12 @@
 > The website repo is untouched. Until somebody runs it, the app falls back to
 > the emailed request; running it is what clears the App Store blocker.
 >
-> **Part C of this plan is still on hold**: no app API, no render surface, no
-> universal-links file, no Apple purchase endpoint, no push tokens. It stays
-> written down as the plan for when that changes.
+> **Part C of this plan is still on hold**: no app API, no universal-links
+> file, no Apple purchase endpoint, no push tokens. It stays written down as
+> the plan for when that changes. The one exception is the render surface:
+> `/app-render`, approved by the owner and merged on 2026-10-06
+> (gregadosmond-oss/profile-pride-app#262). It is live once someone publishes
+> in Lovable; until then the app falls back to drawing pages itself.
 >
 > **What the app does, using only what the website already exposes:**
 >
@@ -50,17 +53,21 @@
 > - Show a published page by loading `pitchpage.co/p/<slug>` in a web view.
 > - Upload a portrait, video, résumé or document into the user's own storage
 >   folder.
-> - Delete the account outright, once `sql/001_delete_my_account.sql` is applied.
+> - Delete the account outright: `sql/001_delete_my_account.sql` was applied
+>   and tested end to end on 2026-10-06.
+> - Send someone to buy credits: on the US storefront the app opens
+>   `pitchpage.co/credits` in Safari, where the website's Stripe checkout sells
+>   them (approved by the owner 2026-10-06; `src/features/credits/web-checkout.ts`).
 >
 > **What it cannot do, each checked against the grants rather than assumed:**
 >
 > | Blocked | Why | What happens instead |
 > |---|---|---|
-> | Buying credits in the app | `grant_credits` is `service_role` only and explicitly revoked from `authenticated` — correctly, since a client that could grant itself credits would be a hole. Apple's receipt has to be verified server-side first. | Credits are bought on the website; the app publishes with what the account holds |
+> | Buying credits in the app | `grant_credits` is `service_role` only and explicitly revoked from `authenticated` — correctly, since a client that could grant itself credits would be a hole. Apple's receipt has to be verified server-side first. | Credits are bought on the website. On the US storefront the app links there (Guideline 3.1.1(a)); any other storefront needs In-App Purchase and this endpoint first |
 > | Push notifications | Needs a device-token table and a sender | Visitor alerts stay email and web push |
 > | AI — building from a résumé, Paige, style suggestions, gap questions | Server code behind an API key the app must not hold | The app edits by hand; AI steps stay on the website |
 > | Outreach sequences and sends | Sending email is server work | Stays on the website |
-> | A pixel-exact preview of a *draft* | An unpublished page has no public URL, and drawing one needs a route on the website | Review is a row per part — which is what the web's own review step is. A published page is shown for real. |
+> | ~~A pixel-exact preview of a *draft*~~ | Unblocked 2026-10-06: `/app-render` draws a draft with the website's own layouts (web PR #262) | The builder uses it once it is published in Lovable, and draws pages itself until then |
 >
 > **Not blocked, but not built.** The company/organization dashboard
 > (`get_org_analytics`, `get_org_outcomes`, `get_org_tracked_links` and the

@@ -1,11 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, View, type DimensionValue, type ViewStyle } from "react-native";
+import { Image } from "expo-image";
 import { Check } from "lucide-react-native";
 
 import { Body, Muted } from "@/components/Text";
 import { encodeStyleSelection, STYLE_CATEGORY_LABELS, type StyleFamily } from "@/page/style-families";
 import { themeForTemplate } from "@/render/template-theme";
+import { TEMPLATE_THUMBNAILS } from "@/page/template-thumbnails";
 import { useColors } from "@/theme/ThemeProvider";
+import { GRID, columnSpan } from "@/theme/tokens";
 
 /**
  * A grid of styles.
@@ -18,33 +21,80 @@ export function StyleGallery({
   selectedId,
   onSelect,
   footer,
+  action = "select",
 }: {
   families: readonly StyleFamily[];
   selectedId?: string;
   onSelect: (family: StyleFamily) => void;
   /** Optional second line under the name. */
   footer?: (family: StyleFamily) => string;
+  /**
+   * What a tap does. "select" settles the choice here, which is a radio to
+   * VoiceOver; "open" goes somewhere else, which is a button. The template
+   * picker opens a preview, and calling that a radio would promise a choice
+   * the tap does not actually make.
+   */
+  action?: "select" | "open";
 }) {
   const colors = useColors();
+  // Measured rather than taken from the window: this grid is rendered inside
+  // a screen with 16pt margins in one place and inside a sheet in another,
+  // and a card sized from the window overflows the narrower of the two.
+  const [available, setAvailable] = useState(0);
+  // Two of the four columns, plus the gutter between them: two cards and one
+  // gutter then fill the row exactly.
+  const cardWidth = available > 0 ? columnSpan(available, 2) : 0;
 
   return (
-    <View className="flex-row flex-wrap" style={{ gap: 10 }}>
+    <View
+      onLayout={(event) => setAvailable(event.nativeEvent.layout.width)}
+      className="flex-row flex-wrap"
+      style={{ gap: GRID.gutter }}
+    >
       {families.map((family) => {
         const selected = family.id === selectedId;
         return (
           <Pressable
             key={family.id}
             onPress={() => onSelect(family)}
-            accessibilityRole={selectedId !== undefined ? "radio" : "button"}
-            accessibilityState={selectedId !== undefined ? { selected } : undefined}
-            accessibilityLabel={`${family.label}, ${STYLE_CATEGORY_LABELS[family.category]}`}
-            style={{ flexBasis: "47%", flexGrow: 1 }}
+            accessibilityRole={action === "select" && selectedId !== undefined ? "radio" : "button"}
+            accessibilityState={
+              action === "select" && selectedId !== undefined ? { selected } : undefined
+            }
+            accessibilityLabel={[
+              `${family.label}, ${STYLE_CATEGORY_LABELS[family.category]}`,
+              // The tick is the only thing marking the current one, and a tick
+              // is not announced.
+              action === "open" && selected ? ", your current template" : "",
+            ].join("")}
+            // Before the first layout there is nothing to derive from, so the
+            // old proportion stands in for one frame.
+            style={cardWidth > 0 ? { width: cardWidth } : { flexBasis: "47%", flexGrow: 1 }}
             className={[
               "overflow-hidden rounded-card border",
               selected ? "border-primary" : "border-border",
             ].join(" ")}
           >
-            <StyleSwatch family={family} />
+            {/*
+              The real page, photographed from the website. The swatch below is
+              the fallback for a family whose thumbnail has not been generated
+              yet — better a rough shape than an empty card.
+            */}
+            {TEMPLATE_THUMBNAILS[family.id] ? (
+              <Image
+                source={TEMPLATE_THUMBNAILS[family.id]}
+                style={{ width: "100%", aspectRatio: 4 / 3 }}
+                contentFit="cover"
+                // The top of a page is what distinguishes it; the footer is
+                // the same everywhere.
+                contentPosition="top"
+                transition={120}
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants"
+              />
+            ) : (
+              <StyleSwatch family={family} />
+            )}
             <View className="gap-0.5 px-2 py-2">
               <View className="flex-row items-center gap-1">
                 <Body numberOfLines={1} className="min-w-0 flex-1 text-[14px]">

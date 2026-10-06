@@ -1,28 +1,26 @@
 import { useMemo, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 
+import { ActionBar } from "@/components/ActionBar";
 import { BackButton } from "@/components/BackButton";
 import { Button } from "@/components/Button";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, Muted } from "@/components/Text";
 import { ErrorState, Loading } from "@/components/States";
-import { useToast } from "@/components/Toast";
 import { StyleGallery } from "@/features/builder/StyleGallery";
-import { keys, useMyPage } from "@/api/queries";
-import { savePage } from "@/api/supabase-direct";
+import { useApplyTemplate } from "@/features/builder/use-apply-template";
+import { useMyPage } from "@/api/queries";
 import { currentPitchKind } from "@/page/apply-kind";
 import {
   KIND_TO_CATEGORY,
   STYLE_CATEGORY_ORDER,
   STYLE_CATEGORY_SHORT,
   STYLE_FAMILIES,
-  encodeStyleSelection,
   resolveStyle,
   type StyleCategory,
   type StyleFamily,
 } from "@/page/style-families";
-import { useQueryClient } from "@tanstack/react-query";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 
@@ -45,8 +43,6 @@ type Filter = typeof ALL | StyleCategory;
 
 export default function TemplateScreen() {
   const colors = useColors();
-  const toast = useToast();
-  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
   const page = useMyPage(id);
 
@@ -54,14 +50,27 @@ export default function TemplateScreen() {
   const suggested = kind ? KIND_TO_CATEGORY[kind] : undefined;
 
   const [filter, setFilter] = useState<Filter | null>(null);
-  const [chosen, setChosen] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+
+  // Hooks cannot sit below the early returns, and the row is not loaded yet,
+  // so the fallback stands in until it is. Nothing can apply a template while
+  // the screen is still showing its spinner.
+  const { apply, busy } = useApplyTemplate(
+    page.data ?? {
+      id: id ?? "",
+      template: null,
+      updated_at: null,
+      wizard_meta: null,
+      sections: null,
+      portrait_url: null,
+      email: null,
+    },
+  );
 
   const current = useMemo(() => resolveStyle(page.data?.template), [page.data?.template]);
   // Null until the page loads, so the first render does not settle on "All"
   // before the page's own type is known.
   const active: Filter = filter ?? suggested ?? ALL;
-  const selectedId = chosen ?? current.family.id;
+  const selectedId = current.family.id;
 
   const families = useMemo(
     () => (active === ALL ? STYLE_FAMILIES : STYLE_FAMILIES.filter((f) => f.category === active)),
@@ -89,53 +98,35 @@ export default function TemplateScreen() {
 
   const row = page.data;
 
-  async function applyTemplate() {
-    const family = STYLE_FAMILIES.find((f) => f.id === selectedId) ?? current.family;
-    setBusy(true);
-    try {
-      await savePage(
-        row.id,
-        {
-          template: encodeStyleSelection(
-            family.id,
-            current.color.id,
-            family.supportsMode ? current.mode : family.defaultMode,
-          ),
-        },
-        row.updated_at,
-      );
-      await queryClient.invalidateQueries({ queryKey: keys.page(row.id) });
-      await queryClient.invalidateQueries({ queryKey: keys.pages });
-      // Next comes what goes ON the page. The kinds that ask their own
-      // questions do that first; the rest go straight to the CV and links.
-      if (kind && kind !== "job" && kind !== "other") {
-        router.push({ pathname: "/(app)/intake/[kind]/[id]", params: { kind, id: row.id } });
-      } else {
-        router.push({ pathname: "/(app)/build/[id]", params: { id: row.id } });
-      }
-    } catch (error) {
-      toast.error(error);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const filters: Filter[] = [ALL, ...STYLE_CATEGORY_ORDER];
+  const filters: Filter[] = [
+    ALL,
+    ...(suggested ? [suggested] : []),
+    ...STYLE_CATEGORY_ORDER.filter((category) => category !== suggested),
+  ];
 
   return (
     <Screen edges={["top"]}>
       <ScreenScroll contentClassName="pt-2 gap-5">
-        <BackButton />
-
-        <View className="gap-2">
-          <H1>Pick a template</H1>
-          <Muted>
-            How your page looks. You can change it any time from Style in the builder, so this is a
-            starting point, not a commitment.
+        <View className="flex-row items-center justify-between gap-3">
+          <BackButton />
+          <Muted className="min-w-0 flex-1 text-right font-body-bold text-[12px]" style={{ color: colors.link }}>
+            SET UP YOUR PAGE · 2 OF 3
           </Muted>
         </View>
 
-        <View className="flex-row flex-wrap gap-2">
+        <View className="gap-3">
+          <View className="flex-row gap-1.5" accessibilityRole="progressbar"
+            accessibilityLabel="Design. Step 2 of 3: page type, design, content."
+            accessibilityValue={{ min: 1, max: 3, now: 2 }}>
+            {[0, 1, 2].map((step) => <View key={step} className="h-1 flex-1 rounded-full"
+              style={{ backgroundColor: step < 2 ? colors.primary : colors.muted }} />)}
+          </View>
+          <H1>Find your look</H1>
+          <Muted>Tap a design to explore the real page. You can change your choice later.</Muted>
+        </View>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 8 }} accessibilityLabel="Template categories">
           {filters.map((name) => {
             const on = active === name;
             const label = name === ALL ? "All" : STYLE_CATEGORY_SHORT[name];
@@ -150,45 +141,50 @@ export default function TemplateScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Show ${label} templates, ${count} of them`}
                 accessibilityState={{ selected: on }}
-                style={{ minHeight: MIN_TAP }}
+                style={{ minHeight: MIN_TAP, paddingVertical: 10 }}
                 className={[
                   "justify-center rounded-control border px-3",
-                  on ? "border-foreground bg-foreground" : "border-border bg-card",
+                  on ? "border-primary bg-primary" : "border-border bg-card",
                 ].join(" ")}
               >
                 {/* Colour as a style, not a class — see Text.tsx on why. */}
                 <Body
                   className={on ? "font-body-medium" : ""}
-                  style={{ color: on ? colors.background : colors.foreground }}
+                  style={{ color: on ? colors.primaryForeground : colors.foreground }}
                 >
                   {label}
                 </Body>
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
 
         {suggested && active === suggested ? (
           <Muted>
-            These suit a {STYLE_CATEGORY_SHORT[suggested].toLowerCase()} page. Tap All to see every
-            template.
+            Recommended for your {STYLE_CATEGORY_SHORT[suggested].toLowerCase()} page.
           </Muted>
         ) : null}
 
         <StyleGallery
           families={families}
           selectedId={selectedId}
-          onSelect={(family: StyleFamily) => setChosen(family.id)}
+          action="open"
+          onSelect={(family: StyleFamily) =>
+            router.push({
+              pathname: "/(app)/template-preview/[id]",
+              params: { id: row.id, family: family.id },
+            })
+          }
         />
       </ScreenScroll>
 
-      <View className="border-t border-border bg-card px-4 py-3">
+      <ActionBar safeBottom>
         <Button
-          title="Use this template"
+          title={`Continue with ${current.family.label}`}
           loading={busy}
-          onPress={() => void applyTemplate()}
+          onPress={() => void apply(selectedId)}
         />
-      </View>
+      </ActionBar>
     </Screen>
   );
 }

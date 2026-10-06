@@ -7,7 +7,8 @@ import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H3, Muted } from "@/components/Text";
-import { GUIDE_CATEGORIES, GUIDE_PAGES, type GuideCategory } from "@/content/guide-pages";
+import { APP_GUIDE_PAGES } from "@/content/guide-app-copy";
+import { GUIDE_CATEGORIES, type GuideCategory } from "@/content/guide-pages";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 
@@ -27,7 +28,7 @@ import { MIN_TAP } from "@/theme/tokens";
 const ALL = "All" as const;
 type Filter = typeof ALL | GuideCategory;
 
-const GUIDES = Object.values(GUIDE_PAGES);
+const GUIDES = Object.values(APP_GUIDE_PAGES);
 
 export default function GuidesScreen() {
   const colors = useColors();

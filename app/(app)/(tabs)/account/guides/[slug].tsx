@@ -10,8 +10,8 @@ import { InlineText } from "@/components/InlineText";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H2, H3, Muted } from "@/components/Text";
 import { EmptyState } from "@/components/States";
-import { GUIDE_PAGES, type GuideBlock } from "@/content/guide-pages";
-import { relationFor } from "@/content/guide-related";
+import { APP_GUIDE_PAGES, appRelationFor } from "@/content/guide-app-copy";
+import type { GuideBlock } from "@/content/guide-pages";
 import { runGuideCta } from "@/content/guide-links";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
@@ -51,7 +51,7 @@ function Block({ block }: { block: GuideBlock }) {
 export default function GuideScreen() {
   const colors = useColors();
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const guide = slug ? GUIDE_PAGES[slug] : undefined;
+  const guide = slug ? APP_GUIDE_PAGES[slug] : undefined;
   const [openFaq, setOpenFaq] = useState<string | null>(null);
 
   if (!guide) {
@@ -74,7 +74,7 @@ export default function GuideScreen() {
     );
   }
 
-  const relation = relationFor(guide.slug);
+  const relation = appRelationFor(guide.slug);
 
   return (
     <Screen edges={["top"]}>
@@ -145,7 +145,7 @@ export default function GuideScreen() {
         <View className="gap-2">
           <H2>Read next</H2>
           {relation.related.map((other) => {
-            const next = GUIDE_PAGES[other];
+            const next = APP_GUIDE_PAGES[other];
             if (!next) return null;
             return (
               <Card key={other} className="p-0">

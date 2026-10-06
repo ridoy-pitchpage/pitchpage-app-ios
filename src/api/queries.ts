@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { AppState } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as direct from "./supabase-direct";
@@ -21,6 +23,8 @@ export const keys = {
   orgs: ["orgs"] as const,
   platformAdmin: ["platform-admin"] as const,
   publishEligibility: (id: string) => ["publish-eligibility", id] as const,
+  /** Every page's publish check at once — the prefix of publishEligibility. */
+  allPublishEligibility: ["publish-eligibility"] as const,
   pageLinks: (id: string) => ["page-links", id] as const,
   insights: (id: string, range: string) => ["insights", id, range] as const,
 };
@@ -39,6 +43,27 @@ export function usePageInsights(id: string | undefined, range: AnalyticsRange) {
     enabled: Boolean(id),
     staleTime: 60_000,
   });
+}
+
+/**
+ * Re-reads the balance whenever the app comes back to the foreground.
+ *
+ * Credits are bought in Safari (src/features/credits/web-checkout.ts), so they
+ * land in the database while the app sits in the background, and nothing tells
+ * the app. The query client deliberately does not refetch on focus
+ * (app/_layout.tsx), so this does it for the two things a purchase changes: the
+ * balance, and the publish check of whichever page sent somebody to buy.
+ */
+export function useRefreshCreditsOnReturn() {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") return;
+      void queryClient.invalidateQueries({ queryKey: keys.credits });
+      void queryClient.invalidateQueries({ queryKey: keys.allPublishEligibility });
+    });
+    return () => subscription.remove();
+  }, [queryClient]);
 }
 
 export function usePublishEligibility(id: string | undefined, enabled = true) {

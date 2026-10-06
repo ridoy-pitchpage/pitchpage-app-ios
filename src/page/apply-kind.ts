@@ -51,6 +51,12 @@ export function currentPitchKind(wizardMeta: unknown): PitchKind | null {
   return typeof kind === "string" ? (kind as PitchKind) : null;
 }
 
+/** Reopening setup must preserve the owner's previously selected audience. */
+export function savedListingAudience(wizardMeta: unknown): ListingAudience {
+  const audience = readMeta(wizardMeta).listing_audience;
+  return audience === "seller" || audience === "investor" ? audience : "buyer";
+}
+
 /**
  * Write the chosen type, its seeded sections and its metadata in one save.
  *
@@ -66,7 +72,7 @@ export async function applyPitchKind(
   const existing = clampSections(row.sections);
   const meta = readMeta(row.wizard_meta);
   const ownerEmail = await ownerEmailFor(row);
-  const listingAudience: ListingAudience = answers.listingAudience ?? "buyer";
+  const listingAudience = answers.listingAudience ?? savedListingAudience(row.wizard_meta);
 
   const alreadyThisKind = currentPitchKind(row.wizard_meta) === kind;
   // Re-running an intake must not wipe what the last one produced.
@@ -76,7 +82,7 @@ export async function applyPitchKind(
       : buildSeedSections(kind, ownerEmail, { listingAudience });
 
   const jobTarget = buildJobTarget(kind, answers);
-  const placeholderHeadline = buildPlaceholderHeadline(kind, answers);
+  const placeholderHeadline = buildPlaceholderHeadline(kind, { ...answers, listingAudience });
 
   const nextMeta: WizardMeta = {
     ...meta,
@@ -115,7 +121,7 @@ export async function reseedForKind(
 ): Promise<{ updatedAt: string | null }> {
   const meta = readMeta(row.wizard_meta);
   const ownerEmail = await ownerEmailFor(row);
-  const listingAudience: ListingAudience = answers.listingAudience ?? "buyer";
+  const listingAudience = answers.listingAudience ?? savedListingAudience(row.wizard_meta);
 
   const patch: SavePagePatch = {
     sections: buildSeedSections(kind, ownerEmail, {
@@ -126,7 +132,7 @@ export async function reseedForKind(
       chosenType: kind,
       pitchKind: kind,
       ...(buildJobTarget(kind, answers) ? { jobTarget: buildJobTarget(kind, answers) } : {}),
-      placeholderHeadline: buildPlaceholderHeadline(kind, answers),
+      placeholderHeadline: buildPlaceholderHeadline(kind, { ...answers, listingAudience }),
       skipsResumeUpload: SKIPS_RESUME_UPLOAD.has(kind),
       ...(kind === "listing" ? { listing_audience: listingAudience } : {}),
     } as SavePagePatch["wizard_meta"],

@@ -1,44 +1,47 @@
 import { Tabs } from "expo-router";
-import type { ColorValue } from "react-native";
+import { Platform, StyleSheet, Text, View, useWindowDimensions, type ColorValue } from "react-native";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChartColumnBig, FileText, UserRound, Wallet } from "lucide-react-native";
 
-import { useColors } from "@/theme/ThemeProvider";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
+import { GLASS, mix } from "@/theme/tokens";
 
 /**
- * A tab's icon: outlined when you are not on it, solid when you are.
- *
- * Every icon being the same hairline outline whatever was selected is what
- * made the bar look flat and dated — the only thing separating the current tab
- * from the rest was its colour, which is also the weakest signal for anyone
- * who does not see colour well. Filling the current one is what iOS itself
- * does, and it carries the selection on shape as well as on colour.
- *
- * The stroke is a little heavier than lucide's default, which is drawn for
- * 24px on a desktop and reads thin at tab size on a phone screen.
+ * The selected icon sits in a soft capsule, so shape as well as colour
+ * identifies the active destination in both appearances.
  */
 function TabIcon({
   Icon,
   color,
   focused,
+  surface,
 }: {
   Icon: typeof FileText;
   // React Navigation types this as ColorValue; lucide wants a string, and the
   // values that actually arrive are the theme's own hex strings.
   color: ColorValue;
   focused: boolean;
+  surface: string;
 }) {
   const tint = String(color);
   return (
-    <Icon
-      size={24}
-      color={tint}
-      strokeWidth={focused ? 2.4 : 2}
-      // A fill at low opacity rather than the full colour: solid enough to
-      // read as selected, not so solid the glyph turns into a blob.
-      fill={focused ? tint : "transparent"}
-      fillOpacity={focused ? 0.18 : 0}
-    />
+    <View
+      style={{
+        width: 42,
+        height: 30,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 15,
+        backgroundColor: focused ? mix(surface, tint, 0.12) : "transparent",
+      }}
+    >
+      <Icon
+        size={21}
+        color={tint}
+        strokeWidth={focused ? 2.35 : 1.8}
+      />
+    </View>
   );
 }
 
@@ -52,7 +55,11 @@ function TabIcon({
  */
 export default function TabsLayout() {
   const colors = useColors();
+  const { resolved } = useTheme();
   const insets = useSafeAreaInsets();
+  const { fontScale } = useWindowDimensions();
+  // Custom labels wrap instead of the navigator's default single-line clip.
+  const barHeight = fontScale > 1.4 ? Math.ceil(54 + fontScale * 42) : 74;
 
   return (
     <Tabs
@@ -60,55 +67,101 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarLabelPosition: "below-icon",
+        tabBarAllowFontScaling: true,
+        tabBarHideOnKeyboard: true,
+        tabBarLabel: ({ color, children }) => (
+          <Text
+            style={{
+              color,
+              fontFamily: "Manrope_700Bold",
+              fontSize: 11,
+              textAlign: "center",
+              paddingHorizontal: 2,
+            }}
+          >
+            {children}
+          </Text>
+        ),
+        // Keep the floating silhouette, but reserve layout space for the bar.
+        // Nested routes and large text no longer need guessed bottom padding.
+        tabBarBackground: () => <TabBarGlass scheme={resolved} card={colors.card} />,
         tabBarStyle: {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
-          /*
-           * Explicit, because the icon and its label together need more room
-           * than the default.
-           *
-           * Where there is a home-indicator inset — every modern iPhone — that
-           * inset does the padding and 56 above it is the standard bar. Where
-           * there is none, which is the web preview and older Android, 56 left
-           * the label's own box squeezed to five pixels with overflow hidden,
-           * so every label rendered as a sliver of its top edge. 68 gives the
-           * 24pt icon and the 11pt label the room they actually need.
-           */
-          height: insets.bottom > 0 ? 56 + insets.bottom : 68,
-          paddingTop: 6,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          marginHorizontal: 16,
+          marginTop: 8,
+          marginBottom: insets.bottom > 0 ? Math.max(insets.bottom - 6, 8) : 10,
+          backgroundColor: "transparent",
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: 23,
+          height: barHeight,
+          paddingTop: 7,
+          paddingBottom: 7,
         },
-        tabBarLabelStyle: { fontFamily: "Manrope_500Medium", fontSize: 11 },
+        tabBarItemStyle: { minHeight: 44, paddingHorizontal: 2 },
+        tabBarIconStyle: { marginBottom: 3 },
       }}
     >
       <Tabs.Screen
         name="pages"
         options={{
           title: "Pages",
-          tabBarIcon: ({ color, focused }) => <TabIcon Icon={FileText} color={color} focused={focused} />,
+          tabBarAccessibilityLabel: "Your pages",
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={FileText} color={color} focused={focused} surface={colors.card} />,
         }}
       />
       <Tabs.Screen
         name="analytics"
         options={{
           title: "Analytics",
-          tabBarIcon: ({ color, focused }) => <TabIcon Icon={ChartColumnBig} color={color} focused={focused} />,
+          tabBarAccessibilityLabel: "Page analytics",
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={ChartColumnBig} color={color} focused={focused} surface={colors.card} />,
         }}
       />
       <Tabs.Screen
         name="credits"
         options={{
           title: "Credits",
-          tabBarIcon: ({ color, focused }) => <TabIcon Icon={Wallet} color={color} focused={focused} />,
+          tabBarAccessibilityLabel: "Publishing credits",
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={Wallet} color={color} focused={focused} surface={colors.card} />,
         }}
       />
       <Tabs.Screen
         name="account"
         options={{
           title: "Account",
-          tabBarIcon: ({ color, focused }) => <TabIcon Icon={UserRound} color={color} focused={focused} />,
+          tabBarAccessibilityLabel: "Your account and settings",
+          tabBarIcon: ({ color, focused }) => <TabIcon Icon={UserRound} color={color} focused={focused} surface={colors.card} />,
         }}
       />
     </Tabs>
+  );
+}
+
+/**
+ * The frosted panel behind the tab bar.
+ *
+ * BlurView samples what is actually behind it on iOS. On Android and in the
+ * web build it degrades to a translucent fill, which is why the card colour
+ * is passed in rather than assumed: a fallback painted on the wrong ground
+ * is worse than no blur at all.
+ */
+function TabBarGlass({ scheme, card }: { scheme: "light" | "dark"; card: string }) {
+  if (Platform.OS === "ios") {
+    return (
+      <BlurView
+        intensity={GLASS.intensity}
+        tint={scheme === "dark" ? "dark" : "light"}
+        style={[StyleSheet.absoluteFill, { borderRadius: 23, overflow: "hidden" }]}
+      />
+    );
+  }
+  return (
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: card, opacity: 0.98, borderRadius: 23 },
+      ]}
+    />
   );
 }

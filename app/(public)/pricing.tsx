@@ -10,11 +10,9 @@ import { useColors } from "@/theme/ThemeProvider";
 /**
  * Pricing (S08).
  *
- * Deliberately no prices in dollars and no Buy button. Credits are bought on
- * the website, and an App Store build that named a price or linked to an
- * external checkout would fall foul of Guideline 3.1.1. When In-App Purchase
- * lands, StoreKit supplies the localised price and this screen reads it from
- * there rather than hard-coding one.
+ * No prices in dollars: the website sets them and sells the credits
+ * (src/features/credits/web-checkout.ts), so a figure here would only go stale.
+ * Buying needs an account, so the way to it is Credits, after signing in.
  */
 
 const FREE = [
@@ -70,8 +68,7 @@ export default function PricingScreen() {
         </Card>
 
         <Muted className="text-center">
-          Credits are bought on pitchpage.co for now, and show up here straight
-          away.
+          Credits are bought on pitchpage.co, and work in the app and on the website alike.
         </Muted>
       </ScreenScroll>
     </Screen>

@@ -29,8 +29,67 @@ export type Archetype =
   /** Narrow measure, hairlines, numerals on a rule, almost no colour. */
   | "minimal";
 
+/**
+ * How a family opens its page.
+ *
+ * Archetype alone is too coarse to pick a template by: thirteen families
+ * are "soft" and nine are "editorial", so twenty-two of the thirty opened
+ * identically and the builder could not show which one was chosen. Where
+ * the name sits is the first thing anyone reads, so it is chosen per family.
+ *
+ * Still an approximation, not the website's layout — that needs the render
+ * surface in §14. It only has to stop two templates looking like one.
+ */
+export type HeroVariant =
+  | "rule"
+  | "banner"
+  | "letterhead"
+  | "poster"
+  | "split"
+  | "ring"
+  | "console"
+  | "plain";
+
+/** Where a family says nothing else, its archetype decides. */
+const HERO_FALLBACK: Record<Archetype, HeroVariant> = {
+  editorial: "rule",
+  bold: "poster",
+  console: "console",
+  soft: "ring",
+  minimal: "plain",
+};
+
+/**
+ * Only the families that differ from their archetype are listed. The point
+ * is to break up the two big buckets, not to give thirty one-off answers.
+ */
+const HERO_FOR: Record<string, HeroVariant> = {
+  // soft, which would otherwise be thirteen identical rings
+  banner: "banner",
+  momentum: "banner",
+  skyline: "banner",
+  startup: "banner",
+  recruit: "banner",
+  interactive: "banner",
+  corporate: "split",
+  listing: "split",
+  scorecard: "split",
+  split: "split",
+  // editorial, which would otherwise be nine identical rules
+  letterhead: "letterhead",
+  broadsheet: "letterhead",
+  scholar: "letterhead",
+  premium: "letterhead",
+  estate: "letterhead",
+  // bold and console
+  trades: "banner",
+  parcel: "console",
+};
+
 export type TemplateTheme = {
   archetype: Archetype;
+  /** How this family opens its page. */
+  hero: HeroVariant;
   /** The page's own background, independent of the app's appearance. */
   ground: string;
   /** Body text on the ground. */
@@ -186,6 +245,7 @@ export function themeForTemplate(template: string | null | undefined): TemplateT
 
   return {
     archetype: family.archetype,
+    hero: HERO_FOR[family.id] ?? HERO_FALLBACK[family.archetype],
     ...ground,
     accent: color.hex,
     onAccent: inkOnAccent(color.hex),

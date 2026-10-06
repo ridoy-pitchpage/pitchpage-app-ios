@@ -5,7 +5,8 @@ import { vars } from "nativewind";
 import { Button } from "./Button";
 import { Body, H3 } from "./Text";
 import { useTheme } from "@/theme/ThemeProvider";
-import { paletteVars } from "@/theme/tokens";
+import { elevation, paletteVars } from "@/theme/tokens";
+import { ModalSurface } from "./ModalSurface";
 
 /**
  * "Are you sure?", on every platform.
@@ -86,46 +87,50 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         // Android's back button, and Escape on web.
         onRequestClose={() => close(false)}
       >
-        {/*
-          A Modal renders outside the provider's view tree, so the theme's CSS
-          variables have to be applied again here or the panel comes out
-          unstyled. Same reason as Sheet.
-        */}
-        <View style={vars(paletteVars(palette))} className="flex-1">
-          <Pressable
-            onPress={() => close(false)}
-            accessibilityLabel="Cancel"
-            accessibilityRole="button"
-            className="flex-1 items-center justify-center bg-black/50 px-6"
-          >
-            {/* Swallows taps so pressing the panel does not dismiss it. */}
+        <ModalSurface>
+          {/*
+            A Modal renders outside the provider's view tree, so the theme's CSS
+            variables have to be applied again here or the panel comes out
+            unstyled. Same reason as Sheet.
+          */}
+          <View style={vars(paletteVars(palette))} className="flex-1">
+            {/* The backdrop is a sibling of the panel, never a button parent. */}
             <Pressable
-              onPress={() => undefined}
-              accessibilityViewIsModal
-              className="w-full max-w-[400px] gap-3 rounded-card bg-card p-5"
-            >
-              <H3>{options?.title}</H3>
-              {options?.message ? (
-                <Body className="text-muted-foreground">{options.message}</Body>
-              ) : null}
+              onPress={() => close(false)}
+              accessibilityLabel="Cancel"
+              accessibilityRole="button"
+              className="absolute inset-0 bg-black/50"
+            />
+            {/* box-none so a tap beside the panel still reaches the backdrop. */}
+            <View pointerEvents="box-none" className="flex-1 items-center justify-center px-6">
+              <View
+                accessibilityViewIsModal
+                className="w-full max-w-[400px] gap-3 rounded-card border border-border p-5"
+                style={[{ backgroundColor: palette.card }, elevation("#000000", 3)]}
+              >
+                <H3>{options?.title}</H3>
+                {options?.message ? (
+                  <Body className="text-muted-foreground">{options.message}</Body>
+                ) : null}
 
-              <View className="gap-2 pt-2">
-                <Button
-                  title={options?.confirmLabel ?? "OK"}
-                  variant={options?.destructive ? "destructive" : "primary"}
-                  onPress={() => close(true)}
-                />
-                {options?.dismissOnly ? null : (
+                <View className="gap-2 pt-2">
                   <Button
-                    title={options?.cancelLabel ?? "Cancel"}
-                    variant="secondary"
-                    onPress={() => close(false)}
+                    title={options?.confirmLabel ?? "OK"}
+                    variant={options?.destructive ? "destructive" : "primary"}
+                    onPress={() => close(true)}
                   />
-                )}
+                  {options?.dismissOnly ? null : (
+                    <Button
+                      title={options?.cancelLabel ?? "Cancel"}
+                      variant="secondary"
+                      onPress={() => close(false)}
+                    />
+                  )}
+                </View>
               </View>
-            </Pressable>
-          </Pressable>
-        </View>
+            </View>
+          </View>
+        </ModalSurface>
       </Modal>
     </ConfirmContext.Provider>
   );

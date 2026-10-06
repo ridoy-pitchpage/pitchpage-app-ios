@@ -44,11 +44,10 @@ export function Select<T extends string>({
         accessibilityRole="button"
         accessibilityLabel={label ? `${label}. ${selected?.label ?? placeholder}` : undefined}
         accessibilityState={{ expanded: open }}
-        style={{ minHeight: MIN_TAP, borderColor: colors.input }}
+        style={{ minHeight: 52, borderColor: colors.input }}
         className="flex-row items-center justify-between rounded-control border bg-card px-3 py-2.5"
       >
         <Body
-          numberOfLines={1}
           className={selected ? "min-w-0 flex-1" : "min-w-0 flex-1 text-muted-foreground"}
         >
           {selected?.label ?? placeholder}
@@ -69,7 +68,7 @@ export function Select<T extends string>({
                 setOpen(false);
               }}
               accessibilityRole="radio"
-              accessibilityState={{ selected: isSelected }}
+              accessibilityState={{ checked: isSelected }}
               style={{ minHeight: MIN_TAP }}
               className="flex-row items-center justify-between gap-3 border-b border-border py-3"
             >
@@ -112,17 +111,16 @@ export function Segmented<T extends string>({
               key={option.value}
               onPress={() => onChange(option.value)}
               accessibilityRole="radio"
-              accessibilityState={{ selected: isSelected }}
+              accessibilityState={{ checked: isSelected }}
               accessibilityLabel={option.label}
-              style={{ minHeight: MIN_TAP - 8 }}
+              style={{ minHeight: MIN_TAP }}
               className={[
-                "flex-1 items-center justify-center rounded-[7px] px-2",
+                "flex-1 items-center justify-center rounded-[10px] px-2 py-2",
                 isSelected ? "bg-primary" : "bg-transparent",
               ].join(" ")}
             >
               <Body
-                numberOfLines={1}
-                className={isSelected ? "text-primary-foreground" : "text-foreground"}
+                className={isSelected ? "text-center text-primary-foreground" : "text-center text-foreground"}
               >
                 {option.label}
               </Body>

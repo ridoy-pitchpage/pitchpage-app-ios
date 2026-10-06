@@ -4,9 +4,16 @@ import { Image } from "expo-image";
 import { Pencil } from "lucide-react-native";
 
 import { BlockBody, SectionHeading } from "./blocks";
+import { Hero } from "./Hero";
 import { Reveal } from "./Reveal";
 import { RADIUS_FOR, TYPE_SPECS, themeForTemplate, type TemplateTheme } from "./template-theme";
-import { MAX_SECTIONS, sectionsForLayout, type PageSection } from "@/page/page-sections";
+import {
+  MAX_SECTIONS,
+  blockIsEmpty,
+  sectionsForEditing,
+  sectionsForLayout,
+  type PageSection,
+} from "@/page/page-sections";
 import type { PageModel } from "@/page/page-model";
 import { SITE_URL } from "@/lib/config";
 import { MIN_TAP } from "@/theme/tokens";
@@ -53,7 +60,12 @@ export function PageRender({
   onAddSection?: () => void;
 }) {
   const theme = useMemo(() => themeForTemplate(page.template), [page.template]);
-  const sections = useMemo(() => sectionsForLayout(page), [page]);
+  // While editing, the page is an outline to fill in; published, it is only
+  // what was actually filled in.
+  const sections = useMemo(
+    () => (editable ? sectionsForEditing(page) : sectionsForLayout(page)),
+    [editable, page],
+  );
   const spec = TYPE_SPECS[theme.archetype];
 
   const portrait = absoluteUrl(page.portrait_url);
@@ -93,72 +105,14 @@ export function PageRender({
             theme={theme}
             label="Edit your details"
           >
-            <View style={{ gap: 12 }}>
-            {portrait && !portraitFailed ? (
-              <Image
-                source={{ uri: portrait }}
-                onError={() => setPortraitFailed(true)}
-                style={{
-                  width: 88,
-                  height: 88,
-                  borderRadius: theme.archetype === "soft" ? 44 : 4,
-                  backgroundColor: theme.surface,
-                }}
-                contentFit="cover"
-                transition={200}
-                accessibilityLabel={`Portrait of ${page.full_name ?? "the page owner"}`}
-              />
-            ) : null}
-
-            <Text
-              style={{
-                color: theme.ink,
-                fontFamily: spec.displayFamily,
-                // Long names get a smaller size rather than a broken line.
-                fontSize: (page.full_name ?? "").length > 18 ? 30 : 38,
-                lineHeight: (page.full_name ?? "").length > 18 ? 36 : 44,
-                letterSpacing: spec.displayTracking,
-                textTransform: spec.displayUppercase ? "uppercase" : "none",
-              }}
-            >
-              {page.full_name || "Your name"}
-            </Text>
-
-            {page.headline?.trim() ? (
-              <Text
-                style={{
-                  color: theme.accentText,
-                  fontFamily: spec.bodyFamily,
-                  fontSize: 16,
-                  lineHeight: 23,
-                }}
-              >
-                {page.headline}
-              </Text>
-            ) : null}
-
-            {page.bio?.trim() ? (
-              <Text
-                style={{
-                  color: theme.ink,
-                  fontFamily: spec.bodyFamily,
-                  fontSize: 15,
-                  lineHeight: 24,
-                }}
-              >
-                {page.bio}
-              </Text>
-            ) : null}
-
-            {page.location?.trim() || page.email?.trim() ? (
-              <Text style={{ color: theme.inkMuted, fontFamily: spec.bodyFamily, fontSize: 13 }}>
-                {[page.location, page.email].filter(Boolean).join("  ·  ")}
-              </Text>
-            ) : null}
-
-              {/* The accent hairline every editorial family uses under the name. */}
-              <View style={{ height: 2, width: 64, backgroundColor: theme.accent, marginTop: 4 }} />
-            </View>
+            <Hero
+              page={page}
+              theme={theme}
+              spec={spec}
+              portrait={portrait}
+              portraitFailed={portraitFailed}
+              onPortraitError={() => setPortraitFailed(true)}
+            />
           </EditableRegion>
         </View>
 
@@ -175,7 +129,24 @@ export function PageRender({
                   {section.title?.trim() ? (
                     <SectionHeading theme={theme}>{section.title}</SectionHeading>
                   ) : null}
-                  <BlockBody section={section} theme={theme} />
+                  {editable && blockIsEmpty(section.blockType, section.data) ? (
+                    // The seed's own hint, standing in for the content. It says
+                    // what belongs here, which an empty block cannot.
+                    <Text
+                      numberOfLines={3}
+                      style={{
+                        color: theme.inkMuted,
+                        fontFamily: spec.bodyFamily,
+                        fontSize: 14,
+                        lineHeight: 21,
+                        opacity: 0.85,
+                      }}
+                    >
+                      {section.hint ?? "Tap to fill this in."}
+                    </Text>
+                  ) : (
+                    <BlockBody section={section} theme={theme} />
+                  )}
                 </View>
               </EditableRegion>
             </Reveal>

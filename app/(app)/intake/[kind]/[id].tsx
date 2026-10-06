@@ -2,7 +2,9 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { Check } from "lucide-react-native";
 
+import { ActionBar } from "@/components/ActionBar";
 import { Button } from "@/components/Button";
 import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
@@ -11,8 +13,9 @@ import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
 import { useToast } from "@/components/Toast";
+import { useColors } from "@/theme/ThemeProvider";
 import { keys, useMyPage } from "@/api/queries";
-import { applyPitchKind } from "@/page/apply-kind";
+import { applyPitchKind, savedListingAudience } from "@/page/apply-kind";
 import { PITCH_KINDS, type ListingAudience, type PitchKind } from "@/page/page-types";
 import {
   ATHLETE_LEVELS,
@@ -45,43 +48,48 @@ type Copy = { title: string; intro: string; footer: string };
 const COPY: Record<string, Copy> = {
   athlete: {
     title: "Athlete pitch",
-    intro: "First, tell us your sport and the level you're pitching for. The builder tailors its questions to what coaches and recruiters want to see.",
-    footer: "Your athlete sections are already set up — you'll fill them in next. No résumé needed.",
+    intro: "Choose your sport and target level. We’ll set up the sections coaches and recruiters expect.",
+    footer: "Your athlete sections are already set up — you'll fill them in next. No resume needed.",
   },
   contractor: {
     title: "Contractor bid",
-    intro: "First, tell us who you're bidding to and what trade you work in. The builder tailors its questions to what GCs, owners and RFP reviewers want to see.",
-    footer: "No résumé — your contractor-bid sections are already set up for you to fill in.",
+    intro: "Choose your trade and who you’re bidding to. We’ll start with sections that fit your work.",
+    footer: "No resume — your contractor-bid sections are already set up for you to fill in.",
   },
   "real-estate": {
     title: "Real estate pitch",
-    intro: "First, tell us who you're pitching and what you specialize in. The builder tailors its questions to what clients and brokerages want to see.",
-    footer: "No résumé — your real-estate sections are already set up for you to fill in.",
+    intro: "Tell us who you’re pitching and what you specialize in to give your page the right starting point.",
+    footer: "No resume — your real-estate sections are already set up for you to fill in.",
   },
   sales: {
     title: "Sales pitch",
-    intro: "First, tell us who you're pitching to and what you're selling. The builder tailors its questions to what buyers want to see.",
-    footer: "No résumé — your sales-pitch sections are already set up for you to fill in.",
+    intro: "Choose your audience and what you’re selling. We’ll start with sections that support your pitch.",
+    footer: "No resume — your sales-pitch sections are already set up for you to fill in.",
   },
   listing: {
     title: "Property listing",
     intro: "A page for one property. Who is it for? That decides which sections we set up for you.",
-    footer: "No résumé, no interview — you type the property facts and they publish exactly as entered.",
+    footer: "No resume, no interview — you type the property facts and they publish exactly as entered.",
   },
   university: {
     title: "University application",
-    intro: "First, tell us what you're applying for. The builder tailors its questions to what admissions committees want to see.",
-    footer: "You can add your résumé later to fill out the answers for you.",
+    intro: "Tell us what you’re applying for. We’ll start with sections that fit your application.",
+    footer: "You can add a downloadable resume on the next screen.",
   },
 };
 
 export default function IntakeScreen() {
   const { kind, id } = useLocalSearchParams<{ kind: string; id: string }>();
   const toast = useToast();
+  const colors = useColors();
   const queryClient = useQueryClient();
   const page = useMyPage(id);
 
-  const [answers, setAnswers] = useState<IntakeAnswers>({ listingAudience: "buyer" });
+  const [edits, setAnswers] = useState<IntakeAnswers>({});
+  const answers: IntakeAnswers = {
+    listingAudience: savedListingAudience(page.data?.wizard_meta),
+    ...edits,
+  };
   const [busy, setBusy] = useState(false);
 
   const pitchKind = kind as PitchKind;
@@ -161,20 +169,31 @@ export default function IntakeScreen() {
   }
 
   return (
-    <Screen>
+    <Screen edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
         <ScreenScroll contentClassName="pt-2 gap-5">
-          <BackButton />
-
-          <View className="gap-2">
-            <H1>{copy.title}</H1>
-            <Body className="text-muted-foreground">{copy.intro}</Body>
+          <View className="flex-row items-center justify-between gap-3">
+            <BackButton />
+            <Muted className="min-w-0 flex-1 text-right font-body-bold text-[12px]" style={{ color: colors.link }}>
+              SET UP YOUR PAGE · 3 OF 3
+            </Muted>
           </View>
 
-          <View className="gap-4">
+          <View className="gap-3">
+            <View className="flex-row gap-1.5" accessibilityRole="progressbar"
+              accessibilityLabel="Content. Step 3 of 3: page type, design, content."
+              accessibilityValue={{ min: 1, max: 3, now: 3 }}>
+              {[0, 1, 2].map((step) => <View key={step} className="h-1 flex-1 rounded-full"
+                style={{ backgroundColor: colors.primary }} />)}
+            </View>
+            <H1>{copy.title}</H1>
+            <Muted>{copy.intro}</Muted>
+          </View>
+
+          <View className="gap-5 rounded-card border border-border bg-card p-4">
             {pitchKind === "athlete" ? (
               <>
                 <Select
@@ -258,15 +277,22 @@ export default function IntakeScreen() {
                       key={option.value}
                       onPress={() => set({ listingAudience: option.value as ListingAudience })}
                       accessibilityRole="radio"
-                      accessibilityState={{ selected }}
+                      accessibilityState={{ checked: selected }}
                       accessibilityLabel={`${option.label}. ${option.hint ?? ""}`}
                       className={[
-                        "gap-1 rounded-card border p-4",
+                        "flex-row items-center gap-3 rounded-control border p-4",
                         selected ? "border-primary bg-card" : "border-border bg-card",
                       ].join(" ")}
                     >
-                      <Body className="font-body-bold">{option.label}</Body>
-                      {option.hint ? <Muted>{option.hint}</Muted> : null}
+                      <View className="h-6 w-6 items-center justify-center rounded-full border"
+                        style={{ borderColor: selected ? colors.primary : colors.input,
+                          backgroundColor: selected ? colors.primary : undefined }}>
+                        {selected ? <Check size={16} color={colors.primaryForeground} /> : null}
+                      </View>
+                      <View className="min-w-0 flex-1 gap-1">
+                        <Body className="font-body-bold">{option.label}</Body>
+                        {option.hint ? <Muted>{option.hint}</Muted> : null}
+                      </View>
                     </Pressable>
                   );
                 })}
@@ -296,25 +322,25 @@ export default function IntakeScreen() {
             ) : null}
           </View>
 
-          <View className="gap-3">
-            <Button
-              title="Continue"
-              loading={busy}
-              disabled={!ready()}
-              onPress={() => void go(answers)}
-            />
-            {pitchKind === "university" ? (
-              <Button
-                title="Skip for now"
-                variant="ghost"
-                disabled={busy}
-                onPress={() => void go({ ...answers, skipped: true })}
-              />
-            ) : null}
-          </View>
-
-          <Muted className="text-center">{copy.footer}</Muted>
+          <Muted>{copy.footer}</Muted>
         </ScreenScroll>
+
+        <ActionBar safeBottom className="gap-2">
+          <Button
+            title="Continue"
+            loading={busy}
+            disabled={!ready()}
+            onPress={() => void go(answers)}
+          />
+          {pitchKind === "university" ? (
+            <Button
+              title="Skip for now"
+              variant="ghost"
+              disabled={busy}
+              onPress={() => void go({ ...answers, skipped: true })}
+            />
+          ) : null}
+        </ActionBar>
       </KeyboardAvoidingView>
     </Screen>
   );

@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { startSessionRefreshWithAppState, supabase } from "./supabase";
+import { useDraft } from "@/state/draft-store";
 
 type AuthValue = {
   session: Session | null;
@@ -32,11 +33,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    let ownerId: string | null = null;
 
     supabase.auth
       .getSession()
       .then(({ data }) => {
-        if (!cancelled) setSession(data.session);
+        if (!cancelled) {
+          ownerId = data.session?.user.id ?? null;
+          setSession(data.session);
+        }
       })
       .catch(() => {
         // A session that cannot be read is a signed-out app, not a crash.
@@ -47,6 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
     const { data: listener } = supabase.auth.onAuthStateChange((event, next) => {
+      const nextOwnerId = next?.user.id ?? null;
+      if (event === "SIGNED_OUT" || (ownerId !== null && ownerId !== nextOwnerId)) {
+        useDraft.getState().clear();
+        queryClient.clear();
+      }
+      ownerId = nextOwnerId;
       setSession(next);
       // Cached rows belong to whoever was signed in; a sign-out or a switch has
       // to drop them or the next user briefly sees the last one's pages.

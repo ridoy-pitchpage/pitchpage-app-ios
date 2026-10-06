@@ -91,10 +91,9 @@ export const appDark: Palette = {
 };
 
 /**
- * Signed-out screens (welcome, sign-in, examples, pricing…), matching the
- * marketing site. It has one palette only: the web gives marketing pages no
- * dark mode, and the app follows so a signed-out screen looks like the site a
- * new user just came from.
+ * Signed-out screens in light appearance (welcome, sign-in, examples,
+ * pricing…), matching the marketing site. SiteSurface uses appDark for those
+ * screens in dark appearance so their controls and text remain legible.
  */
 export const site: Palette = {
   ...appLight,
@@ -147,7 +146,110 @@ export function paletteVars(palette: Palette): Record<string, string> {
 }
 
 /** Shape, spacing and motion constants shared by the design-system components. */
-export const RADIUS = { card: 12, control: 10, pill: 999 } as const;
+export const RADIUS = { card: 18, control: 14, pill: 999 } as const;
 
 /** iOS asks for 44pt; every tappable control is at least this tall. */
 export const MIN_TAP = 44;
+
+/**
+ * The iOS layout grid, from the 393×852 spec: four stretch columns, a 16pt
+ * margin either side and a 16pt gutter between them.
+ *
+ * A two-up card spans two columns plus the gutter between them, which is why
+ * anything laying out cards derives its width from these rather than guessing
+ * a percentage — a percentage cannot know about the gutter, so it either
+ * overflows or leaves a ragged edge.
+ */
+export const GRID = { columns: 4, margin: 16, gutter: 16 } as const;
+
+/** The width of `span` columns inside a container `available` points wide. */
+export function columnSpan(available: number, span: number): number {
+  const column = (available - GRID.gutter * (GRID.columns - 1)) / GRID.columns;
+  return column * span + GRID.gutter * (span - 1);
+}
+
+// ─── depth, glass and gradient ──────────────────────────────────────────────
+
+/**
+ * Everything below is DERIVED from the palette above, never picked by eye.
+ *
+ * A modern surface is not a new colour, it is the same colour with light
+ * falling on it: a gradient a few percent either side of the token, a shadow
+ * the ground's own darkness, a translucent layer over whatever is behind. So
+ * these take a palette in and mix, rather than introducing hues that would
+ * then have to be kept in step with the web's.
+ */
+
+function clamp255(n: number): number {
+  return Math.max(0, Math.min(255, Math.round(n)));
+}
+
+function parseHex(hex: string): [number, number, number] {
+  const h = hex.replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  return [
+    parseInt(full.slice(0, 2), 16),
+    parseInt(full.slice(2, 4), 16),
+    parseInt(full.slice(4, 6), 16),
+  ];
+}
+
+/** `t` of 0 returns `from`, 1 returns `to`. */
+export function mix(from: string, to: string, t: number): string {
+  const [r1, g1, b1] = parseHex(from);
+  const [r2, g2, b2] = parseHex(to);
+  const c = (a: number, b: number) => clamp255(a + (b - a) * t);
+  return `#${[c(r1, r2), c(g1, g2), c(b1, b2)]
+    .map((v) => v.toString(16).padStart(2, "0"))
+    .join("")}`;
+}
+
+/** Lighten toward white; negative darkens toward black. */
+export function shade(hex: string, amount: number): string {
+  return amount >= 0 ? mix(hex, "#FFFFFF", amount) : mix(hex, "#000000", -amount);
+}
+
+/**
+ * Two stops, a few percent apart, for a fill that catches light at the top.
+ *
+ * Light mode lifts the top edge; dark mode lifts it less and drops the bottom
+ * further, because on a near-black ground a bright top reads as plastic.
+ */
+export function surfaceGradient(hex: string, mode: "light" | "dark"): [string, string] {
+  return mode === "light"
+    ? [shade(hex, 0.06), shade(hex, -0.03)]
+    : [shade(hex, 0.05), shade(hex, -0.05)];
+}
+
+/** The same, for a filled control: a touch more separation so it reads raised. */
+export function controlGradient(hex: string, mode: "light" | "dark"): [string, string] {
+  return mode === "light"
+    ? [shade(hex, 0.14), shade(hex, -0.08)]
+    : [shade(hex, 0.1), shade(hex, -0.12)];
+}
+
+/**
+ * Shadows, as iOS draws them: wide and faint rather than tight and dark.
+ *
+ * The colour is the palette's own foreground, so a shadow on cream is warm
+ * and a shadow on navy is cold — a neutral black over a warm ground is the
+ * single thing that makes an interface look cheap.
+ */
+export function elevation(foreground: string, level: 1 | 2 | 3) {
+  const spec = {
+    1: { opacity: 0.06, radius: 10, offset: 3 },
+    2: { opacity: 0.1, radius: 20, offset: 8 },
+    3: { opacity: 0.16, radius: 32, offset: 14 },
+  }[level];
+  return {
+    shadowColor: foreground,
+    shadowOpacity: spec.opacity,
+    shadowRadius: spec.radius,
+    shadowOffset: { width: 0, height: spec.offset },
+    // Android reads elevation only; the value tracks the blur radius.
+    elevation: spec.offset,
+  };
+}
+
+/** How strong the blur behind a glass surface is, per platform norm. */
+export const GLASS = { intensity: 28, heavyIntensity: 48 } as const;

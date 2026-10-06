@@ -28,3 +28,9 @@ coverage/
 
 # local walkthrough screenshots
 .walkthrough/
+
+# Full-size art the bundled WebP was made from; not shipped.
+.design-sources/
+
+# Local dev-server launch config for Claude Code.
+.claude/

@@ -298,6 +298,24 @@ export function sectionsForLayout(data: { sections?: PageSection[] | null }): Pa
 }
 
 /**
+ * The same list, for the BUILDER rather than a page.
+ *
+ * sectionsForLayout drops empty sections because a published page must not
+ * show a heading over nothing. Applied while editing, that hid the entire
+ * outline a template seeds: About Me, Experience, Skills, By the Numbers and
+ * What People Say all start empty, so the only thing left on screen was
+ * Contact, which is the one seed carrying copy. Every template opened as the
+ * same near-blank page, and the sections that were supposed to be filled in
+ * could not be reached to fill in.
+ *
+ * So the builder keeps them. Emptiness is still what decides whether a
+ * section is published; it is not what decides whether its owner can see it.
+ */
+export function sectionsForEditing(data: { sections?: PageSection[] | null }): PageSection[] {
+  return (data.sections ?? []).filter((s) => s.visible).sort((a, b) => a.order - b.order);
+}
+
+/**
  * A quote section none of whose items has a quote. Every layout renders a
  * quote item only when it HAS a quote — measured across all 40, a name-only
  * reference is never shown — so such a section rendered as its heading over

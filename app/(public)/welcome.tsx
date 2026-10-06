@@ -1,84 +1,68 @@
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { Image } from "expo-image";
+import { ArrowRight } from "lucide-react-native";
+import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 
-import { Button } from "@/components/Button";
-import { Screen, ScreenScroll } from "@/components/Screen";
-import { Body, H1, Muted } from "@/components/Text";
-import { Card } from "@/components/Card";
+import { useColors, useTheme } from "@/theme/ThemeProvider";
+import { appLight } from "@/theme/tokens";
 
-/**
- * Welcome (S05). Replaces the website's home and features pages: the same
- * promise, said once, with the three things the product actually does.
- */
-
-const CARDS = [
-  {
-    title: "Start from your résumé",
-    body: "Upload what you already have and AI drafts the page for you.",
-  },
-  {
-    title: "Pick how it looks",
-    body: "Thirty styles, each built for a different kind of work.",
-  },
-  {
-    title: "Share one link, see who opened it",
-    body: "Send a link instead of a PDF, and find out who read what.",
-  },
-];
+const PAGE_EXAMPLE = require("../../assets/templates/personal.webp");
 
 export default function Welcome() {
+  const colors = useColors();
+  const { resolved } = useTheme();
+  const { width, height, fontScale } = useWindowDimensions();
+  const compact = (height < 740 || width < 360) && fontScale < 1.3;
+  const actionInk = resolved === "dark" ? colors.primaryForeground : appLight.primaryForeground;
+
   return (
-    <Screen>
-      <ScreenScroll contentClassName="pt-8 gap-6">
-        <View className="gap-3 pt-6">
-          <H1>Your story.{"\n"}One powerful link.</H1>
-          <Body className="text-muted-foreground">
-            Build a page that shows who you are, and send it instead of a PDF.
-          </Body>
-        </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ paddingHorizontal: 24, paddingTop: 8, flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Text className="font-heading" style={{ flex: 1, fontSize: 18, letterSpacing: -0.9, color: colors.foreground }}>
+          PitchPage<Text style={{ color: colors.link }}>.</Text>
+        </Text>
+        <Pressable onPress={() => router.push("/(public)/sign-in")} accessibilityRole="link" accessibilityLabel="Sign in"
+          style={{ minWidth: 54, minHeight: 44, alignItems: "flex-end", justifyContent: "center" }}>
+          <Text className="font-body-bold" style={{ fontSize: 13, color: colors.link }}>Sign in</Text>
+        </Pressable>
+      </View>
 
-        <View className="gap-3">
-          {CARDS.map((card) => (
-            <Card key={card.title} className="gap-1">
-              <Body className="font-body-bold">{card.title}</Body>
-              <Muted>{card.body}</Muted>
-            </Card>
-          ))}
-        </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingTop: compact ? 20 : 28, paddingBottom: compact ? 20 : 28 }}>
+        <Animated.View entering={FadeIn.duration(250).reduceMotion(ReduceMotion.System)} style={{ gap: compact ? 22 : 30 }}>
+          <View style={{ gap: 14 }}>
+            <Text accessibilityRole="header" className="font-heading" style={{ fontSize: compact ? 33 : 38, lineHeight: compact ? 40 : 46, letterSpacing: -1.7, color: colors.foreground }}>
+              A page for{"\n"}your next move.
+            </Text>
+            <Text className="font-body" style={{ fontSize: 14, lineHeight: 22, color: colors.mutedForeground }}>
+              Bring your story and work together.{"\n"}Share it in one simple link.
+            </Text>
+          </View>
+          <View style={{ gap: 10 }}>
+            <Image source={PAGE_EXAMPLE} contentFit="cover" contentPosition="top"
+              style={{ width: "100%", aspectRatio: compact ? 1.9 : 1.75, borderRadius: 2, borderWidth: 1, borderColor: colors.border }}
+              accessibilityLabel="Example PitchPage for Nina Brooks, a career coach, with her portrait and introduction" />
+            <Text className="font-body" style={{ fontSize: 11, color: colors.mutedForeground }}>An example of what you can make.</Text>
+          </View>
+        </Animated.View>
+      </ScrollView>
 
-        <View className="gap-3 pt-2">
-          <Button title="Create an account" onPress={() => router.push("/(public)/sign-up")} />
-          <Button
-            title="Sign in"
-            variant="secondary"
-            onPress={() => router.push("/(public)/sign-in")}
-          />
-        </View>
-
-        <Muted className="text-center">
-          Building a page is free. Publishing one costs a single credit.
-        </Muted>
-
-        <View className="flex-row flex-wrap justify-center gap-x-5 gap-y-2 pt-2">
-          <FooterLink label="See examples" href="/(public)/examples" />
-          <FooterLink label="How it works" href="/(public)/how-it-works" />
-          <FooterLink label="Pricing" href="/(public)/pricing" />
-          <FooterLink label="Questions" href="/(public)/faq" />
-        </View>
-      </ScreenScroll>
-    </Screen>
-  );
-}
-
-function FooterLink({ label, href }: { label: string; href: string }) {
-  return (
-    <Pressable
-      onPress={() => router.push(href as never)}
-      accessibilityRole="link"
-      accessibilityLabel={label}
-      style={{ minHeight: 44, justifyContent: "center" }}
-    >
-      <Muted className="text-link">{label}</Muted>
-    </Pressable>
+      <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, gap: 8 }}>
+        <Pressable onPress={() => router.push("/(public)/sign-up")} accessibilityRole="button" accessibilityLabel="Create my page"
+          style={({ pressed }) => ({ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: colors.link,
+            opacity: pressed ? 0.8 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 })}>
+          <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>Create my page</Text>
+          <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
+        </Pressable>
+        <Text className="font-body-medium" style={{ fontSize: 11, lineHeight: 17, textAlign: "center", color: colors.mutedForeground }}>
+          Free to build · 1 credit to publish
+        </Text>
+        <Pressable onPress={() => router.push("/(public)/examples")} accessibilityRole="link" accessibilityLabel="See examples"
+          style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" }}>
+          <Text className="font-body-medium" style={{ fontSize: 12, color: colors.mutedForeground }}>See examples</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }

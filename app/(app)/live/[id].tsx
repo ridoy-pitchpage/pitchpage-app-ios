@@ -1,9 +1,10 @@
-import { Platform, Pressable, View } from "react-native";
+import { Linking, Platform, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { WebView } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
 
 import { Button } from "@/components/Button";
+import { TopBar } from "@/components/TopBar";
 import { BackButton } from "@/components/BackButton";
 import { Screen } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
@@ -64,7 +65,7 @@ export default function LivePageScreen() {
 
   return (
     <Screen edges={["top"]}>
-      <View className="flex-row items-center justify-between border-b border-border px-2 py-1">
+      <TopBar className="justify-between">
         <BackButton />
         <Muted numberOfLines={1} className="min-w-0 flex-1 px-2">
           {row.slug}
@@ -76,23 +77,43 @@ export default function LivePageScreen() {
         >
           <Body className="text-link">Open in Safari</Body>
         </Pressable>
-      </View>
+      </TopBar>
 
       {Platform.OS === "web" ? (
-        // react-native-webview renders an iframe on web, which pitchpage.co
-        // allows (it sets no X-Frame-Options), so this path works too.
-        <WebView source={{ uri: url }} style={{ flex: 1 }} />
+        // react-native-webview has no web build: it renders a red "does not
+        // support this platform" notice rather than the page. An iframe is the
+        // web equivalent, and the site allows being framed.
+        <View className="flex-1">
+          <iframe
+            src={url}
+            title={row.slug}
+            style={{ border: 0, width: "100%", height: "100%" }}
+          />
+        </View>
       ) : (
         <WebView
           source={{ uri: url }}
           style={{ flex: 1 }}
           startInLoadingState
           renderLoading={() => <Loading label="Loading your page…" />}
-          // Keep the WebView to the page itself: a tap on an outbound link
-          // opens in Safari rather than stranding the user inside the app.
-          onShouldStartLoadWithRequest={(request) => request.url.startsWith(url)}
+          // Keep the WebView to the page itself. A link out of it — their
+          // LinkedIn, an email address, the resume download — opens the way it
+          // would from a browser; refusing the load alone made those taps do
+          // nothing at all. Frames inside the page, like an embedded video,
+          // load where they are.
+          onShouldStartLoadWithRequest={(request) => {
+            if (request.url.startsWith(url) || request.isTopFrame === false) return true;
+            openOutside(request.url);
+            return false;
+          }}
         />
       )}
     </Screen>
   );
+}
+
+/** A link tapped on the page: the web in the in-app browser, mail and phone in their own apps. */
+function openOutside(target: string) {
+  if (/^https?:\/\//i.test(target)) void WebBrowser.openBrowserAsync(target);
+  else if (/^(mailto|tel|sms):/i.test(target)) void Linking.openURL(target).catch(() => undefined);
 }

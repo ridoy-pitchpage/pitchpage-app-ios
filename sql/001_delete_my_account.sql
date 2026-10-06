@@ -28,6 +28,9 @@
 --     its only admin, someone has to be given admin before the org is usable
 --     again — see STEP 3.
 --   * It does not touch anyone else's rows anywhere.
+--   * It does not erase the bytes of uploaded files. It removes their storage
+--     rows, which stops them being served; the bytes themselves can only be
+--     erased through the Storage API — see the note above the storage delete.
 --
 -- SAFETY. Every table is deleted from only if it actually exists, so a database
 -- missing any of these (they arrived at different times) still runs the whole
@@ -40,7 +43,10 @@
 -- no signed-in user is refused. The mock schema's page-keyed foreign keys have
 -- NO cascade, so a wrong delete order fails the test rather than passing
 -- quietly, and several tables named below are deliberately missing from it to
--- prove the existence check works. It also runs STEP 2's grant check.
+-- prove the existence check works. It carries Supabase Storage's
+-- direct-delete guard and the org_nudges foreign key, the two things on the
+-- real database that refuse a careless delete. It also runs STEP 2's grant
+-- check.
 --
 -- Run that before you paste this anywhere. It does not need the real database.
 --
@@ -95,9 +101,27 @@ BEGIN
     END IF;
   END LOOP;
 
+  -- Nudges this person sent to a company's clients as a member of its team.
+  -- actor_id is NOT NULL with no ON DELETE rule — the one reference to
+  -- auth.users that does not cascade or clear itself — so while a single nudge
+  -- of theirs survives, the auth.users delete below is refused and the whole
+  -- deletion rolls back.
+  IF to_regclass('public.org_nudges') IS NOT NULL THEN
+    DELETE FROM public.org_nudges WHERE actor_id = _uid;
+  END IF;
+
   -- Uploaded portraits and videos. The storage policies put every user's files
   -- in a folder named after their own id, which is what this matches.
+  --
+  -- Supabase Storage refuses a DELETE on storage.objects from SQL unless the
+  -- transaction opts in (the protect_objects_delete trigger, added January
+  -- 2026): without the row, the file's bytes stay in the underlying store with
+  -- nothing pointing at them. Here that is the intent — a deleted account's
+  -- media has to stop being served, and the Storage API that would also erase
+  -- the bytes cannot be called from SQL. So this transaction opts in, and the
+  -- setting ends with it.
   IF to_regclass('storage.objects') IS NOT NULL THEN
+    PERFORM set_config('storage.allow_delete_query', 'true', true);
     DELETE FROM storage.objects WHERE (storage.foldername(name))[1] = _uid::text;
   END IF;
 

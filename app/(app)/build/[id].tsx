@@ -3,10 +3,11 @@ import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
-import { File } from "expo-file-system";
-import { FileText, Sparkles, Trash2 } from "lucide-react-native";
+import { BriefcaseBusiness, FileText, Globe2, Trash2, Upload } from "lucide-react-native";
 
+import { ActionBar } from "@/components/ActionBar";
 import { BackButton } from "@/components/BackButton";
+import { fileSize } from "@/features/media/local-file";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Screen, ScreenScroll } from "@/components/Screen";
@@ -23,19 +24,11 @@ import { useColors } from "@/theme/ThemeProvider";
 /**
  * The last step before the builder: what the page is made from.
  *
- * The website's wizard takes a résumé, has AI read it, and composes a first
+ * The website's wizard takes a resume, has AI read it, and composes a first
  * draft — so the person edits something rather than facing empty fields. This
  * step is the app's version of that: the CV, the links worth carrying over,
- * and the button that turns them into a page.
- *
- * The AI compose itself is server work. It reads LOVABLE_API_KEY, which is a
- * server secret, and an app that shipped with that key in its bundle would be
- * handing it to anyone who downloaded the app. So the button explains what it
- * is waiting for rather than pretending, and "Build it myself" — which works
- * today — is the other half of the choice rather than a consolation.
- *
- * Everything typed here is saved either way, so when the endpoint lands it has
- * the CV and the links already sitting on the page.
+ * and a direct path into the working manual builder. AI composition is not
+ * offered until its server endpoint and consent flow are ready.
  */
 
 const RESUME_EXTENSIONS = ["pdf", "doc", "docx"];
@@ -94,7 +87,7 @@ export default function BuildScreen() {
 
     setBusy("resume");
     try {
-      const size = asset.size ?? new File(asset.uri).size ?? 0;
+      const size = asset.size ?? (await fileSize(asset.uri));
       if (size > MEDIA_LIMITS.documentBytes) {
         toast.error(new Error(tooLargeMessage("document")));
         return;
@@ -154,17 +147,6 @@ export default function BuildScreen() {
     }
   }
 
-  async function buildWithAi() {
-    await confirm({
-      title: "AI build is coming",
-      message:
-        "This will read your CV and links and write a first draft of the whole page for you. It runs on PitchPage's servers, so it needs an endpoint the app can call — it isn't switched on yet. Your CV and links are saved, so it will have them the moment it is. In the meantime you can build the page yourself; every section is one tap.",
-      confirmLabel: "Build it myself",
-      dismissOnly: true,
-    });
-    await saveAndBuild();
-  }
-
   return (
     <Screen edges={["top"]}>
       <KeyboardAvoidingView
@@ -172,19 +154,35 @@ export default function BuildScreen() {
         className="flex-1"
       >
         <ScreenScroll contentClassName="pt-2 gap-5">
-          <BackButton />
-
-          <View className="gap-2">
-            <H1>What should we build from?</H1>
-            <Muted>
-              Add your CV and the links worth carrying over. Everything here is optional — you can
-              add it later from the builder.
+          <View className="flex-row items-center justify-between gap-3">
+            <BackButton />
+            <Muted className="min-w-0 flex-1 text-right font-body-bold text-[12px]" style={{ color: colors.link }}>
+              SET UP YOUR PAGE · 3 OF 3
             </Muted>
           </View>
 
-          <Card className="gap-3">
-            <H3>Your CV</H3>
-            <Muted>PDF or Word. It becomes the résumé people can download from your page.</Muted>
+          <View className="gap-3">
+            <View className="flex-row gap-1.5" accessibilityRole="progressbar"
+              accessibilityLabel="Content. Step 3 of 3: page type, design, content."
+              accessibilityValue={{ min: 1, max: 3, now: 3 }}>
+              {[0, 1, 2].map((step) => <View key={step} className="h-1 flex-1 rounded-full"
+                style={{ backgroundColor: colors.primary }} />)}
+            </View>
+            <H1>Add the essentials</H1>
+            <Muted>Add your CV and useful links. Everything here is optional and can be changed later.</Muted>
+          </View>
+
+          <Card flat className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-control bg-secondary">
+                <FileText size={20} color={colors.link} strokeWidth={1.8} />
+              </View>
+              <View className="min-w-0 flex-1">
+                <H3>Your CV</H3>
+                <Muted className="text-[12px]">Optional</Muted>
+              </View>
+            </View>
+            <Muted>PDF or Word. It becomes the resume people can download from your page.</Muted>
 
             {row.resume_url ? (
               <View className="flex-row items-center gap-3">
@@ -203,15 +201,25 @@ export default function BuildScreen() {
                 title="Upload your CV"
                 variant="secondary"
                 loading={busy === "resume"}
+                icon={<Upload size={17} color={colors.foreground} />}
                 onPress={() => void pickResume()}
               />
             )}
           </Card>
 
-          <Card className="gap-3">
-            <H3>Your links</H3>
+          <Card flat className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-control bg-secondary">
+                <Globe2 size={20} color={colors.link} strokeWidth={1.8} />
+              </View>
+              <View className="min-w-0 flex-1">
+                <H3>Your links</H3>
+                <Muted className="text-[12px]">Where people can find more</Muted>
+              </View>
+            </View>
             <TextField
               label="LinkedIn"
+              icon={<BriefcaseBusiness size={18} color={colors.mutedForeground} />}
               value={linkedinValue}
               onChangeText={setLinkedin}
               placeholder="linkedin.com/in/you"
@@ -221,6 +229,7 @@ export default function BuildScreen() {
             />
             <TextField
               label="Portfolio or website"
+              icon={<Globe2 size={18} color={colors.mutedForeground} />}
               value={portfolioValue}
               onChangeText={setPortfolio}
               placeholder="yoursite.com"
@@ -231,19 +240,14 @@ export default function BuildScreen() {
           </Card>
         </ScreenScroll>
 
-        <View className="gap-2 border-t border-border bg-card px-4 py-3">
+        <ActionBar safeBottom className="gap-2">
           <Button
-            title="Build my page with AI"
+            title="Continue to builder"
             loading={busy === "save"}
-            icon={<Sparkles size={17} color={colors.primaryForeground} />}
-            onPress={() => void buildWithAi()}
-          />
-          <Button
-            title="Build it myself"
-            variant="secondary"
+            disabled={busy === "resume"}
             onPress={() => void saveAndBuild()}
           />
-        </View>
+        </ActionBar>
       </KeyboardAvoidingView>
     </Screen>
   );

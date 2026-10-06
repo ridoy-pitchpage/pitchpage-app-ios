@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { Modal, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
 import { vars } from "nativewind";
 import Animated, {
   useAnimatedStyle,
@@ -13,7 +13,9 @@ import { X } from "lucide-react-native";
 
 import { H3 } from "./Text";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
-import { paletteVars } from "@/theme/tokens";
+import { elevation, paletteVars, surfaceGradient } from "@/theme/tokens";
+import { LinearGradient } from "expo-linear-gradient";
+import { ModalSurface, useModalSurfaceDimensions } from "./ModalSurface";
 
 /**
  * A sheet that rises from the bottom — the phone's answer to the web builder's
@@ -37,8 +39,8 @@ export function Sheet({
   maxHeightRatio?: number;
 }) {
   const colors = useColors();
-  const { palette } = useTheme();
-  const { height } = useWindowDimensions();
+  const { palette, resolved: mode } = useTheme();
+  const surface = useModalSurfaceDimensions();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -55,64 +57,71 @@ export function Sheet({
   const scrimStyle = useAnimatedStyle(() => ({ opacity: progress.value * 0.45 }));
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 justify-end">
-        <Animated.View style={[{ ...StyleSheetAbsolute, backgroundColor: "#000" }, scrimStyle]}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-            onPress={onClose}
-            style={{ flex: 1 }}
-          />
-        </Animated.View>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+      <ModalSurface>
+        <View className="flex-1 justify-end">
+          <Animated.View style={[{ ...StyleSheetAbsolute, backgroundColor: "#000" }, scrimStyle]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              onPress={onClose}
+              style={{ flex: 1 }}
+            />
+          </Animated.View>
 
-        {/*
-          A Modal renders in its own root, outside the tree ThemeProvider set
-          the palette variables on, so every themed class inside would resolve
-          to nothing and the panel would come out transparent. The variables
-          have to be re-applied here.
-        */}
-        <Animated.View
-          style={[
-            panelStyle,
-            vars(paletteVars(palette)),
-            { maxHeight: height * maxHeightRatio, backgroundColor: palette.card },
-          ]}
-          className="rounded-t-[20px] border-t border-border"
-        >
-          <SafeAreaView edges={["bottom"]}>
-            {/* The grabber reads as "this can be dismissed" before anything is read. */}
-            <View className="items-center pt-2">
-              <View
-                className="h-1 w-10 rounded-full"
-                style={{ backgroundColor: colors.mutedForeground, opacity: 0.35 }}
-              />
-            </View>
-
-            {title ? (
-              <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
-                <H3 className="min-w-0 flex-1">{title}</H3>
-                <Pressable
-                  onPress={onClose}
-                  accessibilityRole="button"
-                  accessibilityLabel="Close"
-                  hitSlop={12}
-                  className="p-1"
-                >
-                  <X size={22} color={colors.mutedForeground} />
-                </Pressable>
-              </View>
-            ) : null}
-
-            <ScrollView
-              keyboardShouldPersistTaps="handled"
-              contentContainerClassName="px-4 pb-4 gap-2"
+          {/*
+            A Modal renders in its own root, outside the tree ThemeProvider set
+            the palette variables on, so every themed class inside would resolve
+            to nothing and the panel would come out transparent. The variables
+            have to be re-applied here.
+          */}
+          <Animated.View
+            style={[
+              panelStyle,
+              vars(paletteVars(palette)),
+              { maxHeight: surface.height * maxHeightRatio },
+              // Cast upward, not down: the sheet is above the page, so its
+              // shadow belongs on the edge that meets it.
+              {
+                ...elevation("#000000", 3),
+                shadowOffset: { width: 0, height: -10 },
+              },
+            ]}
+            className="overflow-hidden rounded-t-[28px] border-t border-border"
+          >
+            <LinearGradient
+              colors={surfaceGradient(palette.card, mode)}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
             >
-              {children}
-            </ScrollView>
-          </SafeAreaView>
-        </Animated.View>
-      </View>
+            <SafeAreaView edges={["bottom"]}>
+              {title ? (
+                <View className="flex-row items-center justify-between px-4 pb-2 pt-3">
+                  <H3 className="min-w-0 flex-1">{title}</H3>
+                  <Pressable
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close"
+                    hitSlop={12}
+                    style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}
+                  >
+                    <X size={22} color={colors.mutedForeground} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerClassName="px-4 pb-4 gap-2"
+              >
+                {children}
+              </ScrollView>
+            </SafeAreaView>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+      </ModalSurface>
     </Modal>
   );
 }

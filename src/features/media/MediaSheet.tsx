@@ -3,7 +3,6 @@ import { Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
-import { File } from "expo-file-system";
 import { Camera, ImageIcon, Trash2, Video } from "lucide-react-native";
 
 import { Button } from "@/components/Button";
@@ -11,6 +10,7 @@ import { useConfirm } from "@/components/Confirm";
 import { Sheet } from "@/components/Sheet";
 import { Body, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
+import { fileSize } from "./local-file";
 import { useDraft } from "@/state/draft-store";
 import { MEDIA_LIMITS, removeMedia, tooLargeMessage, uploadMedia } from "./upload";
 import { useColors } from "@/theme/ThemeProvider";
@@ -95,7 +95,7 @@ export function MediaSheet({
         format: ImageManipulator.SaveFormat.JPEG,
       });
 
-      const size = new File(saved.uri).size ?? 0;
+      const size = await fileSize(saved.uri);
       if (size > MEDIA_LIMITS.imageBytes) {
         toast.error(new Error(tooLargeMessage("image")));
         return;
@@ -143,7 +143,7 @@ export function MediaSheet({
 
     setBusy("video");
     try {
-      const size = new File(asset.uri).size ?? 0;
+      const size = await fileSize(asset.uri);
       if (size > MEDIA_LIMITS.videoBytes) {
         toast.error(new Error(tooLargeMessage("video")));
         return;
@@ -256,9 +256,6 @@ export function MediaSheet({
             icon={<Video size={17} color={colors.foreground} />}
             onPress={() => void pickVideo()}
           />
-          <Muted>
-            Recording in the app, trimming and background effects are coming.
-          </Muted>
         </View>
       </View>
     </Sheet>
