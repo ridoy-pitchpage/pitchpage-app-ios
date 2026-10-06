@@ -1,9 +1,12 @@
-import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
+import { useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, View, type TextInput } from "react-native";
 import { router } from "expo-router";
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react-native";
 
+import { ActionBar } from "@/components/ActionBar";
 import { Button } from "@/components/Button";
+import { Card } from "@/components/Card";
+import { MotionEntrance } from "@/components/MotionEntrance";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
@@ -31,6 +34,7 @@ import { useColors } from "@/theme/ThemeProvider";
 export default function SignIn() {
   const toast = useToast();
   const colors = useColors();
+  const passwordInput = useRef<TextInput>(null);
   // Captured locally: TypeScript will not narrow an imported binding inside
   // the callback below.
   const devCreds = DEV_SIGN_IN;
@@ -89,106 +93,112 @@ export default function SignIn() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScreenScroll contentClassName="pt-3 gap-5">
+        <ScreenScroll contentClassName="pt-2 gap-5" keyboardDismissMode="interactive">
           <AuthIntro
-            eyebrow="Welcome back"
-            title="Keep building your next opportunity."
-            description="Sign in to edit your pages, see who viewed them, and share your best work."
+            eyebrow="Your personal workspace"
+            title="Welcome back."
+            description="Pick up where you left off. Your story is waiting."
             onBack={() =>
               router.canGoBack() ? router.back() : router.replace("/(public)/welcome")
             }
           />
 
-          <View
-            className="gap-4 rounded-card border border-border bg-card p-4"
-            style={{
-              shadowColor: colors.foreground,
-              shadowOpacity: 0.08,
-              shadowRadius: 16,
-              shadowOffset: { width: 0, height: 8 },
-            }}
-          >
-            {/* Above Google, not below: guideline 4.8 wants an equivalent option,
-                and Apple's own guidance that it be no less prominent. */}
-            <AppleSignInButton
-              mode="signin"
-              busy={appleBusy || googleBusy}
-              onPress={() => void continueWithApple()}
-            />
-            <GoogleSignInButton
-              mode="signin"
-              loading={googleBusy}
-              onPress={() => void continueWithGoogle()}
-            />
+          <MotionEntrance index={1} className="gap-5">
+            <View className="gap-3" pointerEvents={busy || googleBusy || appleBusy ? "none" : "auto"}>
+              {/* Above Google, not below: guideline 4.8 wants an equivalent option,
+                  and Apple's own guidance that it be no less prominent. */}
+              <AppleSignInButton
+                mode="signin"
+                busy={busy || appleBusy || googleBusy}
+                onPress={() => void continueWithApple()}
+              />
+              <GoogleSignInButton
+                mode="signin"
+                loading={googleBusy}
+                onPress={() => void continueWithGoogle()}
+              />
+            </View>
 
             <View className="flex-row items-center gap-3">
               <View className="h-px flex-1 bg-border" />
-              <Muted className="text-[12px]">or use email</Muted>
+              <Muted className="text-[12px]">or sign in with email</Muted>
               <View className="h-px flex-1 bg-border" />
             </View>
 
-            <TextField
-              label="Email"
-              icon={<Mail size={19} color={colors.mutedForeground} />}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              textContentType="username"
-              returnKeyType="next"
-              placeholder="you@example.com"
-            />
-            <TextField
-              label="Password"
-              icon={<LockKeyhole size={19} color={colors.mutedForeground} />}
-              value={password}
-              onChangeText={setPassword}
-              secure
-              autoCapitalize="none"
-              autoComplete="current-password"
-              textContentType="password"
-              returnKeyType="go"
-              onSubmitEditing={() => void submit()}
-            />
-
-            <Pressable
-              onPress={() => router.push("/(public)/forgot-password")}
-              accessibilityRole="link"
-              className="-my-1 self-end p-2"
-            >
-              <Muted style={{ color: colors.link }}>Forgot your password?</Muted>
-            </Pressable>
-
-            <Button
-              title="Sign in"
-              loading={busy}
-              disabled={googleBusy}
-              icon={<ArrowRight size={18} color={colors.primaryForeground} />}
-              onPress={() => void submit()}
-            />
-
-            {devCreds ? (
-              <Button
-                title="Sign in as test user"
-                variant="secondary"
-                loading={busy}
-                onPress={() => void submit(devCreds)}
+            <Card flat className="gap-4 p-5">
+              <TextField
+                label="Email"
+                icon={<Mail size={19} color={colors.mutedForeground} />}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                textContentType="username"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => passwordInput.current?.focus()}
+                placeholder="you@example.com"
+                editable={!busy && !googleBusy && !appleBusy}
               />
-            ) : null}
-          </View>
+              <TextField
+                label="Password"
+                inputRef={passwordInput}
+                icon={<LockKeyhole size={19} color={colors.mutedForeground} />}
+                value={password}
+                onChangeText={setPassword}
+                secure
+                autoCapitalize="none"
+                autoComplete="current-password"
+                textContentType="password"
+                returnKeyType="go"
+                onSubmitEditing={() => void submit()}
+                editable={!busy && !googleBusy && !appleBusy}
+              />
 
+              <Pressable
+                onPress={() => router.push("/(public)/forgot-password")}
+                accessibilityRole="link"
+                accessibilityLabel="Reset your password"
+                style={{ minHeight: 44 }}
+                className="-my-1 self-end items-center justify-center px-1"
+              >
+                <Muted style={{ color: colors.link }}>Forgot your password?</Muted>
+              </Pressable>
+
+              {devCreds ? (
+                <Button
+                  title="Sign in as test user"
+                  variant="secondary"
+                  loading={busy}
+                  onPress={() => void submit(devCreds)}
+                />
+              ) : null}
+            </Card>
+          </MotionEntrance>
+        </ScreenScroll>
+
+        <ActionBar>
+          <Button
+            title="Sign in"
+            loading={busy}
+            disabled={googleBusy || appleBusy}
+            icon={<ArrowRight size={18} color={colors.primaryForeground} />}
+            onPress={() => void submit()}
+          />
           <Pressable
             onPress={() => router.replace("/(public)/sign-up")}
             accessibilityRole="link"
-            className="self-center p-2"
+            accessibilityLabel="New to PitchPage? Create an account"
+            style={{ minHeight: 44 }}
+            className="mt-1 items-center justify-center px-2"
           >
-            <Muted>
+            <Muted className="text-center">
               New to PitchPage?{" "}
-              <Muted style={{ color: colors.link }}>Create an account</Muted>
+              <Muted className="font-body-bold" style={{ color: colors.link }}>Create an account</Muted>
             </Muted>
           </Pressable>
-        </ScreenScroll>
+        </ActionBar>
       </KeyboardAvoidingView>
     </Screen>
   );

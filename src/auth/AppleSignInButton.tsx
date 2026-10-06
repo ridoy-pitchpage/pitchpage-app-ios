@@ -56,7 +56,7 @@ export function AppleSignInButton({
           : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
       }
       cornerRadius={RADIUS.control}
-      style={{ width: "100%", height: MIN_TAP + 4, opacity: busy ? 0.6 : 1 }}
+      style={{ width: "100%", height: MIN_TAP + 8, opacity: busy ? 0.6 : 1 }}
       onPress={() => {
         if (!busy) onPress();
       }}

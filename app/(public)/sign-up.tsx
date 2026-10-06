@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, View } from "react-native";
+import { useRef, useState } from "react";
+import { KeyboardAvoidingView, Platform, Pressable, View, type TextInput } from "react-native";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react-native";
 
 import { ActionBar } from "@/components/ActionBar";
 import { Button } from "@/components/Button";
+import { Card } from "@/components/Card";
+import { MotionEntrance } from "@/components/MotionEntrance";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
@@ -29,6 +31,8 @@ import { useColors } from "@/theme/ThemeProvider";
 export default function SignUp() {
   const toast = useToast();
   const colors = useColors();
+  const emailInput = useRef<TextInput>(null);
+  const passwordInput = useRef<TextInput>(null);
   // Captured locally: TypeScript will not narrow an imported binding.
   const devCreds = DEV_SIGN_IN;
   const [name, setName] = useState(devCreds ? "Test Account" : "");
@@ -95,110 +99,110 @@ export default function SignUp() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         className="flex-1"
       >
-        <ScreenScroll contentClassName="pt-3 gap-5">
+        <ScreenScroll contentClassName="pt-2 gap-5" keyboardDismissMode="interactive">
           <AuthIntro
-            eyebrow="Start creating"
-            title="Put your story to work."
-            description="Create a free account and turn your experience into a page people remember."
+            eyebrow="A space for your story"
+            title="Your story starts here."
+            description="Create your account. Turn what you've done into something worth sharing."
             onBack={() =>
               router.canGoBack() ? router.back() : router.replace("/(public)/welcome")
             }
           />
 
-          <View
-            className="gap-4 rounded-card border border-border bg-card p-4"
-            style={{
-              shadowColor: colors.foreground,
-              shadowOpacity: 0.08,
-              shadowRadius: 16,
-              shadowOffset: { width: 0, height: 8 },
-            }}
-          >
-            {/* Above Google, not below: guideline 4.8 wants an equivalent option,
-                and Apple's own guidance that it be no less prominent. */}
-            <AppleSignInButton
-              mode="signup"
-              busy={appleBusy || googleBusy}
-              onPress={() => void continueWithApple()}
-            />
-            <GoogleSignInButton
-              mode="signup"
-              loading={googleBusy}
-              onPress={() => void continueWithGoogle()}
-            />
+          <MotionEntrance index={1} className="gap-5">
+            <View className="gap-3" pointerEvents={busy || googleBusy || appleBusy ? "none" : "auto"}>
+              {/* Above Google, not below: guideline 4.8 wants an equivalent option,
+                  and Apple's own guidance that it be no less prominent. */}
+              <AppleSignInButton
+                mode="signup"
+                busy={busy || appleBusy || googleBusy}
+                onPress={() => void continueWithApple()}
+              />
+              <GoogleSignInButton
+                mode="signup"
+                loading={googleBusy}
+                onPress={() => void continueWithGoogle()}
+              />
+            </View>
 
             <View className="flex-row items-center gap-3">
               <View className="h-px flex-1 bg-border" />
-              <Muted className="text-[12px]">or use email</Muted>
+              <Muted className="text-[12px]">or create with email</Muted>
               <View className="h-px flex-1 bg-border" />
             </View>
 
-            <TextField
-              label="Your name"
-              icon={<UserRound size={19} color={colors.mutedForeground} />}
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-              autoComplete="name"
-              textContentType="name"
-              placeholder="Alex Chen"
-            />
-            <TextField
-              label="Email"
-              icon={<Mail size={19} color={colors.mutedForeground} />}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              textContentType="username"
-              placeholder="you@example.com"
-            />
-            <TextField
-              label="Password"
-              icon={<LockKeyhole size={19} color={colors.mutedForeground} />}
-              value={password}
-              onChangeText={setPassword}
-              secure
-              autoCapitalize="none"
-              autoComplete="new-password"
-              textContentType="newPassword"
-              hint="At least 6 characters."
-              returnKeyType="go"
-              onSubmitEditing={() => void submit()}
-            />
+            <Card flat className="gap-4 p-5">
+              <TextField
+                label="Your name"
+                icon={<UserRound size={19} color={colors.mutedForeground} />}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                autoComplete="name"
+                textContentType="name"
+                placeholder="Alex Chen"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => emailInput.current?.focus()}
+                editable={!busy && !googleBusy && !appleBusy}
+              />
+              <TextField
+                label="Email"
+                inputRef={emailInput}
+                icon={<Mail size={19} color={colors.mutedForeground} />}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                textContentType="username"
+                placeholder="you@example.com"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={() => passwordInput.current?.focus()}
+                editable={!busy && !googleBusy && !appleBusy}
+              />
+              <TextField
+                label="Password"
+                inputRef={passwordInput}
+                icon={<LockKeyhole size={19} color={colors.mutedForeground} />}
+                value={password}
+                onChangeText={setPassword}
+                secure
+                autoCapitalize="none"
+                autoComplete="new-password"
+                textContentType="newPassword"
+                hint="At least 6 characters."
+                returnKeyType="go"
+                onSubmitEditing={() => void submit()}
+                editable={!busy && !googleBusy && !appleBusy}
+              />
+            </Card>
+          </MotionEntrance>
+
+          <View className="gap-0.5">
+            <Muted className="text-center">By creating an account, you agree to our</Muted>
+            <View className="flex-row flex-wrap items-center justify-center gap-x-5">
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Read the Terms of Service"
+                style={{ minHeight: 44 }}
+                className="items-center justify-center px-2"
+                onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.terms)}
+              >
+                <Muted className="font-body-bold" style={{ color: colors.link }}>Terms of Service</Muted>
+              </Pressable>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Read the Privacy Policy"
+                style={{ minHeight: 44 }}
+                className="items-center justify-center px-2"
+                onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.privacy)}
+              >
+                <Muted className="font-body-bold" style={{ color: colors.link }}>Privacy Policy</Muted>
+              </Pressable>
+            </View>
           </View>
-
-          <Muted className="text-center">
-            By creating an account you agree to our{" "}
-            <Muted
-              style={{ color: colors.link }}
-              accessibilityRole="link"
-              onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.terms)}
-            >
-              Terms
-            </Muted>{" "}
-            and{" "}
-            <Muted
-              style={{ color: colors.link }}
-              accessibilityRole="link"
-              onPress={() => void WebBrowser.openBrowserAsync(WEB_LINKS.privacy)}
-            >
-              Privacy Policy
-            </Muted>
-            .
-          </Muted>
-
-          <Pressable
-            onPress={() => router.replace("/(public)/sign-in")}
-            accessibilityRole="link"
-            className="self-center p-2"
-          >
-            <Muted>
-              Already have an account?{" "}
-              <Muted style={{ color: colors.link }}>Sign in</Muted>
-            </Muted>
-          </Pressable>
         </ScreenScroll>
 
         {/*
@@ -211,10 +215,22 @@ export default function SignUp() {
           <Button
             title="Create account"
             loading={busy}
-            disabled={googleBusy}
+            disabled={googleBusy || appleBusy}
             icon={<ArrowRight size={18} color={colors.primaryForeground} />}
             onPress={() => void submit()}
           />
+          <Pressable
+            onPress={() => router.replace("/(public)/sign-in")}
+            accessibilityRole="link"
+            accessibilityLabel="Already have an account? Sign in"
+            style={{ minHeight: 44 }}
+            className="mt-1 items-center justify-center px-2"
+          >
+            <Muted className="text-center">
+              Already have an account?{" "}
+              <Muted className="font-body-bold" style={{ color: colors.link }}>Sign in</Muted>
+            </Muted>
+          </Pressable>
         </ActionBar>
       </KeyboardAvoidingView>
     </Screen>

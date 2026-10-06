@@ -1,237 +1,138 @@
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, PanResponder, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
-import { Image } from "expo-image";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
-import Animated, {
-  FadeIn,
-  FadeInLeft,
-  FadeInRight,
-  FadeOutLeft,
-  FadeOutRight,
-} from "react-native-reanimated";
+import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 
-import { Button } from "@/components/Button";
-import { Screen } from "@/components/Screen";
-import { Body, H1, Muted } from "@/components/Text";
+import { OnboardingShowcase } from "@/onboarding/OnboardingShowcase";
 import { completeOnboarding } from "@/onboarding/storage";
-import { useColors } from "@/theme/ThemeProvider";
-
-const BRAND_MARK = require("../../assets/brand-mark.png");
+import { useColors, useTheme } from "@/theme/ThemeProvider";
+import { appLight, mix } from "@/theme/tokens";
 
 const STEPS = [
   {
-    number: "01",
-    price: "Free",
-    title: "Bring your material",
-    body: "Upload your résumé, documents, photos, or clips. Your source material stays private.",
-    image: require("../../assets/onboarding-material.webp"),
-    imageLabel: "A creator gathering her résumé, photos, and video at her desk",
+    label: "The idea", title: "You have\nmore to show.",
+    body: "A job, a client, your next opportunity. Put your story and your work in one page people can explore.",
+    action: "Show me how", note: "A page for whatever comes next.",
   },
   {
-    number: "02",
-    price: "Free",
-    title: "Build the story",
-    body: "Answer two questions. PitchPage composes the sections from what you actually supplied.",
-    image: require("../../assets/onboarding-story.webp"),
-    imageLabel: "The creator answering two questions while her page takes shape",
+    label: "Your story", title: "Show the work.\nAdd the person.",
+    body: "Bring a resume, projects, and a short intro video. Choose the sections that help your pitch.",
+    action: "Find my look", note: "Your original files stay private.",
   },
   {
-    number: "03",
-    price: "Free",
-    title: "Make it yours",
-    body: "Try 30 complete designs with 20+ colour sets before you pay.",
-    image: require("../../assets/onboarding-design.webp"),
-    imageLabel: "The creator comparing complete page designs and colour palettes",
+    label: "Your look", title: "A page with\nyour name on it.",
+    body: "Choose a design that suits your work. Try 30 layouts and 20+ colour sets before you publish.",
+    action: "See how to share", note: "Every design is free to try.",
   },
   {
-    number: "04",
-    price: "$9",
-    title: "Publish and share",
-    body: "Publish for $9, send one memorable link, and see when someone opens it.",
-    image: require("../../assets/onboarding-publish.webp"),
-    imageLabel: "The creator sharing her finished page from her phone",
+    label: "Your next move", title: "Send a link.\nMake a connection.",
+    body: "Publish your page, send your link or QR code, and see when people visit. Simple as that.",
+    action: "Create my page", note: "Build for free. One credit to publish.",
   },
 ] as const;
 
-/**
- * The first launch.
- *
- * The art carries this screen, so it runs edge to edge and under the status
- * bar rather than sitting in a bordered card. A framed picture inside a
- * scrolling column reads as an illustration beside the text, and the look of
- * the thing is most of what is being shown here.
- *
- * The step number, the price and the position in the sequence were each said
- * twice before. They are said once now: the dots carry position, the eyebrow
- * carries the step and what it costs.
- */
 export default function Onboarding() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
-  const { height } = useWindowDimensions();
+  const { resolved } = useTheme();
+  const { height, width, fontScale } = useWindowDimensions();
+  const scroll = useRef<ScrollView>(null);
+  const finishingRef = useRef(false);
   const [active, setActive] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
   const [finishing, setFinishing] = useState(false);
-
   const step = STEPS[active] ?? STEPS[0];
-  const last = active === STEPS.length - 1;
-  // Just over half the screen, but never so tall on a small phone that the
-  // words and the button stop fitting underneath.
-  const heroHeight = Math.min(Math.max(Math.round(height * 0.52), 260), 460);
+  const compact = height < 740 && fontScale < 1.3;
+  const smallType = compact || width < 360;
+  const blueCover = active === 2;
+  const background = blueCover ? appLight.primary : active === 1 ? colors.card : colors.background;
+  const ink = blueCover ? appLight.primaryForeground : colors.foreground;
+  const mutedInk = blueCover ? mix(appLight.primary, appLight.primaryForeground, 0.78) : colors.mutedForeground;
+  const rule = blueCover ? mix(appLight.primary, appLight.primaryForeground, 0.32) : colors.border;
+  const actionFill = blueCover ? appLight.card : colors.link;
+  const actionInk = blueCover ? appLight.primary : resolved === "dark" ? colors.primaryForeground : appLight.primaryForeground;
 
-  function moveTo(next: number) {
-    setDirection(next > active ? 1 : -1);
-    setActive(next);
-  }
+  useEffect(() => {
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [active]);
 
-  async function finish(path: "/(public)/sign-up" | "/(public)/sign-in") {
-    if (finishing) return;
+  const pan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > 22 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+    onPanResponderRelease: (_, gesture) => {
+      if (finishing) return;
+      if (gesture.dx < -60) setActive((current) => Math.min(current + 1, STEPS.length - 1));
+      if (gesture.dx > 60) setActive((current) => Math.max(current - 1, 0));
+    },
+  }), [finishing]);
+
+  async function finish(path: "/(public)/welcome" | "/(public)/sign-in" | "/(public)/sign-up") {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
     setFinishing(true);
-    try {
-      await completeOnboarding();
-    } catch {
-      // Storage should never keep someone trapped in onboarding.
-    } finally {
-      router.replace(path);
-      setFinishing(false);
-    }
+    try { await completeOnboarding(); } catch { /* Storage must never block entry. */ }
+    router.replace(path);
   }
 
   return (
-    <Screen edges={["bottom"]}>
-      <View style={{ height: heroHeight }} className="overflow-hidden bg-card">
-        <Animated.View
-          key={step.number}
-          entering={FadeIn.duration(320)}
-          style={StyleSheet.absoluteFill}
-        >
-          <Image
-            source={step.image}
-            style={{ width: "100%", height: "100%" }}
-            contentFit="cover"
-            contentPosition="center"
-            transition={220}
-            accessibilityLabel={step.imageLabel}
-          />
-        </Animated.View>
-
-        {/*
-          Both sit on a filled pill. The art behind them changes with every
-          step, so nothing can be assumed about the contrast underneath.
-        */}
-        <View
-          style={{ paddingTop: insets.top + 8 }}
-          className="absolute left-0 right-0 top-0 flex-row items-center justify-between px-4"
-        >
-          <View className="flex-row items-center gap-2 rounded-full bg-card px-3 py-2">
-            <Image
-              source={BRAND_MARK}
-              style={{ width: 20, height: 20, borderRadius: 5 }}
-              contentFit="cover"
-            />
-            <Text className="font-heading-semi text-[13px] text-foreground">PitchPage</Text>
-          </View>
-          <Pressable
-            onPress={() => void finish("/(public)/sign-in")}
-            accessibilityRole="link"
-            accessibilityLabel="Sign in to an existing account"
-            style={{ minHeight: 44 }}
-            className="justify-center rounded-full bg-card px-4"
-          >
-            <Text className="font-body-bold text-[13px]" style={{ color: colors.link }}>
-              Sign in
-            </Text>
-          </Pressable>
-        </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: background }}>
+      <StatusBar style={blueCover || resolved === "dark" ? "light" : "dark"} />
+      <View style={{ marginHorizontal: 24, paddingTop: 8, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: rule, flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Text className="font-heading" style={{ fontSize: 18, letterSpacing: -0.9, flex: 1, color: ink }}>PitchPage<Text style={{ color: blueCover ? ink : colors.link }}>.</Text></Text>
+        <Pressable onPress={() => void finish("/(public)/sign-in")} disabled={finishing} accessibilityRole="link" accessibilityLabel="Sign in"
+          style={{ minWidth: 54, minHeight: 44, alignItems: "center", justifyContent: "center" }}>
+          <Text className="font-body-bold" style={{ fontSize: 12, color: ink }}>Sign in</Text>
+        </Pressable>
+        <Pressable onPress={() => void finish("/(public)/welcome")} disabled={finishing} accessibilityRole="link" accessibilityLabel="Skip introduction"
+          style={{ minWidth: 44, minHeight: 44, alignItems: "flex-end", justifyContent: "center" }}>
+          <Text className="font-body" style={{ fontSize: 12, color: mutedInk }}>Skip</Text>
+        </Pressable>
       </View>
 
-      <ScrollView className="flex-1" contentContainerClassName="gap-3 px-4 pb-2 pt-5">
-        <Dots active={active} title={step.title} />
-
-        <Animated.View
-          key={step.number}
-          entering={(direction > 0 ? FadeInRight : FadeInLeft).duration(240)}
-          exiting={(direction > 0 ? FadeOutLeft : FadeOutRight).duration(160)}
-          className="gap-2"
-        >
-          <View className="flex-row items-center gap-2">
-            <Text
-              className="font-body-bold text-[11px] uppercase"
-              style={{ color: colors.link, letterSpacing: 1.6 }}
-            >
-              Step {step.number}
-            </Text>
-            <View className="rounded-full bg-secondary px-2.5 py-1">
-              <Text className="font-body-bold text-[11px] text-foreground">{step.price}</Text>
+      <ScrollView ref={scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: compact ? 16 : 24, paddingBottom: 20 }}>
+        <Animated.View key={active} entering={FadeIn.duration(220).reduceMotion(ReduceMotion.System)} {...pan.panHandlers}
+          style={{ flexGrow: 1, gap: compact ? 18 : 24 }}>
+          <View style={{ gap: compact ? 12 : 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text className="font-body-bold" style={{ fontSize: 11, letterSpacing: 1.2, color: mutedInk }}>{String(active + 1).padStart(2, "0")}</Text>
+              <View style={{ width: 22, height: 1, backgroundColor: rule }} />
+              <Text className="font-body-medium" style={{ fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: mutedInk }}>{step.label}</Text>
             </View>
+            <Text accessibilityRole="header" accessibilityLiveRegion="polite" className="font-heading"
+              style={{ fontSize: smallType ? 33 : 38, lineHeight: smallType ? 40 : 46, letterSpacing: -1.7, color: ink }}>{step.title}</Text>
+            <Text className="font-body" style={{ maxWidth: 360, fontSize: 14, lineHeight: 22, color: mutedInk }}>{step.body}</Text>
           </View>
-          <H1 className="text-[29px] leading-[35px]">{step.title}</H1>
-          <Body className="text-muted-foreground">{step.body}</Body>
+          <OnboardingShowcase active={active} compact={compact} ink={ink} mutedInk={mutedInk} rule={rule} />
         </Animated.View>
       </ScrollView>
 
-      <View className="gap-2 px-4 pb-1 pt-2">
-        <View className="flex-row gap-3">
-          {active > 0 ? (
-            <Button
-              title="Back"
-              variant="secondary"
-              fullWidth={false}
-              className="flex-1"
-              icon={<ArrowLeft size={18} color={colors.foreground} />}
-              onPress={() => moveTo(active - 1)}
-            />
-          ) : null}
-          <Button
-            title={last ? "Start free" : "Continue"}
-            loading={finishing}
-            fullWidth={active === 0}
-            className={active > 0 ? "flex-[1.6]" : ""}
-            icon={<ArrowRight size={18} color={colors.primaryForeground} />}
-            haptic={last}
-            onPress={() => (last ? void finish("/(public)/sign-up") : moveTo(active + 1))}
-          />
+      <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, gap: 8 }}>
+        <Text className="font-body-medium" style={{ fontSize: 11, textAlign: "center", lineHeight: 17, color: mutedInk }}>{step.note}</Text>
+        <Pressable onPress={() => active === 3 ? void finish("/(public)/sign-up") : setActive((current) => Math.min(current + 1, STEPS.length - 1))}
+          disabled={finishing} accessibilityRole="button" accessibilityLabel={step.action} accessibilityState={{ disabled: finishing, busy: finishing }}
+          style={({ pressed }) => ({ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: actionFill,
+            opacity: pressed || finishing ? 0.75 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 })}>
+          {finishing ? <ActivityIndicator color={actionInk} /> : <>
+            <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>{step.action}</Text>
+            <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
+          </>}
+        </Pressable>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          {active > 0 ? <Pressable onPress={() => setActive((current) => Math.max(current - 1, 0))} disabled={finishing}
+            accessibilityRole="button" accessibilityLabel="Previous step" style={{ minWidth: 44, minHeight: 44, justifyContent: "center" }}>
+            <ArrowLeft size={18} color={ink} strokeWidth={1.6} />
+          </Pressable> : <View style={{ width: 44 }} />}
+          <View style={{ flexDirection: "row" }} accessibilityLabel={"Introduction, step " + (active + 1) + " of 4"}>
+            {STEPS.map((item, index) => <Pressable key={item.label} onPress={() => setActive(index)} disabled={finishing}
+              accessibilityRole="button" accessibilityLabel={"Step " + (index + 1) + ": " + item.label} accessibilityState={{ selected: active === index, disabled: finishing }}
+              style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center", gap: 5 }}>
+              <Text className={active === index ? "font-body-bold" : "font-body"} style={{ fontSize: 11, color: active === index ? ink : mutedInk }}>{String(index + 1).padStart(2, "0")}</Text>
+              <View style={{ width: 15, height: 2, backgroundColor: active === index ? ink : "transparent" }} />
+            </Pressable>)}
+          </View>
+          <Text className="font-body" style={{ minWidth: 44, fontSize: 10, textAlign: "right", color: mutedInk }}>/ 04</Text>
         </View>
-        {last ? (
-          <Muted className="text-center text-[12px]">
-            Build and explore every design before paying.
-          </Muted>
-        ) : null}
       </View>
-    </Screen>
-  );
-}
-
-/**
- * Position in the sequence, and nothing else.
- *
- * One element for VoiceOver rather than four: "step 3 of 4" is the whole of
- * what four dots convey, and hearing "dot, dot, dot, dot" is not that.
- */
-function Dots({ active, title }: { active: number; title: string }) {
-  const colors = useColors();
-
-  return (
-    <View
-      accessible
-      accessibilityRole="progressbar"
-      accessibilityLabel={`Step ${active + 1} of ${STEPS.length}: ${title}`}
-      accessibilityValue={{ min: 1, max: STEPS.length, now: active + 1 }}
-      className="flex-row items-center gap-1.5"
-    >
-      {STEPS.map((item, index) => (
-        <View
-          key={item.number}
-          style={{
-            height: 6,
-            width: index === active ? 22 : 6,
-            borderRadius: 3,
-            backgroundColor: index === active ? colors.primary : colors.border,
-          }}
-        />
-      ))}
-    </View>
+    </SafeAreaView>
   );
 }
