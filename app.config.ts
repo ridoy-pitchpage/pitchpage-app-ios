@@ -84,10 +84,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         "PitchPage uses your microphone to record the audio for your intro video.",
       NSPhotoLibraryUsageDescription:
         "PitchPage needs your photo library so you can pick a portrait, project photos and video clips for your page.",
+      // "Save Image" in the share sheet writes the QR code to Photos, and iOS
+      // stops the app if this string is missing when somebody picks it.
       NSPhotoLibraryAddUsageDescription:
         "PitchPage saves your page's QR code to your photo library.",
-      NSSpeechRecognitionUsageDescription:
-        "PitchPage uses speech recognition so you can dictate your answers instead of typing.",
     },
   },
   android: {
