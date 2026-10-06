@@ -68,7 +68,7 @@ export const RESEEDING_KINDS = new Set<PitchKind>([
   "listing",
 ]);
 
-/** Every kind except university skips the résumé upload step. */
+/** Every kind except university skips the resume upload step. */
 export const SKIPS_RESUME_UPLOAD = new Set<PitchKind>([
   "athlete",
   "real-estate",

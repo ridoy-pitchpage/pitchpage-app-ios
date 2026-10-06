@@ -41,7 +41,7 @@ export const ANALYTICS_EVENT_TYPES = [
   // player SDK on the public page, which is out of scope.
   "gallery_play",
   // Any other link on the page — LinkedIn, portfolio, supporting documents,
-  // credentials, mailto:, tel:, section anchors. Only the résumé and the CTAs
+  // credentials, mailto:, tel:, section anchors. Only the resume and the CTAs
   // were tracked before, which left most of a page's outbound links invisible.
   // The `target` column carries the CATEGORY of link, never the URL.
   "link_click",

@@ -21,7 +21,7 @@
 //      thousands of rows already in the table benefit from every mapping added
 //      here without a backfill.
 //
-//   2. LINK TARGETS. Clicks were only tracked for the résumé and the CTAs.
+//   2. LINK TARGETS. Clicks were only tracked for the resume and the CTAs.
 //      `classifyLinkTarget` names the KIND of link instead, so every other link
 //      on the page can be counted without editing a single template layout —
 //      matching on the href is what makes it layout-agnostic.
@@ -282,7 +282,7 @@ function sameUrl(a: string, b: string | null | undefined): boolean {
 /**
  * The CATEGORY of a clicked link, or null when it is not worth recording.
  *
- * The caller classifies résumé and CTA clicks first — those have their own
+ * The caller classifies resume and CTA clicks first — those have their own
  * event types and must not be double-counted here.
  *
  * Categories: linkedin · portfolio · document · credential · email · phone ·

@@ -97,7 +97,7 @@ export default function LivePageScreen() {
           startInLoadingState
           renderLoading={() => <Loading label="Loading your page…" />}
           // Keep the WebView to the page itself. A link out of it — their
-          // LinkedIn, an email address, the résumé download — opens the way it
+          // LinkedIn, an email address, the resume download — opens the way it
           // would from a browser; refusing the load alone made those taps do
           // nothing at all. Frames inside the page, like an embedded video,
           // load where they are.

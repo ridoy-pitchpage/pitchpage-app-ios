@@ -10,7 +10,7 @@ type PitchPageRow = Database["public"]["Tables"]["pitch_pages"]["Row"];
  * keystrokes included, so every field it owns comes from there — sending the
  * saved row instead would show the page as it was before the last few edits.
  * The ROW supplies the columns the draft does not carry at all (open_to, the
- * CTA labels, the résumé, credentials, documents), which the layouts read and
+ * CTA labels, the resume, credentials, documents), which the layouts read and
  * which only the website writes.
  *
  * Every field the layouts index into without guarding gets a safe value
