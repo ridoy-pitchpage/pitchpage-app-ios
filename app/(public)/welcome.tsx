@@ -25,7 +25,7 @@ export default function Welcome() {
         </Text>
         <Pressable onPress={() => router.push("/(public)/sign-in")} accessibilityRole="link" accessibilityLabel="Sign in"
           style={{ minWidth: 54, minHeight: 44, alignItems: "flex-end", justifyContent: "center" }}>
-          <Text className="font-body-bold" style={{ fontSize: 13, color: colors.link }}>Sign in</Text>
+          <Text className="font-body-bold" style={{ fontSize: 15, color: colors.link }}>Sign in</Text>
         </Pressable>
       </View>
 
@@ -35,7 +35,7 @@ export default function Welcome() {
             <Text accessibilityRole="header" className="font-heading" style={{ fontSize: compact ? 33 : 38, lineHeight: compact ? 40 : 46, letterSpacing: -1.7, color: colors.foreground }}>
               A page for{"\n"}your next move.
             </Text>
-            <Text className="font-body" style={{ fontSize: 14, lineHeight: 22, color: colors.mutedForeground }}>
+            <Text className="font-body" style={{ fontSize: 16, lineHeight: 24, color: colors.mutedForeground }}>
               Bring your story and work together.{"\n"}Share it in one simple link.
             </Text>
           </View>
@@ -43,7 +43,7 @@ export default function Welcome() {
             <Image source={PAGE_EXAMPLE} contentFit="cover" contentPosition="top"
               style={{ width: "100%", aspectRatio: compact ? 1.9 : 1.75, borderRadius: 2, borderWidth: 1, borderColor: colors.border }}
               accessibilityLabel="Example PitchPage for Nina Brooks, a career coach, with her portrait and introduction" />
-            <Text className="font-body" style={{ fontSize: 11, color: colors.mutedForeground }}>An example of what you can make.</Text>
+            <Text className="font-body" style={{ fontSize: 13, color: colors.mutedForeground }}>An example of what you can make.</Text>
           </View>
         </Animated.View>
       </ScrollView>
@@ -52,19 +52,19 @@ export default function Welcome() {
         <Pressable onPress={() => router.push("/(public)/sign-up")} accessibilityRole="button" accessibilityLabel="Create my page">
           {/* The look lives on an inner View: on iOS a style function on Pressable is dropped (see eslint.config.js). */}
           {({ pressed }) => (
-            <View style={{ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: colors.link,
+            <View style={{ minHeight: 56, paddingHorizontal: 20, paddingVertical: 14, borderRadius: 5, backgroundColor: colors.link,
               opacity: pressed ? 0.8 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>Create my page</Text>
-              <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
+              <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 17, color: actionInk }}>Create my page</Text>
+              <ArrowRight size={22} color={actionInk} strokeWidth={1.8} />
             </View>
           )}
         </Pressable>
-        <Text className="font-body-medium" style={{ fontSize: 11, lineHeight: 17, textAlign: "center", color: colors.mutedForeground }}>
+        <Text className="font-body-medium" style={{ fontSize: 13, lineHeight: 19, textAlign: "center", color: colors.mutedForeground }}>
           Free to build · 1 credit to publish
         </Text>
         <Pressable onPress={() => router.push("/(public)/examples")} accessibilityRole="link" accessibilityLabel="See examples"
           style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" }}>
-          <Text className="font-body-medium" style={{ fontSize: 12, color: colors.mutedForeground }}>See examples</Text>
+          <Text className="font-body-medium" style={{ fontSize: 15, color: colors.mutedForeground }}>See examples</Text>
         </Pressable>
       </View>
     </SafeAreaView>

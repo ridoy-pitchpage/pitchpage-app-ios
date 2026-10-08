@@ -81,11 +81,11 @@ export default function Onboarding() {
         <Text className="font-heading" style={{ fontSize: 18, letterSpacing: -0.9, flex: 1, color: ink }}>PitchPage<Text style={{ color: blueCover ? ink : colors.link }}>.</Text></Text>
         <Pressable onPress={() => void finish("/(public)/sign-in")} disabled={finishing} accessibilityRole="link" accessibilityLabel="Sign in"
           style={{ minWidth: 54, minHeight: 44, alignItems: "center", justifyContent: "center" }}>
-          <Text className="font-body-bold" style={{ fontSize: 12, color: ink }}>Sign in</Text>
+          <Text className="font-body-bold" style={{ fontSize: 15, color: ink }}>Sign in</Text>
         </Pressable>
         <Pressable onPress={() => void finish("/(public)/welcome")} disabled={finishing} accessibilityRole="link" accessibilityLabel="Skip introduction"
           style={{ minWidth: 44, minHeight: 44, alignItems: "flex-end", justifyContent: "center" }}>
-          <Text className="font-body" style={{ fontSize: 12, color: mutedInk }}>Skip</Text>
+          <Text className="font-body" style={{ fontSize: 15, color: mutedInk }}>Skip</Text>
         </Pressable>
       </View>
 
@@ -94,29 +94,29 @@ export default function Onboarding() {
           style={{ flexGrow: 1, gap: compact ? 18 : 24 }}>
           <View style={{ gap: compact ? 12 : 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Text className="font-body-bold" style={{ fontSize: 11, letterSpacing: 1.2, color: mutedInk }}>{String(active + 1).padStart(2, "0")}</Text>
+              <Text className="font-body-bold" style={{ fontSize: 13, letterSpacing: 1.2, color: mutedInk }}>{String(active + 1).padStart(2, "0")}</Text>
               <View style={{ width: 22, height: 1, backgroundColor: rule }} />
-              <Text className="font-body-medium" style={{ fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: mutedInk }}>{step.label}</Text>
+              <Text className="font-body-medium" style={{ fontSize: 13, letterSpacing: 1.2, textTransform: "uppercase", color: mutedInk }}>{step.label}</Text>
             </View>
             <Text accessibilityRole="header" accessibilityLiveRegion="polite" className="font-heading"
               style={{ fontSize: smallType ? 33 : 38, lineHeight: smallType ? 40 : 46, letterSpacing: -1.7, color: ink }}>{step.title}</Text>
-            <Text className="font-body" style={{ maxWidth: 360, fontSize: 14, lineHeight: 22, color: mutedInk }}>{step.body}</Text>
+            <Text className="font-body" style={{ maxWidth: 380, fontSize: 16, lineHeight: 24, color: mutedInk }}>{step.body}</Text>
           </View>
           <OnboardingShowcase active={active} compact={compact} ink={ink} mutedInk={mutedInk} rule={rule} />
         </Animated.View>
       </ScrollView>
 
       <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, gap: 8 }}>
-        <Text className="font-body-medium" style={{ fontSize: 11, textAlign: "center", lineHeight: 17, color: mutedInk }}>{step.note}</Text>
+        <Text className="font-body-medium" style={{ fontSize: 13, textAlign: "center", lineHeight: 19, color: mutedInk }}>{step.note}</Text>
         <Pressable onPress={() => active === 3 ? void finish("/(public)/sign-up") : setActive((current) => Math.min(current + 1, STEPS.length - 1))}
           disabled={finishing} accessibilityRole="button" accessibilityLabel={step.action} accessibilityState={{ disabled: finishing, busy: finishing }}>
           {/* The look lives on an inner View: on iOS a style function on Pressable is dropped (see eslint.config.js). */}
           {({ pressed }) => (
-            <View style={{ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: actionFill,
+            <View style={{ minHeight: 56, paddingHorizontal: 20, paddingVertical: 14, borderRadius: 5, backgroundColor: actionFill,
               opacity: pressed || finishing ? 0.75 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               {finishing ? <ActivityIndicator color={actionInk} /> : <>
-                <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>{step.action}</Text>
-                <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
+                <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 17, color: actionInk }}>{step.action}</Text>
+                <ArrowRight size={22} color={actionInk} strokeWidth={1.8} />
               </>}
             </View>
           )}
@@ -124,17 +124,17 @@ export default function Onboarding() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           {active > 0 ? <Pressable onPress={() => setActive((current) => Math.max(current - 1, 0))} disabled={finishing}
             accessibilityRole="button" accessibilityLabel="Previous step" style={{ minWidth: 44, minHeight: 44, justifyContent: "center" }}>
-            <ArrowLeft size={18} color={ink} strokeWidth={1.6} />
+            <ArrowLeft size={22} color={ink} strokeWidth={1.8} />
           </Pressable> : <View style={{ width: 44 }} />}
           <View style={{ flexDirection: "row" }} accessibilityLabel={"Introduction, step " + (active + 1) + " of 4"}>
             {STEPS.map((item, index) => <Pressable key={item.label} onPress={() => setActive(index)} disabled={finishing}
               accessibilityRole="button" accessibilityLabel={"Step " + (index + 1) + ": " + item.label} accessibilityState={{ selected: active === index, disabled: finishing }}
               style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center", gap: 5 }}>
-              <Text className={active === index ? "font-body-bold" : "font-body"} style={{ fontSize: 11, color: active === index ? ink : mutedInk }}>{String(index + 1).padStart(2, "0")}</Text>
-              <View style={{ width: 15, height: 2, backgroundColor: active === index ? ink : "transparent" }} />
+              <Text className={active === index ? "font-body-bold" : "font-body"} style={{ fontSize: 14, color: active === index ? ink : mutedInk }}>{String(index + 1).padStart(2, "0")}</Text>
+              <View style={{ width: 18, height: 2, backgroundColor: active === index ? ink : "transparent" }} />
             </Pressable>)}
           </View>
-          <Text className="font-body" style={{ minWidth: 44, fontSize: 10, textAlign: "right", color: mutedInk }}>/ 04</Text>
+          <Text className="font-body" style={{ minWidth: 44, fontSize: 13, textAlign: "right", color: mutedInk }}>/ 04</Text>
         </View>
       </View>
     </SafeAreaView>

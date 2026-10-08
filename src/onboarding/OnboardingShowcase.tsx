@@ -43,8 +43,8 @@ export function OnboardingShowcase({ active, compact, ink, mutedInk, rule }: Pro
           accessibilityLabel={"Example PitchPage for " + current.name + ", " + current.detail} />
         <View style={{ backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <View style={{ flex: 1, gap: 2 }}>
-            <Text className="font-body-bold" style={{ fontSize: 11, color: ink }}>{current.name}</Text>
-            <Text className="font-body" style={{ fontSize: 10, color: mutedInk }}>{current.detail} · Example page</Text>
+            <Text className="font-body-bold" style={{ fontSize: 13, color: ink }}>{current.name}</Text>
+            <Text className="font-body" style={{ fontSize: 13, color: mutedInk }}>{current.detail} · Example page</Text>
           </View>
           <ArrowUpRight size={20} color={colors.link} strokeWidth={1.5} />
         </View>
@@ -53,7 +53,7 @@ export function OnboardingShowcase({ active, compact, ink, mutedInk, rule }: Pro
         {EXAMPLES.map((item, index) => <Pressable key={item.label} onPress={() => setExample(index)} accessibilityRole="button"
           accessibilityLabel={"Explore " + item.label.toLowerCase() + " example"} accessibilityState={{ selected: example === index }}
           style={{ flex: largeText ? undefined : 1, minHeight: 44, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: example === index ? ink : "transparent" }}>
-          <Text className={example === index ? "font-body-bold" : "font-body"} style={{ fontSize: 12, color: example === index ? ink : mutedInk }}>{item.label}</Text>
+          <Text className={example === index ? "font-body-bold" : "font-body"} style={{ fontSize: 14, color: example === index ? ink : mutedInk }}>{item.label}</Text>
         </Pressable>)}
       </View>
     </View>
@@ -62,18 +62,18 @@ export function OnboardingShowcase({ active, compact, ink, mutedInk, rule }: Pro
   if (active === 1) return (
     <View style={{ borderTopWidth: 2, borderTopColor: ink }}>
       {MATERIALS.map((item, index) => <View key={item.title} style={{ borderBottomWidth: 1, borderBottomColor: rule, paddingVertical: compact ? 14 : 19, flexDirection: "row", gap: 16 }}>
-        <Text className="font-body-medium" style={{ paddingTop: 3, fontSize: 10, color: mutedInk }}>{String(index + 1).padStart(2, "0")}</Text>
+        <Text className="font-body-medium" style={{ paddingTop: 3, fontSize: 13, color: mutedInk }}>{String(index + 1).padStart(2, "0")}</Text>
         <View style={{ flex: 1, gap: 6 }}>
           <View style={{ flexDirection: largeText ? "column" : "row", flexWrap: "wrap", alignItems: largeText ? "flex-start" : "center", justifyContent: "space-between", gap: 6 }}>
             <Text className="font-heading-semi" style={{ fontSize: 17, letterSpacing: -0.5, color: ink }}>{item.title}</Text>
-            <Text className="font-body-bold" style={{ fontSize: 8, letterSpacing: 1, color: colors.link }}>{item.tag}</Text>
+            <Text className="font-body-bold" style={{ fontSize: 12, letterSpacing: 1, color: colors.link }}>{item.tag}</Text>
           </View>
-          <Text className="font-body" style={{ fontSize: 12, lineHeight: 19, color: mutedInk }}>{item.body}</Text>
+          <Text className="font-body" style={{ fontSize: 14, lineHeight: 21, color: mutedInk }}>{item.body}</Text>
         </View>
       </View>)}
       <View style={{ paddingTop: 13, flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
         <Text className="font-heading-semi" style={{ fontSize: 22, lineHeight: 24, color: colors.link }}>+</Text>
-        <Text className="font-body" style={{ flex: 1, fontSize: 11, lineHeight: 18, color: mutedInk }}>Add what matters. Leave out what doesn't.</Text>
+        <Text className="font-body" style={{ flex: 1, fontSize: 13, lineHeight: 20, color: mutedInk }}>Add what matters. Leave out what doesn't.</Text>
       </View>
     </View>
   );
@@ -96,10 +96,10 @@ export function OnboardingShowcase({ active, compact, ink, mutedInk, rule }: Pro
         {DESIGNS.map((item, index) => <Pressable key={item.name} onPress={() => setDesign(index)} accessibilityRole="button"
           accessibilityLabel={"Preview " + item.name + " design"} accessibilityState={{ selected: design === index }}
           style={{ flex: largeText ? undefined : 1, minHeight: 44, paddingVertical: 12, alignItems: "center", borderBottomWidth: 2, borderBottomColor: design === index ? ink : "transparent" }}>
-          <Text className={design === index ? "font-body-bold" : "font-body"} style={{ fontSize: 11, color: design === index ? ink : mutedInk }}>{item.label}</Text>
+          <Text className={design === index ? "font-body-bold" : "font-body"} style={{ fontSize: 13, color: design === index ? ink : mutedInk }}>{item.label}</Text>
         </Pressable>)}
       </View>
-      <Text className="font-body" style={{ fontSize: 10, textAlign: "center", color: mutedInk }}>A few of the actual PitchPage designs. Tap to explore.</Text>
+      <Text className="font-body" style={{ fontSize: 13, textAlign: "center", color: mutedInk }}>A few of the actual PitchPage designs. Tap to explore.</Text>
     </View>
   );
 
@@ -107,14 +107,14 @@ export function OnboardingShowcase({ active, compact, ink, mutedInk, rule }: Pro
     <View style={{ gap: 14 }}>
       <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: rule, padding: compact ? 16 : 20 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: rule }}>
-          <Text className="font-body-bold" style={{ fontSize: 10, letterSpacing: 1.5, color: mutedInk }}>YOUR PAGE, READY TO SHARE</Text>
+          <Text className="font-body-bold" style={{ fontSize: 13, letterSpacing: 1.5, color: mutedInk }}>YOUR PAGE, READY TO SHARE</Text>
           <ArrowUpRight size={22} color={colors.link} strokeWidth={1.5} />
         </View>
         <View style={{ flexDirection: largeText ? "column" : "row", alignItems: "center", paddingVertical: 20, gap: 14 }}>
           <View style={{ flex: 1, gap: 8 }}>
             <Text className="font-heading-semi" style={{ fontSize: 21, letterSpacing: -0.6, color: ink }}>One link.{"\n"}All of you.</Text>
-            <Text className="font-body" style={{ fontSize: 10, color: colors.link }}>pitchpage.co/p/your-name</Text>
-            <Text className="font-body" style={{ fontSize: 9, color: mutedInk }}>Example link and QR code</Text>
+            <Text className="font-body" style={{ fontSize: 13, color: colors.link }}>pitchpage.co/p/your-name</Text>
+            <Text className="font-body" style={{ fontSize: 13, color: mutedInk }}>Example link and QR code</Text>
           </View>
           <View accessible accessibilityLabel="Example QR code linking to PitchPage" style={{ padding: 6, backgroundColor: appLight.card }}>
             <QRCode value="https://pitchpage.co" size={compact ? 62 : 74} color={appLight.primary} backgroundColor={appLight.card} />
@@ -123,18 +123,18 @@ export function OnboardingShowcase({ active, compact, ink, mutedInk, rule }: Pro
         <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: rule, paddingTop: 14, gap: 16 }}>
           <View style={{ flex: 1, gap: 4 }}>
             <Text className="font-heading" style={{ fontSize: 25, color: ink }}>Free</Text>
-            <Text className="font-body" style={{ fontSize: 10, color: mutedInk }}>to build & edit</Text>
+            <Text className="font-body" style={{ fontSize: 13, color: mutedInk }}>to build & edit</Text>
           </View>
           <View style={{ width: 1, backgroundColor: rule }} />
           <View style={{ flex: 1, gap: 4 }}>
             <Text className="font-heading" style={{ fontSize: 25, color: colors.link }}>1 credit</Text>
-            <Text className="font-body" style={{ fontSize: 10, color: mutedInk }}>to publish your page</Text>
+            <Text className="font-body" style={{ fontSize: 13, color: mutedInk }}>to publish your page</Text>
           </View>
         </View>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <View style={{ width: 5, height: 5, backgroundColor: colors.link }} />
-        <Text className="font-body" style={{ flex: 1, fontSize: 11, lineHeight: 18, color: mutedInk }}>See page visits after you share. No subscription.</Text>
+        <Text className="font-body" style={{ flex: 1, fontSize: 13, lineHeight: 20, color: mutedInk }}>See page visits after you share. No subscription.</Text>
       </View>
     </View>
   );
