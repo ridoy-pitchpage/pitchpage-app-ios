@@ -14,6 +14,7 @@ import { useToast } from "@/components/Toast";
 import { useMyPage, usePublishEligibility, usePublishPage } from "@/api/queries";
 import { toPageModel } from "@/page/page-model";
 import { checkPageHealth, pageIsEmpty, EMPTY_PAGE_MESSAGE } from "@/page/page-health";
+import { userFacingErrorMessage } from "@/lib/errors";
 import { creditCount } from "@/lib/format";
 
 /**
@@ -145,6 +146,9 @@ export default function PreviewScreen() {
           <PublishCard
             eligibility={eligibility.data}
             loading={eligibility.isPending}
+            loadError={eligibility.isError ? eligibility.error : null}
+            retrying={eligibility.isFetching}
+            onRetry={() => void eligibility.refetch()}
             publishing={publish.isPending}
             onPublish={() => void attemptPublish()}
             onBuyCredits={() => router.push("/(app)/(tabs)/credits/buy")}
@@ -163,6 +167,9 @@ export default function PreviewScreen() {
 function PublishCard({
   eligibility,
   loading,
+  loadError,
+  retrying,
+  onRetry,
   publishing,
   onPublish,
   onBuyCredits,
@@ -171,10 +178,26 @@ function PublishCard({
     | { mode: "sponsored" | "awaiting_credit" | "paid"; org_name: string | null; credits_remaining: number }
     | undefined;
   loading: boolean;
+  loadError: unknown;
+  retrying: boolean;
+  onRetry: () => void;
   publishing: boolean;
   onPublish: () => void;
   onBuyCredits: () => void;
 }) {
+  // Only when there is nothing to show: a background refetch that fails keeps
+  // the answer already on screen. Without this, a failed check left "Checking
+  // your balance…" spinning for good, with no way forward.
+  if (!eligibility && loadError) {
+    return (
+      <Card className="gap-3">
+        <H3>We couldn't check your balance</H3>
+        <Muted>{userFacingErrorMessage(loadError)}</Muted>
+        <Button title="Try again" variant="secondary" loading={retrying} onPress={onRetry} />
+      </Card>
+    );
+  }
+
   if (loading || !eligibility) {
     return (
       <Card>

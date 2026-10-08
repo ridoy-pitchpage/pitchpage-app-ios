@@ -146,6 +146,24 @@ await check('Review: Publish is on screen, and the gaps are asked about on tap',
   return `(button ends at ${bottom}px of ${p.viewportSize().height})`;
 });
 
+await check('Review: a failed balance check offers Try again', async () => {
+  const before = errs.length;
+  const rpc = '**/rest/v1/rpc/get_publish_eligibility*';
+  await p.route(rpc, (route) =>
+    route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Service Unavailable"}' }));
+  await go('/preview/' + mod.DRAFT_ID);
+  await p.waitForTimeout(2500); // the app retries once quietly first (app/_layout.tsx)
+  const t = await text();
+  must(/We couldn't check your balance/.test(t), 'no error state when the balance check fails');
+  must(!/Checking your balance/.test(t), 'still spinning on a failed balance check');
+  await p.unroute(rpc);
+  await p.getByRole('button', { name: 'Try again', exact: true }).click(); await p.waitForTimeout(1500);
+  must(/Ready to publish/.test(await text()), 'Try again did not recover once the check answered');
+  // The 503s above are this step's whole point, not a fault in the app.
+  errs.length = before;
+  return '(error, then recovered)';
+});
+
 await check('Share: link, QR and channels', async () => {
   await go('/share/' + mod.LIVE_ID);
   const t = await text();
