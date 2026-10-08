@@ -3,6 +3,7 @@ import { Pressable, TextInput, View } from "react-native";
 import { X } from "lucide-react-native";
 
 import { Body, Label, Muted } from "./Text";
+import { useSheetFocusReveal } from "./sheet-focus";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 
@@ -33,6 +34,7 @@ export function ChipField({
   hint?: string;
 }) {
   const colors = useColors();
+  const revealInSheet = useSheetFocusReveal();
   const [draft, setDraft] = useState("");
   const atMax = value.length >= max;
 
@@ -86,6 +88,7 @@ export function ChipField({
             else setDraft(text);
           }}
           onSubmitEditing={() => commit(draft)}
+          onFocus={() => revealInSheet?.()}
           onBlur={() => commit(draft)}
           onKeyPress={({ nativeEvent }) => {
             if (nativeEvent.key === "Backspace" && draft === "" && value.length > 0) {
@@ -134,6 +137,7 @@ export function LineList({
   addLabel?: string;
 }) {
   const colors = useColors();
+  const revealInSheet = useSheetFocusReveal();
   // Always offer one empty field, so there is somewhere to start typing.
   const rows = value.length > 0 ? value : [""];
 
@@ -152,6 +156,7 @@ export function LineList({
           <TextInput
             value={line}
             onChangeText={(text) => update(index, text)}
+            onFocus={() => revealInSheet?.()}
             placeholder={index === 0 ? placeholder : undefined}
             placeholderTextColor={colors.mutedForeground}
             accessibilityLabel={label ? `${label}, ${index + 1}` : undefined}

@@ -3,6 +3,7 @@ import { Pressable, TextInput, View, type TextInputProps } from "react-native";
 import { Eye, EyeOff } from "lucide-react-native";
 
 import { Label, Muted } from "./Text";
+import { useSheetFocusReveal } from "./sheet-focus";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { mix, MIN_TAP } from "@/theme/tokens";
 
@@ -35,6 +36,7 @@ export function TextField({
   const { resolved } = useTheme();
   const [revealed, setRevealed] = useState(false);
   const [focused, setFocused] = useState(false);
+  const revealInSheet = useSheetFocusReveal();
   const fieldMinHeight = Math.max(minHeight ?? 52, MIN_TAP);
   const multiline = Boolean(rest.multiline);
 
@@ -74,6 +76,7 @@ export function TextField({
           secureTextEntry={secure && !revealed}
           onFocus={(event) => {
             setFocused(true);
+            revealInSheet?.();
             rest.onFocus?.(event);
           }}
           onBlur={(event) => {
