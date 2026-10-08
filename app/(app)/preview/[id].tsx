@@ -8,10 +8,11 @@ import { Card } from "@/components/Card";
 import { BackButton } from "@/components/BackButton";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
-import { H1, H3, Muted } from "@/components/Text";
+import { Body, H1, H3, Muted } from "@/components/Text";
 import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { useMyPage, usePublishEligibility, usePublishPage } from "@/api/queries";
+import { sectionsForLayout } from "@/page/page-sections";
 import { toPageModel } from "@/page/page-model";
 import { checkPageHealth, pageIsEmpty, EMPTY_PAGE_MESSAGE } from "@/page/page-health";
 import { userFacingErrorMessage } from "@/lib/errors";
@@ -20,13 +21,15 @@ import { creditCount } from "@/lib/format";
 /**
  * Review and publish (S74/S75/S68).
  *
- * Only the decision: which page, and the one button that moves it on, which
- * is Publish, or Get a credit when publishing needs one. This screen used to
- * list what was on the page and every section above that button, so on a real
- * page the button sat below the fold and the screen read as a form with no way
- * out (2026-10-08). The page is checked in the builder, where it can be fixed.
- * What a visitor would notice first still comes up, as a question, when
- * Publish is tapped. Once published, "See it live" opens the real page.
+ * A glance at the page, then the one button that moves it on: Publish, or Get
+ * a credit when publishing needs one. This screen used to show each part's
+ * text and then every section by name above that button, so on a real page the
+ * button sat below the fold and the screen read as a form with no way out
+ * (2026-10-08). The glance is one line per part, added or not, and a section
+ * count, short enough that the button is always in view; the page itself is
+ * checked in the builder, where it can be fixed. What a visitor would notice
+ * first still comes up, as a question, when Publish is tapped. Once published,
+ * "See it live" opens the real page.
  */
 export default function PreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -44,6 +47,8 @@ export default function PreviewScreen() {
   const model = useMemo(() => (page.data ? toPageModel(page.data) : null), [page.data]);
   const health = useMemo(() => (model ? checkPageHealth(model) : null), [model]);
   const empty = useMemo(() => (model ? pageIsEmpty(model) : false), [model]);
+  // What a visitor would see, so a section left empty is not counted.
+  const sectionCount = useMemo(() => (model ? sectionsForLayout(model).length : 0), [model]);
 
   if (page.isPending) {
     return (
@@ -125,6 +130,18 @@ export default function PreviewScreen() {
         {/* full_name is NOT NULL and saved as "" when cleared, so ?? would never fall back. */}
         <H1>{row.full_name || "Your page"}</H1>
 
+        <Card className="gap-2">
+          <H3>What's on your page</H3>
+          <GlanceRow label="Headline" status={addedOrNot(row.headline)} />
+          <GlanceRow label="Bio" status={addedOrNot(row.bio)} />
+          <GlanceRow label="Portrait" status={addedOrNot(row.portrait_url)} />
+          <GlanceRow label="Intro video" status={addedOrNot(row.video_url)} />
+          <GlanceRow
+            label="Sections"
+            status={sectionCount === 0 ? "None yet" : `${sectionCount} with content`}
+          />
+        </Card>
+
         {isLive ? (
           <View className="gap-3">
             <Button
@@ -156,6 +173,24 @@ export default function PreviewScreen() {
         )}
       </ScreenScroll>
     </Screen>
+  );
+}
+
+function addedOrNot(value: string | null | undefined): string {
+  return value && value.trim() ? "Added" : "Not added yet";
+}
+
+/** One line of the glance, read by VoiceOver as one item: "Bio, Added". */
+function GlanceRow({ label, status }: { label: string; status: string }) {
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${label}, ${status}`}
+      className="flex-row items-center justify-between gap-3"
+    >
+      <Body className="shrink-0">{label}</Body>
+      <Muted className="min-w-0 flex-1 text-right">{status}</Muted>
+    </View>
   );
 }
 

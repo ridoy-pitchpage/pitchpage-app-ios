@@ -131,6 +131,9 @@ await check('Builder: a style can be picked', async () => {
 
 await check('Review: Publish is on screen, and the gaps are asked about on tap', async () => {
   await go('/preview/' + mod.DRAFT_ID);
+  const glance = await text();
+  must(/What's on your page/.test(glance) && /Not added yet/.test(glance), 'no summary above the button');
+  must(!/About me/.test(glance), 'sections are listed one by one again');
   const publishButton = p.getByRole('button', { name: 'Publish now', exact: true });
   const box = await publishButton.boundingBox();
   const bottom = box ? Math.round(box.y + box.height) : null;
