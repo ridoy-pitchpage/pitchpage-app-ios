@@ -124,6 +124,18 @@ async function removeIfOwned(
   }
 }
 
+/**
+ * The storage path inside a URL this app stored, e.g. a page's resume_url, or
+ * null when the URL isn't one of ours. What an AI build sends to name the CV.
+ */
+export function storagePathFromUrl(kind: MediaKind, url: string): string | null {
+  const { bucket } = BUCKETS[kind];
+  const marker = `/object/public/${bucket}/`;
+  const index = url.indexOf(marker);
+  if (index === -1) return null;
+  return decodeURIComponent(url.slice(index + marker.length).split("?")[0] ?? "") || null;
+}
+
 /** Remove media a user has explicitly deleted, e.g. a gallery image. */
 export async function removeMedia(kind: MediaKind, urls: string[]): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();

@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import * as DocumentPicker from "expo-document-picker";
-import { BriefcaseBusiness, FileText, Globe2, Trash2, Upload } from "lucide-react-native";
+import { BriefcaseBusiness, FileText, Globe2, MessageSquareText, Trash2, Upload } from "lucide-react-native";
 
 import { ActionBar } from "@/components/ActionBar";
 import { BackButton } from "@/components/BackButton";
@@ -17,21 +17,51 @@ import { ErrorState, Loading } from "@/components/States";
 import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { keys, useMyPage } from "@/api/queries";
+import { AppApiError, appApiPost } from "@/api/app-api";
 import { savePage } from "@/api/supabase-direct";
-import { MEDIA_LIMITS, removeMedia, tooLargeMessage, uploadMedia } from "@/features/media/upload";
+import { ConsentSheet } from "@/features/ai/ConsentSheet";
+import { hasAiConsent, recordAiConsent } from "@/features/ai/consent";
+import {
+  MEDIA_LIMITS,
+  removeMedia,
+  storagePathFromUrl,
+  tooLargeMessage,
+  uploadMedia,
+} from "@/features/media/upload";
+import { applyComposedToPage, withUnconfirmed, type ComposeResultToApply } from "@/page/apply-composed";
+import { clampSections } from "@/page/page-sections";
 import { useColors } from "@/theme/ThemeProvider";
 
 /**
  * The last step before the builder: what the page is made from.
  *
- * The website's wizard takes a resume, has AI read it, and composes a first
- * draft — so the person edits something rather than facing empty fields. This
- * step is the app's version of that: the CV, the links worth carrying over,
- * and a direct path into the working manual builder. AI composition is not
- * offered until its server endpoint and consent flow are ready.
+ * The website's material step, on a phone. The person tells us about
+ * themselves and adds a CV, and "Build my page" has AI write a first draft
+ * into the sections their page type set up, so they edit something rather
+ * than facing empty fields. The AI runs on the website
+ * (POST /api/app/v1/ai/compose-sections, the same composeIntoSections the
+ * website calls), and the draft is applied by the website's own rule
+ * (src/page/apply-composed.ts): only empty sections the person hasn't written
+ * in, only blank basics. Building by hand stays one tap away.
  */
 
 const RESUME_EXTENSIONS = ["pdf", "doc", "docx"];
+
+/** The website's limits (web: src/lib/wizard-meta.ts, MaterialStep). */
+const MAX_BUILD_PROMPT = 4000;
+/** Below this a prompt alone can't build anything; the server refuses under 40 characters of material. */
+const MIN_PROMPT_TO_BUILD = 40;
+
+type ComposeResult = ComposeResultToApply & { unreadable: string[] };
+
+/** wizard_meta as this screen reads and writes it: an object, whatever was stored. */
+function metaObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+}
 
 export default function BuildScreen() {
   const colors = useColors();
@@ -43,7 +73,11 @@ export default function BuildScreen() {
 
   const [linkedin, setLinkedin] = useState<string | null>(null);
   const [portfolio, setPortfolio] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"resume" | "save" | null>(null);
+  const [prompt, setPrompt] = useState<string | null>(null);
+  const [busy, setBusy] = useState<"resume" | "save" | "build" | null>(null);
+  const [consentOpen, setConsentOpen] = useState(false);
+  const [consentBusy, setConsentBusy] = useState(false);
+  const building = useRef<AbortController | null>(null);
 
   if (page.isPending) {
     return (
@@ -69,6 +103,12 @@ export default function BuildScreen() {
   // already saved without overwriting it with a stale empty string.
   const linkedinValue = linkedin ?? row.linkedin_url ?? "";
   const portfolioValue = portfolio ?? row.primary_cta_url ?? "";
+  const meta = metaObject(row.wizard_meta);
+  const promptValue = prompt ?? (typeof meta.buildPrompt === "string" ? meta.buildPrompt : "");
+  const sections = clampSections(row.sections);
+  const resumePath = row.resume_url ? storagePathFromUrl("resume", row.resume_url) : null;
+  const canBuild =
+    sections.length > 0 && (promptValue.trim().length >= MIN_PROMPT_TO_BUILD || resumePath != null);
 
   async function pickResume() {
     const result = await DocumentPicker.getDocumentAsync({
@@ -125,6 +165,95 @@ export default function BuildScreen() {
     if (previous) await removeMedia("resume", [previous]);
   }
 
+  /** Build my page: consent first, once per account. */
+  async function startBuild() {
+    if (!canBuild || busy) return;
+    try {
+      if (await hasAiConsent()) await build();
+      else setConsentOpen(true);
+    } catch (error) {
+      toast.error(error);
+    }
+  }
+
+  async function allowAi() {
+    setConsentBusy(true);
+    try {
+      await recordAiConsent();
+      setConsentOpen(false);
+      await build();
+    } catch (error) {
+      toast.error(error);
+    } finally {
+      setConsentBusy(false);
+    }
+  }
+
+  /**
+   * Ask the website for a draft, apply it by the website's rule, and save it
+   * with this screen's links in one write, so nothing on this screen is lost
+   * and the page's version check covers all of it.
+   */
+  async function build() {
+    const controller = new AbortController();
+    building.current = controller;
+    setBusy("build");
+    try {
+      const brief = promptValue.trim().slice(0, MAX_BUILD_PROMPT);
+      const result = await appApiPost<ComposeResult>(
+        "/ai/compose-sections",
+        {
+          pitchPageId: row.id,
+          sections: sections.map((s) => ({ id: s.id, title: s.title, blockType: s.blockType, hint: s.hint ?? "" })),
+          documents: resumePath ? [{ path: resumePath, bucket: "resumes", name: "Your CV" }] : [],
+          promptText: brief,
+          roleHint: typeof meta.jobTarget === "string" ? meta.jobTarget : "",
+          pitchKind: typeof meta.pitchKind === "string" ? meta.pitchKind : "",
+        },
+        { signal: controller.signal },
+      );
+
+      const applied = applyComposedToPage(
+        { sections, full_name: row.full_name, headline: row.headline, bio: row.bio },
+        stringList(meta.edited),
+        result,
+      );
+      await savePage(
+        row.id,
+        {
+          ...applied.basics,
+          sections: applied.sections,
+          linkedin_url: linkedinValue.trim() || null,
+          primary_cta_url: portfolioValue.trim() || null,
+          wizard_meta: {
+            ...meta,
+            buildPrompt: brief,
+            ...(applied.appliedDrafts.length > 0
+              ? { unconfirmed: withUnconfirmed(stringList(meta.unconfirmed), applied.appliedDrafts) }
+              : {}),
+          },
+        },
+        row.updated_at,
+      );
+      await queryClient.invalidateQueries({ queryKey: keys.page(row.id) });
+      await queryClient.invalidateQueries({ queryKey: keys.pages });
+      if (result.unreadable.length > 0) {
+        toast.error(new Error("We couldn't read your CV, so your draft is built from what you typed."));
+      } else {
+        toast.success("Your first draft is ready");
+      }
+      router.replace({ pathname: "/(app)/builder/[id]", params: { id: row.id } });
+    } catch (error) {
+      // Cancelled by the person: nothing to say. A timeout is not a cancel.
+      const timedOut = error instanceof AppApiError && error.code === "TIMEOUT";
+      if (controller.signal.aborted && !timedOut) return;
+      toast.error(error);
+    } finally {
+      building.current = null;
+      setBusy(null);
+    }
+  }
+
   /** Save what is on this screen, then open the builder. */
   async function saveAndBuild() {
     setBusy("save");
@@ -146,6 +275,27 @@ export default function BuildScreen() {
       setBusy(null);
     }
   }
+
+  if (busy === "build") {
+    return (
+      <Screen>
+        <View className="flex-1 items-center justify-center gap-4 px-6">
+          <Loading label="Building your page…" />
+          <Muted className="text-center">
+            This takes about 30 seconds. Your draft goes into the sections your page already has.
+          </Muted>
+          <Button
+            title="Cancel"
+            variant="secondary"
+            fullWidth={false}
+            onPress={() => building.current?.abort()}
+          />
+        </View>
+      </Screen>
+    );
+  }
+
+  const promptLength = promptValue.length;
 
   return (
     <Screen edges={["top"]}>
@@ -169,8 +319,36 @@ export default function BuildScreen() {
                 style={{ backgroundColor: colors.primary }} />)}
             </View>
             <H1>Add the essentials</H1>
-            <Muted>Add your CV and useful links. Everything here is optional and can be changed later.</Muted>
+            <Muted>
+              Tell us about yourself and add your CV, and we'll write a first draft you can change.
+            </Muted>
           </View>
+
+          <Card flat className="gap-4">
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-control bg-secondary">
+                <MessageSquareText size={20} color={colors.link} strokeWidth={1.8} />
+              </View>
+              <View className="min-w-0 flex-1">
+                <H3>Tell us about yourself</H3>
+                <Muted className="text-[12px]">Who you are, and who this page is for</Muted>
+              </View>
+            </View>
+            <TextField
+              label="About you"
+              value={promptValue}
+              onChangeText={setPrompt}
+              multiline
+              minHeight={132}
+              maxLength={MAX_BUILD_PROMPT}
+              placeholder="Who you are, what you do, and who this page is for — e.g. I run a commercial electrical contractor in Dallas doing hospital and data-centre fit-outs, mostly as a sub to large GCs. This page is for RFP reviewers; lead with our safety record and the size of jobs we take on."
+              hint={
+                // Only once it matters: maxLength stops the typing, so the
+                // limit must be visible before it bites.
+                promptLength > MAX_BUILD_PROMPT * 0.75 ? `${promptLength} / ${MAX_BUILD_PROMPT}` : undefined
+              }
+            />
+          </Card>
 
           <Card flat className="gap-4">
             <View className="flex-row items-center gap-3">
@@ -241,14 +419,32 @@ export default function BuildScreen() {
         </ScreenScroll>
 
         <ActionBar safeBottom className="gap-2">
+          {!canBuild ? (
+            <Muted className="text-center">
+              Tell us about yourself, or add your CV, and this turns on.
+            </Muted>
+          ) : null}
           <Button
-            title="Continue to builder"
+            title="Build my page"
+            disabled={!canBuild || busy != null}
+            onPress={() => void startBuild()}
+          />
+          <Button
+            title="I'll fill it in myself"
+            variant="ghost"
             loading={busy === "save"}
             disabled={busy === "resume"}
             onPress={() => void saveAndBuild()}
           />
         </ActionBar>
       </KeyboardAvoidingView>
+
+      <ConsentSheet
+        visible={consentOpen}
+        busy={consentBusy}
+        onAllow={() => void allowAi()}
+        onNotNow={() => setConsentOpen(false)}
+      />
     </Screen>
   );
 }
