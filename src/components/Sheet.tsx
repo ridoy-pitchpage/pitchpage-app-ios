@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { vars } from "nativewind";
 import Animated, {
   useAnimatedStyle,
@@ -127,7 +128,8 @@ export function Sheet({
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <ModalSurface>
-        <View className="flex-1">
+        {/* A Modal is outside the app root, so gestures in it (dragging a section) need their own. */}
+        <GestureHandlerRootView style={{ flex: 1 }}>
           <Animated.View style={[{ ...StyleSheetAbsolute, backgroundColor: "#000" }, scrimStyle]}>
             <Pressable
               accessibilityRole="button"
@@ -229,7 +231,7 @@ export function Sheet({
               </LinearGradient>
             </Animated.View>
           </KeyboardAvoidingView>
-        </View>
+        </GestureHandlerRootView>
       </ModalSurface>
     </Modal>
   );

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { ChevronDown, ChevronUp, Plus } from "lucide-react-native";
+import { ChevronDown, ChevronUp, GripVertical, Plus } from "lucide-react-native";
+import Sortable from "react-native-sortables";
 
 import { Sheet } from "@/components/Sheet";
 import { Body, Muted } from "@/components/Text";
@@ -10,7 +11,14 @@ import { PRESET_GROUPS, SECTION_PRESETS, sectionFromPreset } from "@/page/sectio
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 
-/** Reordering, adding and opening sections. */
+/**
+ * Reordering, adding and opening sections.
+ *
+ * A section moves two ways: drag it by its handle, or use its arrows. The
+ * arrows stay because VoiceOver cannot drag, and a drag only ever starts on
+ * the handle, so tapping a section to edit it or scrolling the sheet never
+ * picks one up by mistake.
+ */
 export function SectionsSheet({
   visible,
   onClose,
@@ -59,61 +67,80 @@ export function SectionsSheet({
     <>
       <Sheet visible={visible && !adding} onClose={onClose} title="Your sections">
         <Muted className="pb-1">
-          {sections.length} of {MAX_SECTIONS}. Tap one to edit it. An empty section never shows on
-          your published page.
+          {sections.length} of {MAX_SECTIONS}. Tap one to edit it, or drag it by its handle to move
+          it. An empty section never shows on your published page.
         </Muted>
 
-        {sections.map((section, index) => {
-          const empty = blockIsEmpty(section.blockType, section.data);
-          return (
-            <View
-              key={section.id}
-              className="flex-row items-center gap-1 border-b border-border"
-              style={{ minHeight: 56 }}
-            >
-              <Pressable
-                onPress={() => {
-                  onClose();
-                  onEditSection(section);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`Edit ${section.title || "untitled section"}${empty ? ", empty" : ""}`}
-                style={{ minHeight: MIN_TAP }}
-                className="min-w-0 flex-1 justify-center gap-0.5 py-2"
+        <Sortable.Grid
+          columns={1}
+          data={sections}
+          keyExtractor={(section) => section.id}
+          customHandle
+          hapticsEnabled
+          activeItemScale={1.02}
+          inactiveItemOpacity={0.6}
+          onDragEnd={({ data }) => setSections(data)}
+          renderItem={({ item: section, index }) => {
+            const empty = blockIsEmpty(section.blockType, section.data);
+            return (
+              <View
+                className="flex-row items-center gap-1 border-b border-border bg-card"
+                style={{ minHeight: 56 }}
               >
-                <Body numberOfLines={1}>{section.title || "Untitled section"}</Body>
-                {empty ? <Muted>Empty</Muted> : null}
-              </Pressable>
+                <Sortable.Handle>
+                  <View
+                    accessibilityElementsHidden
+                    importantForAccessibility="no-hide-descendants"
+                    style={{ minHeight: MIN_TAP, minWidth: MIN_TAP, alignItems: "center", justifyContent: "center" }}
+                  >
+                    <GripVertical size={20} color={colors.mutedForeground} />
+                  </View>
+                </Sortable.Handle>
 
-              <Pressable
-                onPress={() => move(index, -1)}
-                disabled={index === 0}
-                accessibilityRole="button"
-                accessibilityLabel={`Move ${section.title} up`}
-                accessibilityState={{ disabled: index === 0 }}
-                style={{ minHeight: MIN_TAP, minWidth: MIN_TAP }}
-                className={["items-center justify-center", index === 0 ? "opacity-30" : ""].join(" ")}
-              >
-                <ChevronUp size={20} color={colors.foreground} />
-              </Pressable>
+                <Pressable
+                  onPress={() => {
+                    onClose();
+                    onEditSection(section);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit ${section.title || "untitled section"}${empty ? ", empty" : ""}`}
+                  style={{ minHeight: MIN_TAP }}
+                  className="min-w-0 flex-1 justify-center gap-0.5 py-2"
+                >
+                  <Body numberOfLines={1}>{section.title || "Untitled section"}</Body>
+                  {empty ? <Muted>Empty</Muted> : null}
+                </Pressable>
 
-              <Pressable
-                onPress={() => move(index, 1)}
-                disabled={index === sections.length - 1}
-                accessibilityRole="button"
-                accessibilityLabel={`Move ${section.title} down`}
-                accessibilityState={{ disabled: index === sections.length - 1 }}
-                style={{ minHeight: MIN_TAP, minWidth: MIN_TAP }}
-                className={[
-                  "items-center justify-center",
-                  index === sections.length - 1 ? "opacity-30" : "",
-                ].join(" ")}
-              >
-                <ChevronDown size={20} color={colors.foreground} />
-              </Pressable>
-            </View>
-          );
-        })}
+                <Pressable
+                  onPress={() => move(index, -1)}
+                  disabled={index === 0}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Move ${section.title} up`}
+                  accessibilityState={{ disabled: index === 0 }}
+                  style={{ minHeight: MIN_TAP, minWidth: MIN_TAP }}
+                  className={["items-center justify-center", index === 0 ? "opacity-30" : ""].join(" ")}
+                >
+                  <ChevronUp size={20} color={colors.foreground} />
+                </Pressable>
+
+                <Pressable
+                  onPress={() => move(index, 1)}
+                  disabled={index === sections.length - 1}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Move ${section.title} down`}
+                  accessibilityState={{ disabled: index === sections.length - 1 }}
+                  style={{ minHeight: MIN_TAP, minWidth: MIN_TAP }}
+                  className={[
+                    "items-center justify-center",
+                    index === sections.length - 1 ? "opacity-30" : "",
+                  ].join(" ")}
+                >
+                  <ChevronDown size={20} color={colors.foreground} />
+                </Pressable>
+              </View>
+            );
+          }}
+        />
 
         <Pressable
           onPress={() => setAdding(true)}
