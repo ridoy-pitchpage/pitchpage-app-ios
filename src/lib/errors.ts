@@ -56,6 +56,14 @@ const TRANSLATIONS: Array<[RegExp, string]> = [
 
 /** Supabase Auth messages, which are written for developers. */
 const AUTH_TRANSLATIONS: Array<[RegExp, string]> = [
+  // Apple or Google is not set up for this app on the server: Supabase
+  // answered Apple's first real sign-in with "Unacceptable audience in
+  // id_token: [co.pitchpage.app]", word for word, in front of the customer.
+  // Nothing they can do fixes it, so point them at the way in that works.
+  [
+    /unacceptable audience|provider is not enabled|unsupported provider|nonces? mismatch|invalid nonce|redirect_uri_mismatch/i,
+    "That sign-in option isn't working right now. Sign in with your email and password instead.",
+  ],
   [/invalid login credentials/i, "That email and password don't match. Try again."],
   [/email not confirmed/i, "Confirm your email address first — check your inbox."],
   [/user already registered|already been registered/i, "There's already an account with that email. Sign in instead."],
