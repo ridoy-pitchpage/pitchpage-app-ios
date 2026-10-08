@@ -129,13 +129,21 @@ await check('Builder: a style can be picked', async () => {
   return `(${swatches} controls)`;
 });
 
-await check('Review/preview lists what is on the page', async () => {
+await check('Review: Publish is on screen, and the gaps are asked about on tap', async () => {
   await go('/preview/' + mod.DRAFT_ID);
-  const t = await text();
-  must(t.length > 120, 'review screen near-empty');
+  const publishButton = p.getByRole('button', { name: 'Publish now', exact: true });
+  const box = await publishButton.boundingBox();
+  const bottom = box ? Math.round(box.y + box.height) : null;
+  must(bottom != null && bottom <= p.viewportSize().height, `Publish now is below the fold (${bottom}px)`);
   must(!(await overflow()), 'horizontal overflow');
   await p.screenshot({ path: `${OUT_DIR}/e2e-3-review.png` });
-  return `(${t.length} chars)`;
+  // The draft has no headline, bio or portrait, so Publish asks before spending a credit.
+  await publishButton.click(); await p.waitForTimeout(500);
+  must(/Before you publish/.test(await text()), 'Publish did not ask about the missing headline, bio and portrait');
+  await p.getByRole('button', { name: 'Keep editing', exact: true }).click(); await p.waitForTimeout(400);
+  must(p.url().includes('/preview/'), 'Keep editing left the review screen');
+  must(!/Before you publish/.test(await text()), 'the question stayed open');
+  return `(button ends at ${bottom}px of ${p.viewportSize().height})`;
 });
 
 await check('Share: link, QR and channels', async () => {
