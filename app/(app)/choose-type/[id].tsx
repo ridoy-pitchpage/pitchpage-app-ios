@@ -178,26 +178,32 @@ export default function ChooseTypeScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`${tile.title}. ${tile.description}`}
                       accessibilityState={{ selected: isCurrent, disabled: busy != null, busy: busy === tile.key }}
-                      style={({ pressed }) => ({
-                        minHeight: 84,
-                        padding: 16,
-                        borderBottomWidth: index === group.kinds.length - 1 ? 0 : 1,
-                        borderBottomColor: colors.border,
-                        backgroundColor: pressed ? colors.secondary : isCurrent ? mix(colors.card, colors.primary, 0.06) : undefined,
-                      })}
-                      className="flex-row items-center gap-3"
                     >
-                      <View className="h-11 w-11 items-center justify-center rounded-control"
-                        style={{ backgroundColor: mix(colors.card, colors.primary, 0.1) }}>
-                        <Icon size={22} color={colors.link} strokeWidth={1.8} />
-                      </View>
-                      <View className="min-w-0 flex-1 gap-1">
-                        <H3>{tile.title}</H3>
-                        <Muted>{tile.description}</Muted>
-                      </View>
-                      {busy === tile.key ? <ActivityIndicator color={colors.primary} /> : isCurrent ? (
-                        <Check size={20} color={colors.primary} />
-                      ) : <ChevronRight size={18} color={colors.mutedForeground} />}
+                      {/* The row's look lives on an inner View: on iOS a style function on Pressable is dropped (see eslint.config.js). */}
+                      {({ pressed }) => (
+                        <View
+                          className="flex-row items-center gap-3"
+                          style={{
+                            minHeight: 84,
+                            padding: 16,
+                            borderBottomWidth: index === group.kinds.length - 1 ? 0 : 1,
+                            borderBottomColor: colors.border,
+                            backgroundColor: pressed ? colors.secondary : isCurrent ? mix(colors.card, colors.primary, 0.06) : undefined,
+                          }}
+                        >
+                          <View className="h-11 w-11 items-center justify-center rounded-control"
+                            style={{ backgroundColor: mix(colors.card, colors.primary, 0.1) }}>
+                            <Icon size={22} color={colors.link} strokeWidth={1.8} />
+                          </View>
+                          <View className="min-w-0 flex-1 gap-1">
+                            <H3>{tile.title}</H3>
+                            <Muted>{tile.description}</Muted>
+                          </View>
+                          {busy === tile.key ? <ActivityIndicator color={colors.primary} /> : isCurrent ? (
+                            <Check size={20} color={colors.primary} />
+                          ) : <ChevronRight size={18} color={colors.mutedForeground} />}
+                        </View>
+                      )}
                     </Pressable>
                   );
                 })}

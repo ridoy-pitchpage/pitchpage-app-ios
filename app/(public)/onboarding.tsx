@@ -109,13 +109,17 @@ export default function Onboarding() {
       <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, gap: 8 }}>
         <Text className="font-body-medium" style={{ fontSize: 11, textAlign: "center", lineHeight: 17, color: mutedInk }}>{step.note}</Text>
         <Pressable onPress={() => active === 3 ? void finish("/(public)/sign-up") : setActive((current) => Math.min(current + 1, STEPS.length - 1))}
-          disabled={finishing} accessibilityRole="button" accessibilityLabel={step.action} accessibilityState={{ disabled: finishing, busy: finishing }}
-          style={({ pressed }) => ({ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: actionFill,
-            opacity: pressed || finishing ? 0.75 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 })}>
-          {finishing ? <ActivityIndicator color={actionInk} /> : <>
-            <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>{step.action}</Text>
-            <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
-          </>}
+          disabled={finishing} accessibilityRole="button" accessibilityLabel={step.action} accessibilityState={{ disabled: finishing, busy: finishing }}>
+          {/* The look lives on an inner View: on iOS a style function on Pressable is dropped (see eslint.config.js). */}
+          {({ pressed }) => (
+            <View style={{ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: actionFill,
+              opacity: pressed || finishing ? 0.75 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              {finishing ? <ActivityIndicator color={actionInk} /> : <>
+                <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>{step.action}</Text>
+                <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
+              </>}
+            </View>
+          )}
         </Pressable>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           {active > 0 ? <Pressable onPress={() => setActive((current) => Math.max(current - 1, 0))} disabled={finishing}

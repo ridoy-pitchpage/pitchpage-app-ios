@@ -49,11 +49,15 @@ export default function Welcome() {
       </ScrollView>
 
       <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 4, gap: 8 }}>
-        <Pressable onPress={() => router.push("/(public)/sign-up")} accessibilityRole="button" accessibilityLabel="Create my page"
-          style={({ pressed }) => ({ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: colors.link,
-            opacity: pressed ? 0.8 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 })}>
-          <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>Create my page</Text>
-          <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
+        <Pressable onPress={() => router.push("/(public)/sign-up")} accessibilityRole="button" accessibilityLabel="Create my page">
+          {/* The look lives on an inner View: on iOS a style function on Pressable is dropped (see eslint.config.js). */}
+          {({ pressed }) => (
+            <View style={{ minHeight: 54, paddingHorizontal: 18, paddingVertical: 14, borderRadius: 5, backgroundColor: colors.link,
+              opacity: pressed ? 0.8 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 15, color: actionInk }}>Create my page</Text>
+              <ArrowRight size={21} color={actionInk} strokeWidth={1.7} />
+            </View>
+          )}
         </Pressable>
         <Text className="font-body-medium" style={{ fontSize: 11, lineHeight: 17, textAlign: "center", color: colors.mutedForeground }}>
           Free to build · 1 credit to publish

@@ -32,6 +32,24 @@ module.exports = [
        * copy a merge.
        */
       "@typescript-eslint/array-type": "off",
+
+      /*
+       * A style function — `style={({ pressed }) => …}` — works in the browser
+       * and is silently dropped on the phone, because NativeWind's Pressable
+       * wrapper does not call it. Every e2e suite runs in a browser, so it
+       * passed them all while Welcome's "Create my page" shipped with no fill,
+       * no padding and its arrow on a second line. Put the look on an inner
+       * View from a children function instead, as Button does.
+       */
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "JSXAttribute[name.name='style'] > JSXExpressionContainer > :matches(ArrowFunctionExpression, FunctionExpression)",
+          message:
+            "A style function is dropped on iOS. Use a children function and style an inner View instead.",
+        },
+      ],
     },
   },
 ];

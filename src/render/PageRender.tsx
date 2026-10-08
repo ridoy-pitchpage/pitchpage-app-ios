@@ -190,42 +190,48 @@ export function PageRender({
                   ? "Add your first section"
                   : "Add another section to your page"
               }
-              style={({ pressed }) => ({
-                minHeight: MIN_TAP,
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 4,
-                paddingVertical: 22,
-                borderRadius: RADIUS_FOR[theme.archetype],
-                borderWidth: 1,
-                borderStyle: "dashed",
-                borderColor: theme.line,
-                opacity: pressed ? 0.6 : 1,
-              })}
             >
-              <Text
-                style={{
-                  color: theme.accentText,
-                  fontFamily: spec.bodyFamily,
-                  fontSize: 15,
-                  lineHeight: 23,
-                }}
-              >
-                + Add a section
-              </Text>
-              {sections.length === 0 ? (
-                <Text
+              {/* The look lives on an inner View: on iOS a style function on Pressable is dropped (see eslint.config.js). */}
+              {({ pressed }) => (
+                <View
                   style={{
-                    color: theme.inkMuted,
-                    fontFamily: spec.bodyFamily,
-                    fontSize: 13,
-                    lineHeight: 19,
-                    textAlign: "center",
+                    minHeight: MIN_TAP,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 4,
+                    paddingVertical: 22,
+                    borderRadius: RADIUS_FOR[theme.archetype],
+                    borderWidth: 1,
+                    borderStyle: "dashed",
+                    borderColor: theme.line,
+                    opacity: pressed ? 0.6 : 1,
                   }}
                 >
-                  Nothing on your page yet — whatever you add appears here.
-                </Text>
-              ) : null}
+                  <Text
+                    style={{
+                      color: theme.accentText,
+                      fontFamily: spec.bodyFamily,
+                      fontSize: 15,
+                      lineHeight: 23,
+                    }}
+                  >
+                    + Add a section
+                  </Text>
+                  {sections.length === 0 ? (
+                    <Text
+                      style={{
+                        color: theme.inkMuted,
+                        fontFamily: spec.bodyFamily,
+                        fontSize: 13,
+                        lineHeight: 19,
+                        textAlign: "center",
+                      }}
+                    >
+                      Nothing on your page yet — whatever you add appears here.
+                    </Text>
+                  ) : null}
+                </View>
+              )}
             </Pressable>
           ) : null}
         </View>
@@ -260,30 +266,36 @@ function EditableRegion({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint="Opens the editor for this part of your page"
-      style={({ pressed }) => ({
-        borderWidth: 1,
-        borderStyle: "dashed",
-        borderColor: pressed ? theme.accent : theme.line,
-        borderRadius: 8,
-        marginHorizontal: -8,
-        paddingHorizontal: 8,
-        paddingVertical: 8,
-        backgroundColor: pressed ? `${theme.accent}14` : "transparent",
-      })}
+      style={{ marginHorizontal: -8 }}
     >
-      {children}
-      <View
-        style={{
-          position: "absolute",
-          top: 4,
-          right: 4,
-          backgroundColor: theme.accent,
-          borderRadius: 999,
-          padding: 4,
-        }}
-      >
-        <Pencil size={11} color={theme.onAccent} />
-      </View>
+      {/* The outline lives on an inner View: on iOS a style function on Pressable is dropped (see eslint.config.js). */}
+      {({ pressed }) => (
+        <View
+          style={{
+            borderWidth: 1,
+            borderStyle: "dashed",
+            borderColor: pressed ? theme.accent : theme.line,
+            borderRadius: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 8,
+            backgroundColor: pressed ? `${theme.accent}14` : "transparent",
+          }}
+        >
+          {children}
+          <View
+            style={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              backgroundColor: theme.accent,
+              borderRadius: 999,
+              padding: 4,
+            }}
+          >
+            <Pencil size={11} color={theme.onAccent} />
+          </View>
+        </View>
+      )}
     </Pressable>
   );
 }
