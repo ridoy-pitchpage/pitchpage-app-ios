@@ -1,11 +1,10 @@
 import type { User } from "@supabase/supabase-js";
 import { Platform } from "react-native";
-import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
-import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 
 import { SITE_URL } from "@/lib/config";
+import { AUTH_CALLBACK, bridgeStartUrl, parseAuthCallback, type BridgeProvider } from "./auth-callback";
 import { supabase } from "./supabase";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -61,128 +60,48 @@ export async function signInWithPassword(creds: Credentials): Promise<void> {
 }
 
 /**
- * Opens the provider in iOS's secure authentication sheet and hands the
- * returned Supabase session back to the app. On web, Supabase performs the
- * normal browser redirect itself.
+ * Google or Apple, through the website's sign-in bridge (master plan §12).
+ *
+ * The project's Google and Apple sign-in are Lovable-managed: the website signs
+ * in through Lovable's OAuth broker, which holds the providers' credentials.
+ * Asking Supabase directly failed both ways on a real iPhone — Google with
+ * redirect_uri_mismatch, Apple with "Unacceptable audience in id_token" — so
+ * the app runs the website's own sign-in instead, in an ephemeral
+ * authentication sheet, and takes the session the bridge hands back.
+ *
+ * The state is checked before anything is used: iOS only returns the callback
+ * to the sheet that opened it, and the state proves it answers this request.
  */
-export async function signInWithProvider(provider: "google" | "apple"): Promise<boolean> {
-  const redirectTo = Linking.createURL("auth-callback");
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: {
-      redirectTo,
-      skipBrowserRedirect: Platform.OS !== "web",
-    },
+export async function signInWithProvider(provider: BridgeProvider): Promise<boolean> {
+  const name = provider === "apple" ? "Apple" : "Google";
+  if (Platform.OS === "web") {
+    // The bridge ends at pitchpage://, which only the installed app answers.
+    throw new Error(`Sign in with ${name} works in the iPhone app. Use your email and password here.`);
+  }
+
+  // Starts with a letter, so no URL parser along the way reads it as a number.
+  const state = `s${Array.from(Crypto.getRandomBytes(24), (b) => b.toString(16).padStart(2, "0")).join("")}`;
+  const result = await WebBrowser.openAuthSessionAsync(
+    bridgeStartUrl(SITE_URL, provider, state),
+    AUTH_CALLBACK,
+    { preferEphemeralSession: true },
+  );
+  if (result.type === "cancel" || result.type === "dismiss") return false;
+  if (result.type !== "success") throw new Error(`Couldn't connect to ${name}. Please try again.`);
+
+  const callback = parseAuthCallback(result.url, state);
+  if (callback.kind !== "session") {
+    throw new Error(`Couldn't finish signing in with ${name}. Please try again.`);
+  }
+  const { error } = await supabase.auth.setSession({
+    access_token: callback.accessToken,
+    refresh_token: callback.refreshToken,
   });
   if (error) throw error;
-
-  // The browser is already navigating away; there is nothing else to do in
-  // this instance of the screen.
-  if (Platform.OS === "web") return false;
-  if (!data.url) throw new Error(`Couldn't connect to ${provider}. Please try again.`);
-
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
-    preferEphemeralSession: true,
-  });
-  if (result.type === "cancel" || result.type === "dismiss") return false;
-  if (result.type !== "success") {
-    throw new Error(`Couldn't connect to ${provider}. Please try again.`);
-  }
-
-  const returned = new URL(result.url);
-  const code = returned.searchParams.get("code");
-  if (code) {
-    const exchanged = await supabase.auth.exchangeCodeForSession(code);
-    if (exchanged.error) throw exchanged.error;
-  } else {
-    const fragment = new URLSearchParams(returned.hash.replace(/^#/, ""));
-    const accessToken = fragment.get("access_token");
-    const refreshToken = fragment.get("refresh_token");
-    const providerError = fragment.get("error_description") ?? returned.searchParams.get("error_description");
-    if (providerError) throw new Error(providerError);
-    if (!accessToken || !refreshToken) {
-      throw new Error(`Couldn't finish ${provider} sign-in. Please try again.`);
-    }
-    const session = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-    if (session.error) throw session.error;
-  }
 
   const { data: auth, error: userError } = await supabase.auth.getUser();
   if (userError) throw userError;
   if (auth.user) await ensureProfile(auth.user);
-  return true;
-}
-
-/**
- * Sign in with Apple, through the system sheet — the native path, not a web
- * redirect.
- *
- * App Store guideline 4.8: an app offering Google sign-in must offer an
- * equivalent privacy-preserving option, and this is it. Apple returns an
- * identity token, which Supabase verifies directly (signInWithIdToken), so no
- * browser round trip is involved.
- *
- * The nonce: a random value goes to Supabase raw and to Apple hashed. Apple
- * signs the hash into the token, Supabase hashes the raw value and checks they
- * match — which is what stops a token captured from one sign-in being replayed
- * into another.
- *
- * Apple sends the person's name exactly once, on the first sign-in to this app,
- * and never again. It is saved to the account then, or it is lost.
- *
- * Needs the Apple provider switched on in Supabase, with this app's bundle id
- * as an authorised client. Until it is, this fails with Supabase's own error,
- * which reaches the person through userFacingErrorMessage like any other.
- */
-export async function signInWithApple(): Promise<boolean> {
-  const rawNonce = Array.from(Crypto.getRandomBytes(32), (b) =>
-    b.toString(16).padStart(2, "0"),
-  ).join("");
-  const hashedNonce = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    rawNonce,
-  );
-
-  let credential: AppleAuthentication.AppleAuthenticationCredential;
-  try {
-    credential = await AppleAuthentication.signInAsync({
-      requestedScopes: [
-        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-        AppleAuthentication.AppleAuthenticationScope.EMAIL,
-      ],
-      nonce: hashedNonce,
-    });
-  } catch (error) {
-    // Closing the sheet is a choice, not a failure.
-    if ((error as { code?: string }).code === "ERR_REQUEST_CANCELED") return false;
-    throw error;
-  }
-
-  if (!credential.identityToken) {
-    throw new Error("Apple didn't complete the sign-in. Please try again.");
-  }
-
-  const { error } = await supabase.auth.signInWithIdToken({
-    provider: "apple",
-    token: credential.identityToken,
-    nonce: rawNonce,
-  });
-  if (error) throw error;
-
-  const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
-    .filter(Boolean)
-    .join(" ");
-  if (fullName) {
-    // Only on the first sign-in does Apple include it; keep it while we can.
-    await supabase.auth.updateUser({ data: { full_name: fullName } });
-  }
-
-  const { data, error: userError } = await supabase.auth.getUser();
-  if (userError) throw userError;
-  if (data.user) await ensureProfile(data.user);
   return true;
 }
 

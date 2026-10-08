@@ -14,7 +14,7 @@ import { useToast } from "@/components/Toast";
 import { AppleSignInButton } from "@/auth/AppleSignInButton";
 import { GoogleSignInButton } from "@/auth/GoogleSignInButton";
 import { OFFER_APPLE_SIGN_IN, OFFER_GOOGLE_SIGN_IN } from "@/auth/sign-in-options";
-import { credentialProblem, signInWithPassword, signInWithApple, signInWithProvider } from "@/auth/auth-actions";
+import { credentialProblem, signInWithPassword, signInWithProvider } from "@/auth/auth-actions";
 import { AuthIntro } from "@/auth/AuthIntro";
 import { DEV_SIGN_IN } from "@/lib/config";
 import { useColors } from "@/theme/ThemeProvider";
@@ -67,7 +67,7 @@ export default function SignIn() {
   async function continueWithApple() {
     setAppleBusy(true);
     try {
-      const completed = await signInWithApple();
+      const completed = await signInWithProvider("apple");
       if (completed) router.replace("/(app)/(tabs)/pages");
     } catch (error) {
       toast.error(error);
