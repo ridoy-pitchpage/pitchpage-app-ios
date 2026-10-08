@@ -59,6 +59,32 @@ await check('Intake: pick sport + level, Continue enables', async () => {
   return '(gated until answered)';
 });
 
+await check('Build my page: prompt, consent, draft saved', async () => {
+  const saved = [];
+  // Page routes run before the context's stubs; fallback hands it on to them.
+  await p.route('**/rest/v1/pitch_pages**', (route) => {
+    if (route.request().method() === 'PATCH') saved.push(route.request().postDataJSON());
+    return route.fallback();
+  });
+  await go('/build/' + mod.DRAFT_ID);
+  const build = p.getByLabel('Build my page', { exact: true });
+  const before = await build.evaluate(e => e.getAttribute('aria-disabled') ?? String(e.disabled));
+  must(before === 'true', `Build my page should start disabled, was ${before}`);
+  await p.getByLabel('About you', { exact: true }).fill('Enterprise account executive, six years in fintech, selling to banks.');
+  await p.waitForTimeout(400);
+  await build.click(); await p.waitForTimeout(900);
+  must(/Build your page with AI/.test(await text()), 'AI consent was not asked');
+  await p.getByLabel('Allow', { exact: true }).click();
+  await p.waitForURL(/\/builder\//, { timeout: 15000 });
+  const patch = saved.at(-1);
+  must(patch, 'nothing was saved');
+  must(patch.headline === 'Enterprise account executive', 'the blank headline was not filled');
+  must(!JSON.stringify(patch.sections).includes('Would overwrite'), 'a section with words in it was overwritten');
+  must(patch.wizard_meta?.buildPrompt?.startsWith('Enterprise account executive'), 'the prompt was not kept');
+  await p.unroute('**/rest/v1/pitch_pages**');
+  return '(consent, draft, builder)';
+});
+
 await check('Builder: the page is the screen, regions editable', async () => {
   await go('/builder/' + mod.DRAFT_ID);
   const t = await text();

@@ -60,6 +60,20 @@ const CARD = (p) => ({
 const json = (route, body, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
+// What composeIntoSections answers for the draft. Its one section already has
+// words in it, so the website's rule leaves it alone and only the blank
+// headline is filled — which is the part a test can see in the save.
+export const COMPOSED = {
+  filled: {
+    t1: { heading: '', paragraphs: ['Would overwrite the person\'s own words.'], bullets: [], format: 'paragraph' },
+  },
+  upgraded: {},
+  unconfirmed: ['t1'],
+  flags: [],
+  basics: { full_name: '', headline: 'Enterprise account executive', bio: '' },
+  unreadable: [],
+};
+
 export const DRAFT_ID = DRAFT.id;
 export const LIVE_ID = LIVE.id;
 
@@ -126,6 +140,13 @@ export async function installStubs(ctx) {
       contentType: 'text/html',
       body: '<script>const say = () => parent.postMessage(JSON.stringify({ type: "error", message: "stubbed in e2e" }), "*"); say(); setTimeout(say, 250); setTimeout(say, 1000);</script>',
     }),
+  );
+  // The app API on the website (master plan §9). "Build my page" posts here;
+  // anything else on it answers the way a missing endpoint would.
+  await ctx.route('https://pitchpage.co/api/app/v1/**', (route) =>
+    route.request().url().endsWith('/ai/compose-sections')
+      ? json(route, COMPOSED)
+      : json(route, { error: { code: 'NOT_FOUND', message: 'That page no longer exists.' } }, 404),
   );
   // Seed a session so the signed-in routes render without a sign-in step.
   await ctx.addInitScript(([s]) => {
