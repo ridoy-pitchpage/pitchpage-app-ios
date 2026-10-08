@@ -75,9 +75,13 @@ export async function uploadMedia({
   // held twice in memory.
   const bytes = await fileBytes(uri);
 
+  // A plain insert, never an upsert. An upsert also needs SELECT on the
+  // bucket, and the live policies give the owner INSERT, UPDATE and DELETE on
+  // portraits and pitch-videos but no SELECT, so every photo and video upload
+  // was refused as a row-level security violation, which reads as "You're
+  // signed out". The path is random, so there is never anything to overwrite.
   const { error } = await supabase.storage.from(bucket).upload(path, bytes, {
     contentType,
-    upsert: true,
   });
   if (error) throw error;
 
