@@ -129,3 +129,15 @@ it("keeps navigation blocked for pending, saving, failed, and conflicted drafts"
   expect(hasUnsavedChanges("idle")).toBe(false);
   expect(hasUnsavedChanges("saved")).toBe(false);
 });
+
+it("renumbers moved sections on screen as well as in the save, so a list sorted by order moves too", () => {
+  const section = (id: string, order: number) =>
+    ({ id, title: id, blockType: "text_block", order, visible: true, hint: "", data: {} }) as never;
+  const [a, b, c] = [section("a", 0), section("b", 1), section("c", 2)];
+  // Move c to the top, as the up arrow does.
+  useDraft.getState().setSections([c, a, b]);
+  const onScreen = [...(useDraft.getState().page?.sections ?? [])].sort((x, y) => x.order - y.order);
+  expect(onScreen.map((s) => s.id)).toEqual(["c", "a", "b"]);
+  const saved = (useDraft.getState().dirty.sections ?? []) as Array<{ id: string; order: number }>;
+  expect(saved.map((s) => [s.id, s.order])).toEqual([["c", 0], ["a", 1], ["b", 2]]);
+});

@@ -166,11 +166,14 @@ export const useDraft = create<DraftState>((set, get) => {
     },
 
     setSections: (sections, options) => {
+      // Reindexed 0..n-1, as the web does on every save. The on-screen copy
+      // gets the same numbers as the saved one: everything that lists sections
+      // sorts by `order`, so a moved section that kept its old number was
+      // sorted straight back, and the arrows looked as if they did nothing.
+      const reindexed = sections.map((sec, i) => ({ ...sec, order: i }));
       set((s) => ({
-        page: s.page ? { ...s.page, sections } : s.page,
-        // Order is reindexed on the way out, because the database column is the
-        // list's identity and the web reindexes 0..n-1 on every save.
-        dirty: { ...s.dirty, sections: sections.map((sec, i) => ({ ...sec, order: i })) },
+        page: s.page ? { ...s.page, sections: reindexed } : s.page,
+        dirty: { ...s.dirty, sections: reindexed },
       }));
       schedule(options?.now === true);
     },
