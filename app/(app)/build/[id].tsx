@@ -29,6 +29,8 @@ import {
   uploadMedia,
 } from "@/features/media/upload";
 import { applyComposedToPage, withUnconfirmed, type ComposeResultToApply } from "@/page/apply-composed";
+import { currentPitchKind, savedListingAudience } from "@/page/apply-kind";
+import { sectionsToBuild } from "@/page/build-sections";
 import { clampSections } from "@/page/page-sections";
 import { useColors } from "@/theme/ThemeProvider";
 
@@ -200,11 +202,17 @@ export default function BuildScreen() {
     setBusy("build");
     try {
       const brief = promptValue.trim().slice(0, MAX_BUILD_PROMPT);
+      // A template's untouched examples are not the person's writing, so the
+      // draft may replace them; without this the website's apply rule saw
+      // every section as written and kept none of the draft (build-sections.ts).
+      const target = sectionsToBuild(sections, currentPitchKind(row.wizard_meta), row.email ?? "", {
+        listingAudience: savedListingAudience(row.wizard_meta),
+      });
       const result = await appApiPost<ComposeResult>(
         "/ai/compose-sections",
         {
           pitchPageId: row.id,
-          sections: sections.map((s) => ({ id: s.id, title: s.title, blockType: s.blockType, hint: s.hint ?? "" })),
+          sections: target.map((s) => ({ id: s.id, title: s.title, blockType: s.blockType, hint: s.hint ?? "" })),
           documents: resumePath ? [{ path: resumePath, bucket: "resumes", name: "Your CV" }] : [],
           promptText: brief,
           roleHint: typeof meta.jobTarget === "string" ? meta.jobTarget : "",
@@ -214,7 +222,7 @@ export default function BuildScreen() {
       );
 
       const applied = applyComposedToPage(
-        { sections, full_name: row.full_name, headline: row.headline, bio: row.bio },
+        { sections: target, full_name: row.full_name, headline: row.headline, bio: row.bio },
         stringList(meta.edited),
         result,
       );

@@ -1,4 +1,6 @@
 
+import { readFileSync } from 'node:fs';
+
 const b64u = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const USER_ID = '11111111-2222-3333-4444-555555555555';
 const exp = Math.floor(Date.now() / 1000) + 3600;
@@ -50,6 +52,27 @@ const DRAFT = {
     data: { heading: '', paragraphs: ['Enterprise AE, six years in fintech.'], bullets: [], format: 'paragraph' } }],
 };
 
+// A job page straight after its template was picked: Banner's own examples
+// in every section, and the owner's Contact. Read from the app's seeds
+// rather than copied, so it is always exactly what a template leaves behind.
+const BANNER = (() => {
+  const line = readFileSync(new URL('../src/page/template-seeds.ts', import.meta.url), 'utf8')
+    .split('\n').find((l) => l.trim().startsWith('"banner":'));
+  return JSON.parse(line.trim().slice('"banner":'.length).replace(/,$/, ''));
+})();
+const TEMPLATED = {
+  ...DRAFT,
+  id: 'aaaaaaaa-0000-4000-8000-000000000003',
+  slug: 'alex-chen-t7q3w', full_name: 'Alex Chen', template: 'banner__blue__dark',
+  wizard_meta: { pitchKind: 'job', chosenType: 'job' },
+  sections: [
+    ...BANNER.sections.filter((s) => s.blockType !== 'cta')
+      .map((s, i) => ({ id: `tpl${i}`, title: s.title, blockType: s.blockType, order: i, visible: true, data: s.data })),
+    { id: 'tplcta', title: 'Contact', blockType: 'cta', order: 7, visible: true,
+      data: { heading: "Let's talk", sub: 'Interested? Get in touch — I reply quickly.', label: 'Contact me', url: '', email: 'alex@example.com' } },
+  ],
+};
+
 const CARD = (p) => ({
   id: p.id, slug: p.slug, full_name: p.full_name, headline: p.headline,
   updated_at: p.updated_at, video_url: p.video_url, published_at: p.published_at,
@@ -60,21 +83,31 @@ const CARD = (p) => ({
 const json = (route, body, status = 200) =>
   route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
 
-// What composeIntoSections answers for the draft. Its one section already has
-// words in it, so the website's rule leaves it alone and only the blank
-// headline is filled — which is the part a test can see in the save.
-export const COMPOSED = {
-  filled: {
-    t1: { heading: '', paragraphs: ['Would overwrite the person\'s own words.'], bullets: [], format: 'paragraph' },
-  },
-  upgraded: {},
-  unconfirmed: ['t1'],
-  flags: [],
-  basics: { full_name: '', headline: 'Enterprise account executive', bio: '' },
-  unreadable: [],
+// What composeIntoSections answers: a draft, in that section's own shape, for
+// every section it is sent. A chart gets none, standing for a section the
+// material has nothing true to say about, and Contact is never written. The
+// headline is blank on both draft pages, so it is filled.
+export const DRAFTS = {
+  text_block: { heading: '', paragraphs: ['Drafted from the material.'], bullets: [], format: 'paragraph' },
+  timeline: { location: '', items: [{ period: '2019 — Now', title: 'Account executive', org: 'Northwind', bullets: [] }] },
+  tag_list: { heading: '', tags: ['Negotiation', 'Discovery'] },
+  metric_grid: { items: [{ value: '6', label: 'Years in fintech', sub: '' }] },
+  cards: { items: [{ title: 'Drafted card', body: 'From the material.', icon: '' }] },
+  quote_list: { items: [{ quote: '', name: 'Dana Ortiz', role: 'Sales manager, Northwind' }] },
+  logo_row: { heading: '', names: ['Northwind'] },
+};
+const composedFor = (body) => {
+  const filled = {};
+  for (const s of body?.sections ?? []) if (DRAFTS[s.blockType]) filled[s.id] = DRAFTS[s.blockType];
+  return {
+    filled, upgraded: {}, unconfirmed: Object.keys(filled), flags: [],
+    basics: { full_name: '', headline: 'Enterprise account executive', bio: '' },
+    unreadable: [],
+  };
 };
 
 export const DRAFT_ID = DRAFT.id;
+export const TEMPLATED_ID = TEMPLATED.id;
 export const LIVE_ID = LIVE.id;
 
 export async function installStubs(ctx) {
@@ -120,7 +153,7 @@ export async function installStubs(ctx) {
       // Honour an id=eq.<uuid> filter: maybeSingle() errors on two rows, so a
       // stub that ignores the filter fails a query the real API answers.
       const wanted = /id=eq\.([0-9a-f-]+)/.exec(url)?.[1];
-      const pick = wanted === DRAFT.id ? DRAFT : wanted === LIVE.id ? LIVE : null;
+      const pick = [DRAFT, LIVE, TEMPLATED].find((page) => page.id === wanted) ?? null;
       if (single) return json(route, pick ?? LIVE);
       if (wanted) return json(route, pick ? [pick] : []);
       return json(route, [CARD(DRAFT), CARD(LIVE)]);
@@ -145,7 +178,7 @@ export async function installStubs(ctx) {
   // anything else on it answers the way a missing endpoint would.
   await ctx.route('https://pitchpage.co/api/app/v1/**', (route) =>
     route.request().url().endsWith('/ai/compose-sections')
-      ? json(route, COMPOSED)
+      ? json(route, composedFor(route.request().postDataJSON()))
       : json(route, { error: { code: 'NOT_FOUND', message: 'That page no longer exists.' } }, 404),
   );
   // Seed a session so the signed-in routes render without a sign-in step.

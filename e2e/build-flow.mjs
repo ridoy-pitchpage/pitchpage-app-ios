@@ -79,10 +79,41 @@ await check('Build my page: prompt, consent, draft saved', async () => {
   const patch = saved.at(-1);
   must(patch, 'nothing was saved');
   must(patch.headline === 'Enterprise account executive', 'the blank headline was not filled');
-  must(!JSON.stringify(patch.sections).includes('Would overwrite'), 'a section with words in it was overwritten');
+  const written = JSON.stringify(patch.sections);
+  must(written.includes('Enterprise AE, six years in fintech.'), "the person's own words were lost");
+  must(!written.includes('Drafted from the material.'), 'a section with words in it was overwritten');
   must(patch.wizard_meta?.buildPrompt?.startsWith('Enterprise account executive'), 'the prompt was not kept');
   await p.unroute('**/rest/v1/pitch_pages**');
   return '(consent, draft, builder)';
+});
+
+await check("Build my page: a template's examples give way to the draft", async () => {
+  const saved = [];
+  await p.route('**/rest/v1/pitch_pages**', (route) => {
+    if (route.request().method() === 'PATCH') saved.push(route.request().postDataJSON());
+    return route.fallback();
+  });
+  await go('/build/' + mod.TEMPLATED_ID);
+  await p.getByLabel('About you', { exact: true }).fill('Enterprise account executive, six years in fintech, selling to banks.');
+  await p.waitForTimeout(400);
+  await p.getByLabel('Build my page', { exact: true }).click(); await p.waitForTimeout(900);
+  // The stubbed account never keeps its consent, so it can be asked again here.
+  if (/Build your page with AI/.test(await text())) await p.getByLabel('Allow', { exact: true }).click();
+  await p.waitForURL(/\/builder\//, { timeout: 15000 });
+  const sections = saved.at(-1)?.sections ?? [];
+  const written = JSON.stringify(sections);
+  must(sections.length > 0, 'nothing was saved');
+  must(!/\$28M|156%|Quota Attainment|Land and expand|Their name/.test(written), "a template's example survived the build");
+  const titles = sections.map((s) => s.title);
+  for (const title of ['About Me', 'Experience', 'Skills', 'By the Numbers', 'What People Say']) {
+    must(titles.includes(title), `the job page's own "${title}" is missing: ${titles.join(', ')}`);
+  }
+  for (const draft of ['Drafted from the material.', 'Account executive', 'Negotiation', 'Years in fintech', 'Dana Ortiz']) {
+    must(written.includes(draft), `the draft's "${draft}" was not applied`);
+  }
+  must(written.includes('alex@example.com'), "the owner's Contact section was lost");
+  await p.unroute('**/rest/v1/pitch_pages**');
+  return `(${titles.length} sections: ${titles.join(', ')})`;
 });
 
 await check('Builder: the page is the screen, regions editable', async () => {
