@@ -44,8 +44,10 @@ resume,cv,portfolio,job application,personal website,career,hiring,athlete,realt
 Build a pitch page on your iPhone: your story, your numbers, an intro video and a design to match. Share one link or a QR code, and see when people open it.
 ```
 
-**Description** (no prices, no mention of buying anywhere else, no AI — the
-app has none of it):
+**Description** (no prices and no mention of buying anywhere else — the app
+has none of it). "Build my page" drafts a page with AI since 2026-10-08; if the
+description should say so, add a line such as "Tell us about yourself and add
+your CV, and PitchPage writes a first draft you can change.":
 
 ```
 PitchPage turns what you would normally attach — a résumé, a stat sheet, a bid — into one page people actually read. Build it on your iPhone, publish it at your own link, and see when it is opened.
@@ -99,6 +101,12 @@ Tick these, and for **every one** answer: used for **App Functionality** only ·
 | User Content | Other User Content | Page text, the résumé and other documents |
 | Identifiers | User ID | The account id every row is stored under |
 
+**AI:** "Build my page" sends what the person typed, their CV and their
+section names to Google's Gemini through the Lovable AI Gateway, to write the
+draft. That is still App Functionality under User Content, so no new box, but
+check the privacy policy names that processor, because Guideline 5.1.2(i)
+expects it there as well as on the consent screen.
+
 Leave everything else unticked. The app has no analytics or crash-reporting
 SDK, no advertising, sells nothing in the app, and reads no location,
 contacts, browsing or search history. The page analytics it shows are about
@@ -128,7 +136,7 @@ DEMO ACCOUNT
 The demo account has credits and one published page, so every feature can be tried, including publishing. To test account deletion, please create a new account instead (email, Sign in with Apple or Google) — deleting the demo account would lock review out.
 
 HOW TO TRY IT
-1. Pages → New page. Choose what the page is for, pick a look, then "Continue to builder".
+1. Pages → New page. Choose what the page is for and pick a look. Then tell us about yourself (or add a CV) and tap "Build my page" for an AI first draft, or "I'll fill it in myself".
 2. Tap any section on the page to edit it. Add a photo or a short video from the media buttons.
 3. Preview → Publish. This uses one of the account's credits.
 4. Share: copy the link, show the QR code, or make a tracked link.
@@ -140,7 +148,8 @@ PitchPage is free to download and free to build with. Publishing a page uses one
 
 OTHER NOTES
 • The page itself is drawn with the same layout code the published page uses, inside a web view, so what the builder shows is exactly what visitors see. Sign-in, editing, camera and photo capture, sharing, QR codes and analytics are native.
-• There are no AI features in this version, and nothing is sent to an AI service.
+• "Build my page" writes a first draft with AI. Before anything is sent, the app asks once, naming what is sent (what the person typed, their CV, their section names) and where it goes (Google's Gemini through the Lovable AI Gateway). "Not now" leaves building by hand (Guideline 5.1.2(i)).
+• Sign in with Apple and Google open PitchPage's own sign-in page in a secure sign-in sheet and return to the app.
 • The app does no tracking and shows no advertising.
 ```
 
@@ -251,7 +260,10 @@ it on the version page in App Store Connect and **Add for Review**.
 On a real iPhone, with the TestFlight build — not Expo Go, which cannot test
 the native sign-ins:
 
-- [ ] Sign in with Apple, with Google, and with email; sign out and back in
+- [ ] Sign in with Apple, with Google, and with email; sign out and back in.
+      Apple and Google open pitchpage.co's sign-in sheet and come back signed in
+- [ ] Build my page: the AI consent is asked once; a prompt alone builds a
+      draft; a prompt and a CV build one; Cancel stops it
 - [ ] Create a page, pick a style, edit sections, move one, delete one
 - [ ] Portrait from the camera and from Photos; an intro video
 - [ ] Publish with a credit; the live page opens; a link on it opens

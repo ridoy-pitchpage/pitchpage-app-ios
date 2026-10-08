@@ -74,7 +74,8 @@ Simulator has no camera, so recording is tested on a real iPhone.
 
 The app signs in against the live Supabase project and works with real data:
 
-- Welcome, sign in, create account, forgot password
+- Welcome, sign in, create account, forgot password. Google and Apple go
+  through the website's sign-in bridge (`/app-auth/start` and `/app-auth/finish`)
 - **Your pages** — the list, create a draft, delete
 - **Review and publish** — what's on the page, the pre-publish health check,
   and publishing, including the company-sponsored and awaiting-a-credit cases
@@ -91,6 +92,9 @@ The app signs in against the live Supabase project and works with real data:
   with another device is detected rather than silently overwritten.
 - **Choose a type and intake** — the eight page types and their guided
   questions, which seed the sections
+- **Build my page** — tell us about yourself and add a CV, and the website's
+  own AI (`POST /api/app/v1/ai/compose-sections`) writes a first draft into the
+  sections that are still empty, after a one-time AI consent
 - **Guides** — all fifteen articles, in the app and readable offline
 - **Analytics** — views, people, a day-by-day chart, video watch-through,
   where visitors came from and how each tracked link is doing, over four
@@ -104,8 +108,9 @@ plan §24), so use a test account.
 
 ## What is not in yet
 
-Paige and the AI steps, buying credits in the app, push notifications,
-outreach sends, and the company dashboard.
+Paige and the other AI steps (rewriting a section, the guided questions),
+buying credits in the app, push notifications, outreach sends, and the company
+dashboard.
 
 The first four need server code the app must not hold — `grant_credits`, for
 instance, is `service_role` only, and rightly so: a client that could grant
@@ -113,10 +118,12 @@ itself credits would be a hole. The company dashboard is different: its
 functions ARE callable by a signed-in admin, so it is not blocked, just not
 built yet.
 
-The website repo is read-only by instruction and stays untouched. What works
-does so because the website already grants a signed-in user row-level access
-to their own pages, credits, profile and view events, and because publishing is
-a database function any signed-in user may call.
+The website has three pieces that exist for the app: `/app-render`, the
+sign-in bridge, and the compose endpoint. Everything else works because the
+website already grants a signed-in user row-level access to their own pages,
+credits, profile and view events, and because publishing is a database
+function any signed-in user may call. Website changes follow that repo's
+`CLAUDE.md`, and none of them is live until it is published in Lovable.
 
 **Before submitting:** run `sql/001_delete_my_account.sql` against the
 database. Until it is applied, deleting an account falls back to emailing a
