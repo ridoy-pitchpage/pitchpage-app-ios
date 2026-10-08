@@ -6,6 +6,7 @@ import { useConfirm } from "@/components/Confirm";
 import { Sheet } from "@/components/Sheet";
 import { TextField } from "@/components/TextField";
 import { Muted } from "@/components/Text";
+import { useToast } from "@/components/Toast";
 import { BlockEditor } from "./BlockEditor";
 import { useDraft } from "@/state/draft-store";
 import type { BlockData, PageSection } from "@/page/page-sections";
@@ -25,9 +26,27 @@ export function SectionSheet({
   onClose: () => void;
 }) {
   const confirm = useConfirm();
+  const toast = useToast();
   const page = useDraft((s) => s.page);
   const setSections = useDraft((s) => s.setSections);
+  const flush = useDraft((s) => s.flush);
   const section = page?.sections.find((s) => s.id === sectionId) ?? null;
+
+  /*
+   * Edits save themselves, but a sheet with only "Remove this section" in it
+   * left people unsure whether what they typed was kept (2026-10-08). Save
+   * writes now and closes; it is off until something here has changed.
+   */
+  const [changed, setChanged] = useState(false);
+  const [saving, setSaving] = useState(false);
+  // Per opening, not per section: this sheet stays mounted while closed, so
+  // reopening the section just edited would otherwise still say "Save" for
+  // edits that saved themselves long ago.
+  const [openedFor, setOpenedFor] = useState<string | null>(null);
+  if (sectionId !== openedFor) {
+    setOpenedFor(sectionId);
+    setChanged(false);
+  }
 
   /*
    * The field keeps its own copy of the title so typing stays smooth, and that
@@ -52,7 +71,23 @@ export function SectionSheet({
 
   function write(next: Partial<PageSection>) {
     if (!page || !section) return;
+    setChanged(true);
     setSections(page.sections.map((s) => (s.id === section.id ? { ...s, ...next } : s)));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      if (await flush()) {
+        setChanged(false);
+        toast.success("Saved");
+        onClose();
+      } else {
+        toast.error(useDraft.getState().lastError ?? new Error("That didn't save. Try again."));
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   function remove() {
@@ -103,7 +138,13 @@ export function SectionSheet({
           onChange={(data: BlockData) => write({ data })}
         />
 
-        <View className="pt-2">
+        <View className="gap-2 pt-2">
+          <Button
+            title={changed ? "Save" : "Saved"}
+            disabled={!changed || saving}
+            loading={saving}
+            onPress={() => void save()}
+          />
           <Button title="Remove this section" variant="secondary" onPress={remove} />
         </View>
 

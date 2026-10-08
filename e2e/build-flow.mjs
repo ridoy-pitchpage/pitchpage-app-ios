@@ -151,6 +151,20 @@ await check('Builder: typing a section title persists', async () => {
   return '(round-trips)';
 });
 
+await check('Builder: Save lights up after an edit, saves and closes', async () => {
+  const off = (button) => button.evaluate((e) => e.getAttribute('aria-disabled') === 'true' || e.disabled === true);
+  await p.getByLabel('Sections', { exact: true }).click(); await p.waitForTimeout(800);
+  await p.locator('[aria-label^="Edit "]').last().click(); await p.waitForTimeout(900);
+  must(await off(p.getByRole('button', { name: 'Saved', exact: true })), 'Save was on before anything changed');
+  const f = p.locator('input[type="text"], textarea').first();
+  await f.fill(''); await p.keyboard.type('Highlights'); await p.waitForTimeout(400);
+  const save = p.getByRole('button', { name: 'Save', exact: true });
+  must(!(await off(save)), 'Save stayed off after an edit');
+  await save.click(); await p.waitForTimeout(900);
+  must(!/Section name/.test(await text()), 'the section stayed open after Save');
+  return '(off, on, saved)';
+});
+
 await check('Builder: a style can be picked', async () => {
   await p.getByLabel('Style', { exact: true }).click(); await p.waitForTimeout(900);
   const swatches = await p.locator('[role="button"], [role="radio"]').count();
