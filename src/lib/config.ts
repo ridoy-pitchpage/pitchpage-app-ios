@@ -64,14 +64,15 @@ export const APP_VERSION = Constants.expoConfig?.version ?? "0.0.0";
 
 export const SUPPORT_EMAIL = "support@pitchpage.co";
 
-/** Public pages that open in an in-app browser rather than a native screen (§6.2). */
+/**
+ * Public pages that open in an in-app browser rather than a native screen
+ * (§6.2). Only the legal ones: the website's marketing pages name the price
+ * and link to buying, which an app that sells nothing may not point anyone at
+ * (Guideline 3.1.3(f)).
+ */
 export const WEB_LINKS = {
   privacy: `${SITE_URL}/privacy`,
   terms: `${SITE_URL}/terms`,
-  about: `${SITE_URL}/about`,
-  compare: `${SITE_URL}/compare`,
-  tracking: `${SITE_URL}/tracking`,
-  roles: `${SITE_URL}/for`,
 } as const;
 
 /** A published page's public URL. Share links always point at the website. */

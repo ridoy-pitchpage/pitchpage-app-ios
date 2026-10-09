@@ -1,7 +1,7 @@
 import { Text } from "react-native";
 
 import { parseInline, type InlineNode } from "@/content/guide-inline-parse";
-import { openGuideHref } from "@/content/guide-links";
+import { guideLinkTarget, openGuideHref } from "@/content/guide-links";
 
 /**
  * Guide copy's inline syntax — [text](/path), **bold**, *italic* — rendered as
@@ -26,6 +26,9 @@ function renderNodes(nodes: InlineNode[], linkClassName: string): React.ReactNod
     const children = renderNodes(node.children, linkClassName);
 
     if (node.type === "link") {
+      // A link with nowhere to go in the app reads as the words it is
+      // (src/content/guide-links.ts).
+      if (!guideLinkTarget(node.href)) return <Text key={index}>{children}</Text>;
       return (
         <Text
           key={index}

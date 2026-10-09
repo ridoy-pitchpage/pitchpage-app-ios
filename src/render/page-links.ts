@@ -26,6 +26,9 @@ export type LinkAction =
  */
 const RESUME_LINK_SECONDS = 300;
 
+const PITCHPAGE_SITE = /^https?:\/\/(?:www\.)?pitchpage\.co(?=[/?#]|$)/i;
+const PUBLISHED_PAGE = /^https?:\/\/(?:www\.)?pitchpage\.co\/p\/[^/?#]+/i;
+
 export function linkActionFor(url: string): LinkAction | null {
   const target = url.trim();
   if (/^https:\/\//i.test(target)) {
@@ -35,6 +38,11 @@ export function linkActionFor(url: string): LinkAction | null {
     if (path) return { kind: "resume", path };
   }
   if (/^(mailto|tel|sms):/i.test(target)) return { kind: "app", url: target };
+  // The website itself, other than a published page, is never opened. On a
+  // page that only ever means the "Build your own at pitchpage.co" line, and
+  // every marketing page there names the price and links to buying, which an
+  // app that sells nothing may not point anyone at (Guideline 3.1.3(f)).
+  if (PITCHPAGE_SITE.test(target) && !PUBLISHED_PAGE.test(target)) return null;
   if (/^https?:\/\//i.test(target)) return { kind: "browser", url: target };
   // javascript:, data:, file: and other apps' schemes are never opened.
   return null;

@@ -43,6 +43,21 @@ describe("linkActionFor", () => {
     }
   });
 
+  it("opens nothing on the website but a published page", () => {
+    // "Build your own at pitchpage.co", at the foot of every published page.
+    for (const url of ["https://pitchpage.co/r/jane-doe", "https://www.pitchpage.co/pricing", "https://pitchpage.co", "https://pitchpage.co?ref=x"]) {
+      expect(linkActionFor(url)).toBeNull();
+    }
+    expect(linkActionFor("https://pitchpage.co/p/jane-doe")).toEqual({
+      kind: "browser",
+      url: "https://pitchpage.co/p/jane-doe",
+    });
+    // Other sites that only start the same way.
+    for (const url of ["https://pitchpage.com/pricing", "https://pitchpage.co.example.com/x"]) {
+      expect(linkActionFor(url)).toEqual({ kind: "browser", url });
+    }
+  });
+
   it("never opens a script, a data URL, a file or another app", () => {
     for (const url of ["javascript:void(0)", "data:text/html,hello", "file:///private/var/x", "whatsapp://send", "about:blank", ""]) {
       expect(linkActionFor(url)).toBeNull();
