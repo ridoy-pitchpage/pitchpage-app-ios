@@ -98,14 +98,15 @@ export default function ShareScreen() {
 
   async function openEmail() {
     const link = withShareChannel(url, "email");
-    const target = mailto(person, link);
-    const supported = await Linking.canOpenURL(target);
-    if (!supported) {
+    // Straight to openURL. Asking canOpenURL first got "no" on every iPhone,
+    // Mail installed or not, because iOS refuses that question for a scheme
+    // the app hasn't declared, so this only ever copied the link.
+    try {
+      await Linking.openURL(mailto(person, link));
+    } catch {
       await Clipboard.setStringAsync(link);
-      toast.success("No mail app — link copied instead");
-      return;
+      toast.success("No mail app on this device, so the link was copied instead");
     }
-    await Linking.openURL(target);
   }
 
   return (
