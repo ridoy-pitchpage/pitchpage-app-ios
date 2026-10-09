@@ -61,7 +61,7 @@ Thirty visual styles and twenty colours, from editorial to bold. Preview any of 
 BUILD IT YOUR WAY
 • Tap any section on the page to edit it, move it or remove it
 • Lead with your numbers: results, stats and milestones as clear figures and charts
-• Add your portrait, an intro video of up to two minutes, photo galleries and film clips
+• Add your portrait and an intro video of up to two minutes
 • Attach your résumé so people can download it
 • A short checklist shows what is still missing before you publish
 
@@ -97,13 +97,13 @@ Tick these, and for **every one** answer: used for **App Functionality** only ·
 | Contact Info | Name | Account name and the name on the page |
 | Contact Info | Email Address | Sign-in, and the page's contact button |
 | Contact Info | Phone Number | Only if typed into a page — the Contact sections invite it. Ticking it is the conservative answer |
-| User Content | Photos or Videos | Portrait, intro video, gallery, film clips |
+| User Content | Photos or Videos | Portrait and intro video |
 | User Content | Other User Content | Page text, the résumé and other documents |
 | Identifiers | User ID | The account id every row is stored under |
 
-**AI:** "Build my page" sends what the person typed, their CV and their
-section names to Google's Gemini through the Lovable AI Gateway, to write the
-draft. That is still App Functionality under User Content, so no new box, but
+**AI:** "Build my page" sends what the person typed, their CV, the kind of
+page and the role they chose in setup, and their section names to Google's
+Gemini through the Lovable AI Gateway, to write the draft. That is still App Functionality under User Content, so no new box, but
 check the privacy policy names that processor, because Guideline 5.1.2(i)
 expects it there as well as on the consent screen.
 
@@ -112,6 +112,17 @@ SDK, no advertising, sells nothing in the app, and reads no location,
 contacts, browsing or search history. The page analytics it shows are about
 the visitors to a person's published page, collected by the website, not data
 collected from the app's user.
+
+**Only once the website keeps its trackers out of the app.** The app draws
+pages with the website in its own web views (the builder, template previews,
+the live page), and Apple counts what those collect. Until
+[gregadosmond-oss/profile-pride-app#268](https://github.com/gregadosmond-oss/profile-pride-app/pull/268)
+is merged **and published**, Google Analytics and PostHog, session replay
+included, run in the builder's and the previews' web views, and "no analytics"
+is not true. Don't submit with these answers before then. If that change
+isn't going out, the label has to declare Usage Data → Product Interaction
+(Analytics), and the privacy policy has to say the app's page views use
+PostHog and Google Analytics.
 
 **Tracking:** No. (That is also why there is no App Tracking Transparency prompt.)
 
