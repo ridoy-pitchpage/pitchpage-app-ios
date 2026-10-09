@@ -5,6 +5,7 @@ import {
   type BlockType,
   type PageSection,
 } from "./page-sections";
+import { seedableEmail } from "./contact-email";
 import { freshId } from "./page-types";
 import { TEMPLATE_SEEDS } from "./template-seeds";
 
@@ -50,7 +51,7 @@ export function seedSections(
       blockType: section.blockType,
       data:
         section.blockType === "cta"
-          ? ({ ...section.data, email: ownerEmail ?? "" } as BlockData)
+          ? ({ ...section.data, email: seedableEmail(ownerEmail) } as BlockData)
           : section.data,
       order: index,
       visible: true,

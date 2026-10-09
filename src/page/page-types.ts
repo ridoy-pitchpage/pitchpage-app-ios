@@ -1,3 +1,4 @@
+import { seedableEmail } from "./contact-email";
 import type { BlockData, BlockType, PageSection } from "./page-sections";
 
 /**
@@ -264,13 +265,14 @@ export function buildSeedSections(
   ownerEmail: string,
   options?: { listingAudience?: ListingAudience },
 ): PageSection[] {
+  const email = seedableEmail(ownerEmail);
   return seedsFor(kind, options?.listingAudience).map((seed, index) => ({
     id: freshId(),
     title: seed.title,
     blockType: seed.blockType,
     data:
-      seed.blockType === "cta" && ownerEmail
-        ? ({ ...seed.data, email: ownerEmail } as BlockData)
+      seed.blockType === "cta" && email
+        ? ({ ...seed.data, email } as BlockData)
         : ({ ...seed.data } as BlockData),
     order: index,
     visible: true,

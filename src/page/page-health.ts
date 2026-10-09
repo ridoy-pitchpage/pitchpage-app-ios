@@ -1,3 +1,4 @@
+import { isAppleRelayEmail } from "./contact-email";
 import { blockIsEmpty, sectionsForLayout, type PageSection } from "./page-sections";
 import { isSampleQuote } from "./sample-content";
 
@@ -70,13 +71,20 @@ export function checkPageHealth(page: PageHealthInput): PageHealth {
     (s) => s.blockType === "cta" && !blockIsEmpty(s.blockType, s.data),
   );
   const ctaData = (ctaSection?.data ?? {}) as { url?: string; email?: string };
+  // App-only, like the sample testimonial below. Apple's Hide My Email address
+  // shows on the page but reaches nobody (contact-email.ts), so it is not a
+  // way to get in touch, and the checklist says why instead of only asking.
+  const reachable = (email?: string | null) => has(email) && !isAppleRelayEmail(email);
+  const relayShown = isAppleRelayEmail(page.email) || isAppleRelayEmail(ctaData.email);
   const hasContactPath =
     (rendersCtaUrl(page.template) && (has(page.primary_cta_url) || has(page.final_cta_url))) ||
     has(page.video_url) ||
-    has(page.email) ||
+    reachable(page.email) ||
     has(ctaData.url) ||
-    has(ctaData.email);
-  if (!hasContactPath) {
+    reachable(ctaData.email);
+  if (relayShown) {
+    issues.push({ id: "relay-email", label: "Replace the Hide My Email address with one visitors can reach" });
+  } else if (!hasContactPath) {
     issues.push({ id: "cta", label: "Add a way for people to contact you" });
   }
 

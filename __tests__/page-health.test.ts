@@ -53,6 +53,38 @@ describe("page health", () => {
   });
 });
 
+describe("Apple's Hide My Email address", () => {
+  const RELAY = "x7k2pq9mzt@privaterelay.appleid.com";
+  const contact = (email: string) => ({
+    id: "c", title: "Contact", blockType: "cta" as const, order: 1, visible: true,
+    data: { heading: "", sub: "", label: "Get in touch", url: "", email },
+  });
+  const ids = (page: Parameters<typeof checkPageHealth>[0]) => checkPageHealth(page).issues.map((i) => i.id);
+
+  it("is named when it is the page's email, and is not a way to reach anybody", () => {
+    expect(ids({ ...base, email: RELAY })).toEqual(["relay-email"]);
+  });
+
+  it("is named when it is in the Contact section", () => {
+    expect(ids({ ...base, sections: [...base.sections, contact(RELAY.toUpperCase())] })).toContain("relay-email");
+  });
+
+  it("is still named when the page has another way in", () => {
+    expect(ids({ ...base, email: RELAY, video_url: "https://x/v.mp4" })).toEqual(["relay-email"]);
+  });
+
+  it("leaves a real address alone", () => {
+    expect(ids({ ...base, sections: [...base.sections, contact("jane@icloud.com")] })).toEqual([]);
+  });
+
+  it("is never written into a new page's Contact section", () => {
+    const seeded = buildSeedSections("job", RELAY).find((s) => s.blockType === "cta");
+    expect((seeded?.data as { email?: string }).email ?? "").toBe("");
+    const real = buildSeedSections("job", "jane@icloud.com").find((s) => s.blockType === "cta");
+    expect((real?.data as { email?: string }).email).toBe("jane@icloud.com");
+  });
+});
+
 describe("the sample testimonial", () => {
   const quote = (name: string, words: string) => ({
     id: "q",

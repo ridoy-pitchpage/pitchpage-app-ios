@@ -1,5 +1,6 @@
 import { savePage, type PitchPageRow, type SavePagePatch } from "@/api/supabase-direct";
 import { supabase } from "@/auth/supabase";
+import { seedableEmail } from "./contact-email";
 import { blockIsEmpty, clampSections, type PageSection } from "./page-sections";
 import {
   buildSeedSections,
@@ -18,15 +19,19 @@ import { buildJobTarget, buildPlaceholderHeadline, type IntakeAnswers } from "./
  * replaces sections, and the user confirms it first.
  */
 
-/** The address to put in a new page's contact block. */
+/**
+ * The address to put in a new page's contact block, and on the page. Never
+ * Apple's Hide My Email address, which visitors can't write to: the page then
+ * starts without one, and the publish checklist asks for it.
+ */
 export async function ownerEmailFor(row: Pick<PitchPageRow, "email">): Promise<string> {
-  const onRow = typeof row.email === "string" ? row.email.trim() : "";
+  const onRow = seedableEmail(row.email);
   if (onRow) return onRow;
   try {
     // The stored session, not a round trip: this runs while the user is
     // waiting on a screen transition.
     const { data } = await supabase.auth.getSession();
-    return data.session?.user?.email ?? "";
+    return seedableEmail(data.session?.user?.email);
   } catch {
     return "";
   }

@@ -3,6 +3,7 @@ import { View } from "react-native";
 import { Sheet } from "@/components/Sheet";
 import { TextField } from "@/components/TextField";
 import { Muted } from "@/components/Text";
+import { isAppleRelayEmail, RELAY_EMAIL_HINT } from "@/page/contact-email";
 import { useDraft } from "@/state/draft-store";
 
 /**
@@ -47,6 +48,7 @@ export function DetailsSheet({ visible, onClose }: { visible: boolean; onClose: 
         />
         <TextField
           label="Email"
+          hint={isAppleRelayEmail(page.email) ? RELAY_EMAIL_HINT : undefined}
           value={page.email ?? ""}
           onChangeText={(email) => patch({ email })}
           keyboardType="email-address"

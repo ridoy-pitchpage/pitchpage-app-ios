@@ -8,6 +8,7 @@ import { ChipField, LineList } from "@/components/ChipField";
 import { Segmented } from "@/components/Select";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
+import { isAppleRelayEmail, RELAY_EMAIL_HINT } from "@/page/contact-email";
 import type { BlockData, BlockType } from "@/page/page-sections";
 
 /**
@@ -672,6 +673,7 @@ function CtaEditor({ data, set }: { data: BlockData; set: Setter }) {
       />
       <TextField
         label="Email"
+        hint={isAppleRelayEmail(d.email) ? RELAY_EMAIL_HINT : undefined}
         value={d.email ?? ""}
         onChangeText={(email) => set({ email })}
         maxLength={200}

@@ -3,8 +3,9 @@ import { applyPitchKind, reseedForKind, savedListingAudience } from "@/page/appl
 import { LISTING_CTA_LABEL } from "@/page/page-types";
 
 jest.mock("@/api/supabase-direct", () => ({ savePage: jest.fn() }));
+const mockGetSession = jest.fn().mockResolvedValue({ data: { session: null } });
 jest.mock("@/auth/supabase", () => ({
-  supabase: { auth: { getSession: jest.fn().mockResolvedValue({ data: { session: null } }) } },
+  supabase: { auth: { getSession: () => mockGetSession() } },
 }));
 
 const save = jest.mocked(savePage);
@@ -53,4 +54,25 @@ it.each([undefined, null, [], {}, { listing_audience: "unknown" }, { listing_aud
 it("reads both saved non-default selections for the form", () => {
   expect(savedListingAudience(seller.wizard_meta)).toBe("seller");
   expect(savedListingAudience({ listing_audience: "investor" })).toBe("investor");
+});
+
+describe("Apple's Hide My Email address", () => {
+  const RELAY = "x7k2pq9mzt@privaterelay.appleid.com";
+  const fresh = { ...seller, id: "fresh-page", email: null, wizard_meta: {} } as unknown as PitchPageRow;
+
+  afterEach(() => mockGetSession.mockResolvedValue({ data: { session: null } }));
+
+  it("is never written onto a page set up by an account signed in with it", async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { user: { email: RELAY } } } });
+    await applyPitchKind(fresh, "job");
+    const patch = save.mock.calls[0]![1] as { email?: string; sections: Array<{ blockType: string; data: { email?: string } }> };
+    expect(patch.email).toBeUndefined();
+    expect(patch.sections.find((s) => s.blockType === "cta")?.data.email ?? "").toBe("");
+  });
+
+  it("gives way to the account's real address when one was saved on the page", async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { user: { email: "jane@icloud.com" } } } });
+    await applyPitchKind({ ...fresh, email: RELAY } as PitchPageRow, "job");
+    expect(save.mock.calls[0]![1]).toEqual(expect.objectContaining({ email: "jane@icloud.com" }));
+  });
 });

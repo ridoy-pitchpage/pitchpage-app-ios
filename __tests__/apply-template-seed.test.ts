@@ -62,6 +62,13 @@ describe("seedSections", () => {
     }
   });
 
+  it("never routes contact to Apple's Hide My Email address", () => {
+    const seeded = seedSections("spotlight", [], "x7k2pq9mzt@privaterelay.appleid.com")!;
+    for (const s of seeded.filter((x) => x.blockType === "cta")) {
+      expect((s.data as { email: string }).email).toBe("");
+    }
+  });
+
   it("gives every section a fresh id", () => {
     const a = seedSections("banner", [], OWNER)!.map((s) => s.id);
     const b = seedSections("banner", [], OWNER)!.map((s) => s.id);
