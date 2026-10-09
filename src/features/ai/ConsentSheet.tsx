@@ -31,6 +31,7 @@ export function ConsentSheet({
       <View className="gap-1 pl-1">
         <Body>• What you typed about yourself</Body>
         <Body>• Your CV, if you added one</Body>
+        <Body>• The kind of page and the role you chose in setup</Body>
         <Body>• The names of your page's sections</Body>
       </View>
       <Muted>
