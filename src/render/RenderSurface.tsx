@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ElementRef, type ReactNode } from "react";
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
+import { BlockLoader } from "@/components/BlockLoader";
 import { useToast } from "@/components/Toast";
 import { RENDER_URL } from "@/lib/config";
 import { openPageLink } from "./page-links";
@@ -258,12 +259,9 @@ export function RenderSurface({
         {state === "connecting" ? (
           <View
             style={[StyleSheet.absoluteFill, { backgroundColor: ground }]}
-            className="items-center justify-center gap-3"
-            accessibilityRole="progressbar"
-            accessibilityLabel="Loading your page"
+            className="items-center justify-center"
           >
-            <ActivityIndicator color={inkMuted} />
-            <Text style={{ color: inkMuted, fontSize: 13 }}>Loading your template…</Text>
+            <BlockLoader label="Loading your template…" color={inkMuted} />
           </View>
         ) : null}
 

@@ -87,6 +87,37 @@ await check('Build my page: prompt, consent, draft saved', async () => {
   return '(consent, draft, builder)';
 });
 
+await check('Build my page: the wait is a page taking shape, not a spinner', async () => {
+  // Hold the draft until the screen has been looked at, then let it through.
+  const compose = '**/api/app/v1/ai/compose-sections';
+  let release;
+  const held = new Promise((resolve) => { release = resolve; });
+  await p.route(compose, async (route) => { await held; return route.fallback(); });
+  try {
+    await go('/build/' + mod.DRAFT_ID);
+    await p.getByLabel('About you', { exact: true }).fill('Enterprise account executive, six years in fintech, selling to banks.');
+    await p.waitForTimeout(400);
+    await p.getByLabel('Build my page', { exact: true }).click(); await p.waitForTimeout(900);
+    if (/Build your page with AI/.test(await text())) await p.getByLabel('Allow', { exact: true }).click();
+    await p.waitForTimeout(1300);
+    const loader = p.getByRole('progressbar', { name: 'Building your page…', exact: true });
+    must((await loader.count()) === 1, 'no "Building your page…" progress');
+    // The web build draws ActivityIndicator as an SVG; the blocks are views.
+    const spinners = await p.locator('[role="progressbar"] svg').count();
+    must(spinners === 0, `a spinner is still drawn (${spinners})`);
+    const blocks = await loader.evaluate((e) => e.querySelectorAll('div').length);
+    must(blocks >= 8, `only ${blocks} blocks in the outline`);
+    await p.screenshot({ path: `${OUT_DIR}/e2e-0-building.png` });
+  } finally {
+    // Let the held draft through whatever happened. Taking the route away in
+    // the same breath would answer the held request a second time.
+    release();
+  }
+  await p.waitForURL(/\/builder\//, { timeout: 15000 });
+  await p.unroute(compose);
+  return '(blocks, no spinner)';
+});
+
 await check("Build my page: a template's examples give way to the draft", async () => {
   const saved = [];
   await p.route('**/rest/v1/pitch_pages**', (route) => {

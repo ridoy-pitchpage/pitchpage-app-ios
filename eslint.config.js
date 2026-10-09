@@ -41,6 +41,23 @@ module.exports = [
        * no padding and its arrow on a second line. Put the look on an inner
        * View from a children function instead, as Button does.
        */
+      /*
+       * Loading is drawn as blocks, never the system spinner (2026-10-09):
+       * Loading or BlockLoader for a screen, BlockDots inside a control.
+       */
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "react-native",
+              importNames: ["ActivityIndicator"],
+              message: "Use Loading, BlockLoader or BlockDots (src/components) instead of a spinner.",
+            },
+          ],
+        },
+      ],
+
       "no-restricted-syntax": [
         "error",
         {

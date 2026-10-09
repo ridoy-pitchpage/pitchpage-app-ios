@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 import { TriangleAlert } from "lucide-react-native";
 
+import { BlockLoader } from "./BlockLoader";
 import { Button } from "./Button";
-import { Body, H3, Muted } from "./Text";
+import { Body, H3 } from "./Text";
 import { useColors } from "@/theme/ThemeProvider";
 import { mix } from "@/theme/tokens";
 import { userFacingErrorMessage } from "@/lib/errors";
@@ -14,11 +15,9 @@ import { userFacingErrorMessage } from "@/lib/errors";
  */
 
 export function Loading({ label = "Loading…" }: { label?: string }) {
-  const colors = useColors();
   return (
-    <View className="flex-1 items-center justify-center gap-3 p-8" accessibilityRole="progressbar">
-      <ActivityIndicator color={colors.mutedForeground} />
-      <Muted>{label}</Muted>
+    <View className="flex-1 items-center justify-center p-8">
+      <BlockLoader label={label} />
     </View>
   );
 }

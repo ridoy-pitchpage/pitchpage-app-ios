@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -7,6 +7,7 @@ import {
   Shapes, Trophy, Wrench, type LucideIcon,
 } from "lucide-react-native";
 
+import { BlockDots } from "@/components/BlockLoader";
 import { Card } from "@/components/Card";
 import { MotionEntrance } from "@/components/MotionEntrance";
 import { BackButton } from "@/components/BackButton";
@@ -199,7 +200,7 @@ export default function ChooseTypeScreen() {
                             <H3>{tile.title}</H3>
                             <Muted>{tile.description}</Muted>
                           </View>
-                          {busy === tile.key ? <ActivityIndicator color={colors.primary} /> : isCurrent ? (
+                          {busy === tile.key ? <BlockDots color={colors.primary} /> : isCurrent ? (
                             <Check size={20} color={colors.primary} />
                           ) : <ChevronRight size={18} color={colors.mutedForeground} />}
                         </View>

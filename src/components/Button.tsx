@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, Text, View, type PressableProps } from "react-native";
+import { Pressable, Text, View, type PressableProps } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import Animated, {
@@ -8,6 +8,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 
+import { BlockDots } from "./BlockLoader";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { MIN_TAP, RADIUS, mix, shade } from "@/theme/tokens";
 
@@ -62,11 +63,11 @@ export function Button({
     variant === "primary"
       ? [mix(base, colors.ring, resolved === "dark" ? 0.04 : 0.12), base]
       : [shade(base, 0.04), base];
-  // The spinner and any icon sit ON the fill, so they take the paired
+  // The busy dots and any icon sit ON the fill, so they take the paired
   // foreground rather than a colour of their own.
   const onFill =
     variant === "destructive" ? colors.destructiveForeground : colors.primaryForeground;
-  const spinner = filled ? onFill : colors.mutedForeground;
+  const busyInk = filled ? onFill : colors.mutedForeground;
   const pressScale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pressScale.value }],
@@ -128,7 +129,7 @@ export function Button({
           cardColor={colors.card}
         >
           {loading ? (
-            <ActivityIndicator size="small" color={spinner} />
+            <BlockDots color={busyInk} />
           ) : (
             <>
               {icon ? <View>{icon}</View> : null}

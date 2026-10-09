@@ -13,6 +13,7 @@ import { Card } from "@/components/Card";
 import { Screen, ScreenScroll } from "@/components/Screen";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { TextField } from "@/components/TextField";
+import { BlockLoader } from "@/components/BlockLoader";
 import { ErrorState, Loading } from "@/components/States";
 import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
@@ -288,7 +289,7 @@ export default function BuildScreen() {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center gap-4 px-6">
-          <Loading label="Building your page…" />
+          <BlockLoader mode="build" label="Building your page…" />
           <Muted className="text-center">
             This takes about 30 seconds. Your draft goes into the sections your page already has.
           </Muted>

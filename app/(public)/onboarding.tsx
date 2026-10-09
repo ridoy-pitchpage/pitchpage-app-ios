@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, PanResponder, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { PanResponder, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 
+import { BlockDots } from "@/components/BlockLoader";
 import { OnboardingShowcase } from "@/onboarding/OnboardingShowcase";
 import { completeOnboarding } from "@/onboarding/storage";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
@@ -114,7 +115,7 @@ export default function Onboarding() {
           {({ pressed }) => (
             <View style={{ minHeight: 56, paddingHorizontal: 20, paddingVertical: 14, borderRadius: 5, backgroundColor: actionFill,
               opacity: pressed || finishing ? 0.75 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              {finishing ? <ActivityIndicator color={actionInk} /> : <>
+              {finishing ? <BlockDots color={actionInk} /> : <>
                 <Text className="font-body-bold" style={{ flexShrink: 1, fontSize: 17, color: actionInk }}>{step.action}</Text>
                 <ArrowRight size={22} color={actionInk} strokeWidth={1.8} />
               </>}
