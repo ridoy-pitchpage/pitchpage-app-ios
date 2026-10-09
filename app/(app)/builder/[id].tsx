@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useNavigation, usePreventRemove } from "expo-router/react-navigation";
+import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -22,6 +23,7 @@ import { useToast } from "@/components/Toast";
 import { keys, useMyPage } from "@/api/queries";
 import { PageRender } from "@/render/PageRender";
 import { RenderSurface, type SurfaceTarget } from "@/render/RenderSurface";
+import { themeForTemplate } from "@/render/template-theme";
 import { toPublicData } from "@/render/to-public-data";
 import { DetailsSheet } from "@/features/builder/DetailsSheet";
 import { SectionSheet } from "@/features/builder/SectionSheet";
@@ -36,7 +38,7 @@ import {
   useDraft,
 } from "@/state/draft-store";
 import { useColors } from "@/theme/ThemeProvider";
-import { MIN_TAP } from "@/theme/tokens";
+import { MIN_TAP, elevation } from "@/theme/tokens";
 
 /**
  * The builder.
@@ -70,8 +72,20 @@ export default function BuilderScreen() {
   const status = useDraft((s) => s.status);
   const draftId = useDraft((s) => s.pageId);
 
+  const [mode, setMode] = useState<"edit" | "preview">(
+    initialMode === "preview" ? "preview" : "edit",
+  );
+  // A preview opened from the editor goes back to it; one opened straight
+  // from your pages goes back to them, as any screen would.
+  const [previewFromEditor, setPreviewFromEditor] = useState(false);
+  const backToEditor = mode === "preview" && previewFromEditor;
+
   // Covers the header, the iOS back gesture, and other navigation removals.
-  usePreventRemove(draftId === id && hasUnsavedChanges(status), ({ data }) => {
+  usePreventRemove(backToEditor || (draftId === id && hasUnsavedChanges(status)), ({ data }) => {
+    if (backToEditor) {
+      setMode("edit");
+      return;
+    }
     if (leaving.current) return;
     leaving.current = true;
     void (async () => {
@@ -83,9 +97,6 @@ export default function BuilderScreen() {
     })().finally(() => { leaving.current = false; });
   });
 
-  const [mode, setMode] = useState<"edit" | "preview">(
-    initialMode === "preview" ? "preview" : "edit",
-  );
   const [sheet, setSheet] = useState<"none" | "details" | "sections" | "style" | "media">("none");
   /** Whether the Sections sheet should open on its "add" pane. */
   const [sectionsOnAdd, setSectionsOnAdd] = useState(false);
@@ -166,9 +177,13 @@ export default function BuilderScreen() {
   }
 
   const editing = mode === "edit";
+  // Previewing shows the page and nothing else: no top bar, no toolbar, and
+  // the strip under the status bar in the page's own ground.
+  const pageTheme = themeForTemplate(page.template);
 
   return (
-    <View className="flex-1">
+    <View className="flex-1" style={editing ? undefined : { backgroundColor: pageTheme.ground }}>
+      {editing ? null : <StatusBar style={pageTheme.mode === "dark" ? "light" : "dark"} />}
       {/*
         The website's own rendering of the draft, so the builder looks exactly
         like the template that was picked. PageRender stays as the fallback:
@@ -184,68 +199,71 @@ export default function BuilderScreen() {
           else if (target.kind === "details") setSheet("details");
           else setSheet("media");
         }}
-        bottomInset={toolbarHeight}
+        bottomInset={editing ? toolbarHeight : 0}
         header={
-          <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.background }}>
-            <TopBar className="flex-wrap gap-2 px-3 py-2">
-              <Pressable
-                onPress={() => void leave()}
-                accessibilityRole="button"
-                accessibilityLabel="Back to your pages"
-                hitSlop={10}
-                style={{ minHeight: MIN_TAP, minWidth: MIN_TAP }}
-                className="items-center justify-center"
-              >
-                <ChevronLeft size={26} color={colors.foreground} />
-              </Pressable>
+          editing ? (
+            <SafeAreaView edges={["top"]} style={{ backgroundColor: colors.background }}>
+              <TopBar className="flex-wrap gap-2 px-3 py-2">
+                <Pressable
+                  onPress={() => void leave()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Back to your pages"
+                  hitSlop={10}
+                  style={{ minHeight: MIN_TAP, minWidth: MIN_TAP }}
+                  className="items-center justify-center"
+                >
+                  <ChevronLeft size={26} color={colors.foreground} />
+                </Pressable>
 
-              <View className="min-w-[100px] flex-1">
-                <Body numberOfLines={1} className="text-[15px]">
-                  {page.full_name || "Your page"}
-                </Body>
-                <Muted className="text-[12px]">{editing ? "Page editor" : "Page preview"}</Muted>
-              </View>
+                <View className="min-w-[100px] flex-1">
+                  <Body numberOfLines={1} className="text-[15px]">
+                    {page.full_name || "Your page"}
+                  </Body>
+                  <Muted className="text-[12px]">Page editor</Muted>
+                </View>
 
-              <Button
-                title={page.published_at ? "Update" : "Publish"}
-                fullWidth={false}
-                haptic
-                onPress={async () => {
-                  if (!(await flush())) {
-                    toast.error(new Error("Your last change hasn't saved yet."));
-                    return;
-                  }
-                  router.push({ pathname: "/(app)/preview/[id]", params: { id: page.id } });
-                }}
-              />
-            </TopBar>
+                <Button
+                  title={page.published_at ? "Update" : "Publish"}
+                  fullWidth={false}
+                  haptic
+                  onPress={async () => {
+                    if (!(await flush())) {
+                      toast.error(new Error("Your last change hasn't saved yet."));
+                      return;
+                    }
+                    router.push({ pathname: "/(app)/preview/[id]", params: { id: page.id } });
+                  }}
+                />
+              </TopBar>
 
-            <View className="flex-row flex-wrap items-center justify-between gap-2 px-4 pb-2 pt-1">
-              <Muted className="min-w-0 flex-1 text-[12px]" accessibilityLiveRegion="polite">
-                {saveLabel(status) || "All changes saved"}
-              </Muted>
-              <Pressable
-                onPress={() => setMode(editing ? "preview" : "edit")}
-                accessibilityRole="button"
-                accessibilityLabel={editing ? "Preview your page" : "Back to editing"}
-                style={{ minHeight: MIN_TAP }}
-                className="flex-row items-center gap-2 rounded-full border border-border bg-card px-3"
-              >
-                {editing ? (
+              <View className="flex-row flex-wrap items-center justify-between gap-2 px-4 pb-2 pt-1">
+                <Muted className="min-w-0 flex-1 text-[12px]" accessibilityLiveRegion="polite">
+                  {saveLabel(status) || "All changes saved"}
+                </Muted>
+                <Pressable
+                  onPress={() => {
+                    setPreviewFromEditor(true);
+                    setMode("preview");
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Preview your page"
+                  style={{ minHeight: MIN_TAP }}
+                  className="flex-row items-center gap-2 rounded-full border border-border bg-card px-3"
+                >
                   <Eye size={16} color={colors.foreground} />
-                ) : (
-                  <Pencil size={16} color={colors.foreground} />
-                )}
-                <Body className="text-[14px]">{editing ? "Preview" : "Edit"}</Body>
-              </Pressable>
-            </View>
-          </SafeAreaView>
+                  <Body className="text-[14px]">Preview</Body>
+                </Pressable>
+              </View>
+            </SafeAreaView>
+          ) : (
+            <SafeAreaView edges={["top"]} style={{ backgroundColor: pageTheme.ground }} />
+          )
         }
         fallback={
           <PageRender
             page={page}
             editable={editing}
-            bottomInset={toolbarHeight}
+            bottomInset={editing ? toolbarHeight : 0}
             onEditHero={() => setSheet("details")}
             onEditSection={(section) => setSectionId(section.id)}
             onAddSection={() => {
@@ -256,43 +274,68 @@ export default function BuilderScreen() {
         }
       />
 
-      <SafeAreaView
-        edges={["bottom"]}
-        className="absolute inset-x-0 bottom-0"
-        onLayout={(event) => setToolbarHeight(event.nativeEvent.layout.height)}
-      >
-        <View
-          className="mx-3 mb-2 flex-row items-stretch gap-2 rounded-[22px] border border-border bg-card p-2"
+      {editing ? (
+        <SafeAreaView
+          edges={["bottom"]}
+          className="absolute inset-x-0 bottom-0"
+          onLayout={(event) => setToolbarHeight(event.nativeEvent.layout.height)}
         >
-          <ToolbarButton
-            label="Details"
-            active={sheet === "details"}
-            icon={<FilePenLine size={20} color={colors.link} strokeWidth={2.1} />}
-            onPress={() => setSheet("details")}
-          />
-          <ToolbarButton
-            label="Sections"
-            active={sheet === "sections"}
-            icon={<ListTree size={20} color={colors.link} strokeWidth={2.1} />}
-            onPress={() => {
-              setSectionsOnAdd(false);
-              setSheet("sections");
-            }}
-          />
-          <ToolbarButton
-            label="Media"
-            active={sheet === "media"}
-            icon={<Images size={20} color={colors.link} strokeWidth={2.1} />}
-            onPress={() => setSheet("media")}
-          />
-          <ToolbarButton
-            label="Style"
-            active={sheet === "style"}
-            icon={<SwatchBook size={20} color={colors.link} strokeWidth={2.1} />}
-            onPress={() => setSheet("style")}
-          />
-        </View>
-      </SafeAreaView>
+          <View
+            className="mx-3 mb-2 flex-row items-stretch gap-2 rounded-[22px] border border-border bg-card p-2"
+          >
+            <ToolbarButton
+              label="Details"
+              active={sheet === "details"}
+              icon={<FilePenLine size={20} color={colors.link} strokeWidth={2.1} />}
+              onPress={() => setSheet("details")}
+            />
+            <ToolbarButton
+              label="Sections"
+              active={sheet === "sections"}
+              icon={<ListTree size={20} color={colors.link} strokeWidth={2.1} />}
+              onPress={() => {
+                setSectionsOnAdd(false);
+                setSheet("sections");
+              }}
+            />
+            <ToolbarButton
+              label="Media"
+              active={sheet === "media"}
+              icon={<Images size={20} color={colors.link} strokeWidth={2.1} />}
+              onPress={() => setSheet("media")}
+            />
+            <ToolbarButton
+              label="Style"
+              active={sheet === "style"}
+              icon={<SwatchBook size={20} color={colors.link} strokeWidth={2.1} />}
+              onPress={() => setSheet("style")}
+            />
+          </View>
+        </SafeAreaView>
+      ) : (
+        // The page's own way back to editing, kept small and to one side so
+        // it covers as little of the page as it can.
+        <SafeAreaView
+          edges={["bottom"]}
+          pointerEvents="box-none"
+          className="absolute bottom-0 right-0"
+        >
+          {/* The spacing is on an inner view, as the toolbar's is: padding
+              given to a SafeAreaView is replaced by the inset it computes. */}
+          <View className="mb-3 mr-4">
+            <Pressable
+              onPress={() => setMode("edit")}
+              accessibilityRole="button"
+              accessibilityLabel="Edit your page"
+              style={[{ minHeight: MIN_TAP, backgroundColor: colors.card }, elevation("#000000", 3)]}
+              className="flex-row items-center gap-2 rounded-full border border-border px-4"
+            >
+              <Pencil size={16} color={colors.foreground} />
+              <Body className="text-[15px]">Edit</Body>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      )}
 
       <DetailsSheet visible={sheet === "details"} onClose={() => setSheet("none")} />
       <SectionsSheet

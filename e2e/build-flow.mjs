@@ -249,6 +249,19 @@ await check('Builder: a style can be picked', async () => {
   return `(${swatches} controls)`;
 });
 
+await check('Builder: Preview is the page alone, and Edit brings the tools back', async () => {
+  await p.getByLabel('Preview your page', { exact: true }).click(); await p.waitForTimeout(900);
+  for (const control of ['Details', 'Sections', 'Media', 'Style', 'Back to your pages', 'Publish']) {
+    must((await p.getByLabel(control, { exact: true }).count()) === 0, `"${control}" still shows in Preview`);
+  }
+  must(!(await overflow()), 'horizontal overflow');
+  await p.screenshot({ path: `${OUT_DIR}/e2e-2-preview.png` });
+  await p.getByLabel('Edit your page', { exact: true }).click(); await p.waitForTimeout(900);
+  must((await p.getByLabel('Details', { exact: true }).count()) === 1, 'the toolbar did not come back');
+  must((await p.getByLabel('Back to your pages', { exact: true }).count()) === 1, 'the top bar did not come back');
+  return '(page only, then the editor again)';
+});
+
 await check('Review: Publish is on screen, and the gaps are asked about on tap', async () => {
   await go('/preview/' + mod.DRAFT_ID);
   const glance = await text();
