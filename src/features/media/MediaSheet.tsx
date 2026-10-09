@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Linking, Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
@@ -53,6 +53,15 @@ export function MediaSheet({
       : `${SITE_URL}${page.portrait_url}`
     : null;
 
+  /**
+   * Once somebody has said no, iOS won't ask them again, so Settings is the
+   * only way back, and the way there is a button rather than directions.
+   */
+  async function offerSettings(title: string, message: string) {
+    const open = await confirm({ title, message, confirmLabel: "Open Settings", cancelLabel: "Not now" });
+    if (open) await Linking.openSettings();
+  }
+
   async function pickPortrait(source: "camera" | "library") {
     const permission =
       source === "camera"
@@ -60,12 +69,12 @@ export function MediaSheet({
         : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      void confirm({
-        title: source === "camera" ? "Camera access is off" : "Photo access is off",
-        message: "You can turn it back on in Settings if you change your mind.",
-        confirmLabel: "OK",
-        dismissOnly: true,
-      });
+      void offerSettings(
+        source === "camera" ? "Camera access is off" : "Photo access is off",
+        source === "camera"
+          ? "Turn on the camera for PitchPage in Settings to take a portrait."
+          : "Turn on photo access for PitchPage in Settings to choose a portrait.",
+      );
       return;
     }
 
@@ -124,12 +133,10 @@ export function MediaSheet({
   async function pickVideo() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      void confirm({
-        title: "Photo access is off",
-        message: "You can turn it back on in Settings.",
-        confirmLabel: "OK",
-        dismissOnly: true,
-      });
+      void offerSettings(
+        "Photo access is off",
+        "Turn on photo access for PitchPage in Settings to choose an intro video.",
+      );
       return;
     }
 
