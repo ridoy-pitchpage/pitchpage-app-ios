@@ -273,7 +273,7 @@ await check('Review: Publish is on screen, and the gaps are asked about on tap',
   must(bottom != null && bottom <= p.viewportSize().height, `Publish now is below the fold (${bottom}px)`);
   must(!(await overflow()), 'horizontal overflow');
   await p.screenshot({ path: `${OUT_DIR}/e2e-3-review.png` });
-  // The draft has no headline, bio or portrait, so Publish asks before spending a credit.
+  // The draft has no headline, bio or portrait, so Publish asks first.
   await publishButton.click(); await p.waitForTimeout(500);
   must(/Before you publish/.test(await text()), 'Publish did not ask about the missing headline, bio and portrait');
   await p.getByRole('button', { name: 'Keep editing', exact: true }).click(); await p.waitForTimeout(400);
@@ -282,22 +282,46 @@ await check('Review: Publish is on screen, and the gaps are asked about on tap',
   return `(button ends at ${bottom}px of ${p.viewportSize().height})`;
 });
 
-await check('Review: a failed balance check offers Try again', async () => {
-  const before = errs.length;
-  const rpc = '**/rest/v1/rpc/get_publish_eligibility*';
-  await p.route(rpc, (route) =>
-    route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Service Unavailable"}' }));
+await check('Review: publishing a draft is free and opens Share', async () => {
+  const calls = [];
+  const listen = (request) => { if (request.url().includes('/rest/v1/rpc/publish_pitch_page')) calls.push(request); };
+  p.on('request', listen);
   await go('/preview/' + mod.DRAFT_ID);
-  await p.waitForTimeout(2500); // the app retries once quietly first (app/_layout.tsx)
   const t = await text();
-  must(/We couldn't check your balance/.test(t), 'no error state when the balance check fails');
-  must(!/Checking your balance/.test(t), 'still spinning on a failed balance check');
+  must(/free for up to 3 live pages/.test(t), 'the card does not say publishing is free');
+  must(!/credit|balance|\$\d/i.test(t), 'the review screen still mentions credits or a price');
+  await p.getByRole('button', { name: 'Publish now', exact: true }).click(); await p.waitForTimeout(500);
+  await p.getByRole('button', { name: 'Publish anyway', exact: true }).click(); await p.waitForTimeout(1500);
+  p.off('request', listen);
+  must(p.url().includes('/share/' + mod.DRAFT_ID), `publishing did not open Share (${p.url()})`);
+  must(calls.length === 1, `expected one publish call, saw ${calls.length}`);
+  must(/\/rpc\/publish_pitch_page_from_app(\?|$)/.test(calls[0].url()), `published through ${calls[0].url()}`);
+  must(calls[0].postDataJSON()?._pitch_page_id === mod.DRAFT_ID, 'the publish call did not name the page');
+  return '(free function, then Share)';
+});
+
+await check('Review: at the cap, publishing says how to make room', async () => {
+  const before = errs.length;
+  const rpc = '**/rest/v1/rpc/publish_pitch_page_from_app*';
+  // The function's own refusal, as PostgREST sends a RAISE EXCEPTION.
+  await p.route(rpc, (route) => route.fulfill({
+    status: 400, contentType: 'application/json',
+    body: JSON.stringify({ code: 'P0001', details: null, hint: null,
+      message: 'You already have 3 pages live from the app. Take one offline to publish this one.' }),
+  }));
+  await go('/preview/' + mod.DRAFT_ID);
+  await p.getByRole('button', { name: 'Publish now', exact: true }).click(); await p.waitForTimeout(500);
+  await p.getByRole('button', { name: 'Publish anyway', exact: true }).click(); await p.waitForTimeout(1200);
+  const t = await text();
+  must(/You have 3 pages live from the app/.test(t), 'no dialog at the cap');
+  must(/Take one offline, then publish this one/.test(t), 'the dialog does not say how to make room');
+  await p.screenshot({ path: `${OUT_DIR}/e2e-3-cap.png` });
+  await p.getByRole('button', { name: 'See your pages', exact: true }).click(); await p.waitForTimeout(1200);
   await p.unroute(rpc);
-  await p.getByRole('button', { name: 'Try again', exact: true }).click(); await p.waitForTimeout(1500);
-  must(/Ready to publish/.test(await text()), 'Try again did not recover once the check answered');
-  // The 503s above are this step's whole point, not a fault in the app.
+  must(/\/pages$/.test(new URL(p.url()).pathname), `See your pages went to ${p.url()}`);
+  // The 400 above is this step's whole point, not a fault in the app.
   errs.length = before;
-  return '(error, then recovered)';
+  return '(dialog, then your pages)';
 });
 
 await check('Share: link, QR and channels', async () => {

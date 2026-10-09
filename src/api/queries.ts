@@ -161,9 +161,6 @@ export function usePublishPage() {
     onSuccess: (_result, id) => {
       void queryClient.invalidateQueries({ queryKey: keys.pages });
       void queryClient.invalidateQueries({ queryKey: keys.page(id) });
-      // Publishing spends a credit, so the balance on screen is now stale.
-      void queryClient.invalidateQueries({ queryKey: keys.credits });
-      void queryClient.invalidateQueries({ queryKey: keys.publishEligibility(id) });
     },
   });
 }

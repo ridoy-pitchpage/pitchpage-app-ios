@@ -11,25 +11,27 @@ import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
-import { useMyCredits, useMyPage, usePublishEligibility, usePublishPage } from "@/api/queries";
+import { useMyPage, usePublishPage } from "@/api/queries";
+import { FREE_LIVE_PAGES, isPublishCapError } from "@/api/supabase-direct";
 import { sectionsForLayout } from "@/page/page-sections";
 import { toPageModel } from "@/page/page-model";
 import { checkPageHealth, pageIsEmpty, EMPTY_PAGE_MESSAGE } from "@/page/page-health";
-import { userFacingErrorMessage } from "@/lib/errors";
-import { creditCount } from "@/lib/format";
 
 /**
  * Review and publish (S74/S75/S68).
  *
- * A glance at the page, then the one button that moves it on: Publish, or Get
- * a credit when publishing needs one. This screen used to show each part's
- * text and then every section by name above that button, so on a real page the
- * button sat below the fold and the screen read as a form with no way out
- * (2026-10-08). The glance is one line per part, added or not, and a section
- * count, short enough that the button is always in view; the page itself is
- * checked in the builder, where it can be fixed. What a visitor would notice
- * first still comes up, as a question, when Publish is tapped. Once published,
- * "See it live" opens the real page.
+ * A glance at the page, then the one button that moves it on: Publish. This
+ * screen used to show each part's text and then every section by name above
+ * that button, so on a real page the button sat below the fold and the screen
+ * read as a form with no way out (2026-10-08). The glance is one line per
+ * part, added or not, and a section count, short enough that the button is
+ * always in view; the page itself is checked in the builder, where it can be
+ * fixed. What a visitor would notice first still comes up, as a question, when
+ * Publish is tapped. Once published, "See it live" opens the real page.
+ *
+ * Publishing from the app is free (2026-10-09). The app sells nothing, so
+ * this screen no longer reads a balance or a company's eligibility, and has
+ * no "Get a credit".
  */
 export default function PreviewScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,12 +40,6 @@ export default function PreviewScreen() {
 
   const page = useMyPage(id);
   const isLive = page.data?.published_at != null;
-  // Only meaningful for a draft; a live page has already been paid for.
-  const eligibility = usePublishEligibility(id, !isLive);
-  // The person's own balance. get_publish_eligibility's credits_remaining is
-  // the COMPANY's pot, and 0 for every page without a company, so reading it
-  // as the balance told everyone with credits that they needed one.
-  const credits = useMyCredits();
   const publish = usePublishPage();
 
   // `sections` is jsonb, so the row has to go through the model — which runs
@@ -75,23 +71,28 @@ export default function PreviewScreen() {
   function doPublish() {
     if (!id) return;
     publish.mutate(id, {
-      onSuccess: (result) => {
-        if (result.published) {
-          toast.success("Your page is live");
-          router.replace({ pathname: "/(app)/share/[id]", params: { id } });
+      onSuccess: () => {
+        toast.success("Your page is live");
+        router.replace({ pathname: "/(app)/share/[id]", params: { id } });
+      },
+      onError: (error) => {
+        if (!isPublishCapError(error)) {
+          toast.error(error);
           return;
         }
-        // The RPC ran and found no credit to spend. Everything about why lives
-        // in the database, so the app states the outcome rather than guessing.
+        // A toast is gone in four seconds, and the fix for this one is on
+        // another screen, so it waits to be read and offers the way there.
+        // dismissTo goes back to the tabs already open rather than stacking
+        // a second set above this screen.
         void confirm({
-          title: "You need a credit",
-          message:
-            "Publishing a page costs one credit. Everything you have built is saved, so nothing is lost while you sort one out.",
-          confirmLabel: "OK",
-          dismissOnly: true,
+          title: `You have ${FREE_LIVE_PAGES} pages live from the app`,
+          message: `Publishing from the app is free for up to ${FREE_LIVE_PAGES} live pages at a time. Take one offline, then publish this one.`,
+          confirmLabel: "See your pages",
+          cancelLabel: "Not now",
+        }).then((go) => {
+          if (go) router.dismissTo("/(app)/(tabs)/pages");
         });
       },
-      onError: (error) => toast.error(error),
     });
   }
 
@@ -164,20 +165,18 @@ export default function PreviewScreen() {
             />
           </View>
         ) : (
-          <PublishCard
-            eligibility={eligibility.data}
-            balance={credits.data?.balance}
-            loading={eligibility.isPending || credits.isPending}
-            loadError={(eligibility.isError ? eligibility.error : null) ?? (credits.isError ? credits.error : null)}
-            retrying={eligibility.isFetching || credits.isFetching}
-            onRetry={() => {
-              void eligibility.refetch();
-              void credits.refetch();
-            }}
-            publishing={publish.isPending}
-            onPublish={() => void attemptPublish()}
-            onBuyCredits={() => router.push("/(app)/(tabs)/credits/buy")}
-          />
+          <Card className="gap-3">
+            <H3>Ready to publish</H3>
+            <Muted>
+              {`Publishing from the app is free for up to ${FREE_LIVE_PAGES} live pages at a time.`}
+            </Muted>
+            <Button
+              title="Publish now"
+              loading={publish.isPending}
+              haptic
+              onPress={() => void attemptPublish()}
+            />
+          </Card>
         )}
       </ScreenScroll>
     </Screen>
@@ -199,109 +198,5 @@ function GlanceRow({ label, status }: { label: string; status: string }) {
       <Body className="shrink-0">{label}</Body>
       <Muted className="min-w-0 flex-1 text-right">{status}</Muted>
     </View>
-  );
-}
-
-/**
- * The publish states, matching the web's (§6.8). What the button says is
- * decided by `get_publish_eligibility`, so a company-sponsored page reads the
- * same here as it does on the website.
- */
-function PublishCard({
-  eligibility,
-  balance,
-  loading,
-  loadError,
-  retrying,
-  onRetry,
-  publishing,
-  onPublish,
-  onBuyCredits,
-}: {
-  eligibility:
-    | { mode: "sponsored" | "awaiting_credit" | "paid"; org_name: string | null; credits_remaining: number }
-    | undefined;
-  /** The person's own credits, from user_credits. Never eligibility.credits_remaining (see above). */
-  balance: number | undefined;
-  loading: boolean;
-  loadError: unknown;
-  retrying: boolean;
-  onRetry: () => void;
-  publishing: boolean;
-  onPublish: () => void;
-  onBuyCredits: () => void;
-}) {
-  // Only when there is nothing to show: a background refetch that fails keeps
-  // the answer already on screen. Without this, a failed check left "Checking
-  // your balance…" spinning for good, with no way forward.
-  if ((!eligibility || balance === undefined) && loadError) {
-    return (
-      <Card className="gap-3">
-        <H3>We couldn't check your balance</H3>
-        <Muted>{userFacingErrorMessage(loadError)}</Muted>
-        <Button title="Try again" variant="secondary" loading={retrying} onPress={onRetry} />
-      </Card>
-    );
-  }
-
-  if (loading || !eligibility || balance === undefined) {
-    return (
-      <Card>
-        <Button title="Checking your balance…" loading />
-      </Card>
-    );
-  }
-
-  const org = eligibility.org_name ?? "your company";
-
-  if (eligibility.mode === "sponsored") {
-    return (
-      <Card className="gap-3">
-        <H3>Ready to publish</H3>
-        <Muted>{org} covers your pages, so this one is free.</Muted>
-        <Button title={`Publish — free via ${org}`} loading={publishing} haptic onPress={onPublish} />
-      </Card>
-    );
-  }
-
-  if (eligibility.mode === "awaiting_credit") {
-    return (
-      <Card className="gap-3">
-        <H3>Waiting on a credit</H3>
-        <Muted>
-          {org} hasn't assigned you a credit yet. Ask them, or use one of your
-          own.
-        </Muted>
-        {balance > 0 ? (
-          <Button title="Publish with my own credit" loading={publishing} haptic onPress={onPublish} />
-        ) : (
-          <Button title="Get a credit" variant="secondary" onPress={onBuyCredits} />
-        )}
-      </Card>
-    );
-  }
-
-  const hasCredit = balance > 0;
-
-  return (
-    <Card className="gap-3">
-      <H3>{hasCredit ? "Ready to publish" : "You need a credit"}</H3>
-      <Muted>
-        {hasCredit
-          ? `Publishing uses one credit. You have ${creditCount(balance)}.`
-          : "Publishing a page costs one credit. Everything you've built is saved either way."}
-      </Muted>
-      {hasCredit ? (
-        <Button title="Publish now" loading={publishing} haptic onPress={onPublish} />
-      ) : (
-        /*
-          With no credit this card used to end here — a heading, a sentence,
-          and nothing to press. Getting to the end of building a page and
-          finding no way forward reads as a broken screen rather than a
-          price, so the way forward is a button.
-        */
-        <Button title="Get a credit" onPress={onBuyCredits} />
-      )}
-    </Card>
   );
 }

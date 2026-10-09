@@ -144,21 +144,39 @@ function isMissingFunction(error: { code?: string }): boolean {
 }
 
 /**
- * Publishing from the app is free, for up to 3 live pages per account
- * (2026-10-09). The owner check and the cap live in
+ * How many pages publishing from the app keeps live for free. A copy of the
+ * constant in `publish_pitch_page_from_app`, so the app can state the rule;
+ * the app enforces nothing with it.
+ */
+export const FREE_LIVE_PAGES = 3;
+
+/** Marks the server's refusal at the cap, the one publish error whose fix is elsewhere. */
+const PUBLISH_CAP = "PUBLISH_CAP";
+
+export function isPublishCapError(error: unknown): boolean {
+  return !!error && typeof error === "object" && (error as { code?: unknown }).code === PUBLISH_CAP;
+}
+
+/**
+ * Publishing from the app is free, for up to FREE_LIVE_PAGES live pages per
+ * account (2026-10-09). The owner check and the cap live in
  * `publish_pitch_page_from_app` on the server, because the server can't tell
- * the app from a browser; the app enforces nothing itself. At the cap the
- * function refuses in a sentence, "You already have 3 pages live from the app.
- * Take one offline to publish this one.", which reaches the screen as the
- * error. Before the function is applied, publishing says so rather than
+ * the app from a browser. At the cap the function refuses in a sentence, "You
+ * already have 3 pages live from the app. Take one offline to publish this
+ * one." Before the function is applied, publishing says so rather than
  * showing PostgREST's own message.
  */
-export async function publishPage(id: string): Promise<{ published: boolean }> {
+export async function publishPage(id: string): Promise<void> {
   const client = supabase as unknown as UntypedRpc;
   const { error } = await client.rpc("publish_pitch_page_from_app", { _pitch_page_id: id });
-  if (!error) return { published: true };
+  if (!error) return;
   if (isMissingFunction(error)) {
     throw new Error("Publishing from the app isn't switched on yet. Try again soon.");
+  }
+  // Recognised by the server's wording, in this one place. If the wording
+  // ever changes, the sentence still reaches the screen as an ordinary error.
+  if (/pages live from the app/i.test(error.message)) {
+    throw Object.assign(new Error(error.message), { code: PUBLISH_CAP });
   }
   throw new Error(error.message);
 }
