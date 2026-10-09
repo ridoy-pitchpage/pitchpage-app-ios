@@ -31,7 +31,10 @@ export function isSaveConflictError(err: unknown): boolean {
 
 const TRANSLATIONS: Array<[RegExp, string]> = [
   [
-    /failed to fetch|load failed|networkerror|network ?request ?failed|err_internet|offline|aborted/i,
+    // Not a bare "offline": the app's own sentences say "take one offline",
+    // and the free-publishing cap would read as a dropped connection. iOS
+    // says "The Internet connection appears to be offline."
+    /failed to fetch|load failed|networkerror|network ?request ?failed|err_internet|appears to be offline|you(?:'re| are) offline|aborted/i,
     "Couldn't reach the server — check your connection and try again.",
   ],
   [
@@ -49,6 +52,10 @@ const TRANSLATIONS: Array<[RegExp, string]> = [
     /http 5\d\d\b|internal server error|service unavailable|timed? ?out/i,
     "The server had trouble with that. Give it a moment and try again.",
   ],
+  // PostgREST's answer for a database function that isn't applied yet. The
+  // calls that know which feature it is say so themselves; this catches the
+  // rest, so the function's name and signature never reach a customer.
+  [/could not find the function/i, "That isn't available yet. Try again soon."],
   // Config problems are ours, never the customer's, and must never name the
   // setting that is missing.
   [/missing [A-Z0-9_]{4,}|api[_ ]?key|env(ironment)? variable/i, GENERIC],

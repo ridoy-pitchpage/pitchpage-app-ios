@@ -122,22 +122,11 @@ export async function deletePage(id: string): Promise<void> {
 }
 
 /**
- * Publishing spends a credit, and every rule about that — a company's pool, an
- * allocation, a page that was already paid for republishing free — lives inside
- * the RPC. A `false` result means the RPC ran and found no credit to spend.
- */
-export async function publishPage(id: string): Promise<{ published: boolean }> {
-  const { data, error } = await supabase.rpc("publish_pitch_page", { _pitch_page_id: id });
-  if (error) throw error;
-  return { published: data === true };
-}
-
-/**
- * `unpublish_pitch_page` exists live but is missing from the generated types,
- * which were produced before that migration was applied. The web works around
- * it the same way and explains why the cast is on the client rather than on a
- * detached `.rpc`: pulling the method off the object loses the auth header and
- * its `this` binding.
+ * `publish_pitch_page_from_app` and `unpublish_pitch_page` are applied to the
+ * database by hand and are missing from the generated types. The web works
+ * around it the same way and explains why the cast is on the client rather
+ * than on a detached `.rpc`: pulling the method off the object loses the auth
+ * header and its `this` binding.
  */
 type UntypedRpc = {
   rpc: (
@@ -149,10 +138,41 @@ type UntypedRpc = {
   ) => PromiseLike<{ error: { message: string; code?: string } | null }>;
 };
 
+/** PostgREST's answer for a function the database doesn't have. */
+function isMissingFunction(error: { code?: string }): boolean {
+  return error.code === "PGRST202" || error.code === "42883";
+}
+
+/**
+ * Publishing from the app is free, for up to 3 live pages per account
+ * (2026-10-09). The owner check and the cap live in
+ * `publish_pitch_page_from_app` on the server, because the server can't tell
+ * the app from a browser; the app enforces nothing itself. At the cap the
+ * function refuses in a sentence, "You already have 3 pages live from the app.
+ * Take one offline to publish this one.", which reaches the screen as the
+ * error. Before the function is applied, publishing says so rather than
+ * showing PostgREST's own message.
+ */
+export async function publishPage(id: string): Promise<{ published: boolean }> {
+  const client = supabase as unknown as UntypedRpc;
+  const { error } = await client.rpc("publish_pitch_page_from_app", { _pitch_page_id: id });
+  if (!error) return { published: true };
+  if (isMissingFunction(error)) {
+    throw new Error("Publishing from the app isn't switched on yet. Try again soon.");
+  }
+  throw new Error(error.message);
+}
+
 export async function unpublishPage(id: string): Promise<void> {
   const client = supabase as unknown as UntypedRpc;
   const { error } = await client.rpc("unpublish_pitch_page", { _pitch_page_id: id });
-  if (error) throw new Error(error.message);
+  if (!error) return;
+  // It was merged in September and never applied, so for a while this answered
+  // every "Take offline" with PostgREST's raw "Could not find the function…".
+  if (isMissingFunction(error)) {
+    throw new Error("Taking a page offline isn't switched on yet. Try again soon.");
+  }
+  throw new Error(error.message);
 }
 
 export type PublishEligibility = {
