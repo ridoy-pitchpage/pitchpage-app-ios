@@ -1,8 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
-import { Modal, Pressable, View } from "react-native";
+import { Alert, Modal, Platform, Pressable, View } from "react-native";
 import { vars } from "nativewind";
 
 import { Button } from "./Button";
+import { alertButtons } from "./confirm-alert";
 import { Body, H3 } from "./Text";
 import { useTheme } from "@/theme/ThemeProvider";
 import { elevation, paletteVars } from "@/theme/tokens";
@@ -18,10 +19,13 @@ import { ModalSurface } from "./ModalSurface";
  * the action was never pressed. It worked on a device and nowhere else, which
  * is the worst way for something to be broken.
  *
- * This replaces it with a real dialog. It is the app's own, so it is also the
- * app's typography and colours rather than the OS's, it can carry a
- * destructive button that looks destructive, and it behaves the same whether
- * you are on an iPhone or in a browser.
+ * So the web build gets a real dialog of the app's own. On an iPhone the
+ * system alert is back (2026-10-09): the app's dialog is a Modal, and iOS
+ * will not present a Modal while another is up. A confirm asked from inside a
+ * sheet ("Remove this section", a refused camera permission) never appeared,
+ * and React Native went on believing it had, so every confirm after it, Sign
+ * out and Delete account among them, silently did nothing until the app was
+ * quit. The system alert shows above any sheet.
  *
  *   const confirm = useConfirm();
  *   if (await confirm({ title: "Delete this page?", confirmLabel: "Delete" })) …
@@ -59,6 +63,14 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   const resolver = useRef<((value: boolean) => void) | null>(null);
 
   const ask = useCallback<Ask>((next) => {
+    if (Platform.OS !== "web") {
+      return new Promise<boolean>((resolve) => {
+        Alert.alert(next.title, next.message, alertButtons(next, resolve), {
+          cancelable: true,
+          onDismiss: () => resolve(false),
+        });
+      });
+    }
     // A second ask while one is open answers the first "no" rather than
     // leaving its promise hanging for the life of the app.
     resolver.current?.(false);
@@ -81,7 +93,8 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
     <ConfirmContext.Provider value={value}>
       {children}
       <Modal
-        visible={options != null}
+        // Only the web build ever opens this; see the header.
+        visible={Platform.OS === "web" && options != null}
         transparent
         animationType="fade"
         // Android's back button, and Escape on web.
