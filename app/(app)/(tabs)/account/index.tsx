@@ -20,6 +20,7 @@ import { Body, H1, H3, Muted } from "@/components/Text";
 import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { useAuth } from "@/auth/AuthProvider";
+import { hasPasswordSignIn } from "@/auth/sign-in-options";
 import { signOut } from "@/auth/auth-actions";
 import { useMyProfile } from "@/api/queries";
 import { APP_VARIANT, APP_VERSION } from "@/lib/config";
@@ -123,7 +124,9 @@ export default function AccountScreen() {
         <MotionEntrance index={3} className="gap-2">
           <H3>Settings</H3>
           <Card className="p-0">
-            <Row label="Change password" Icon={LockKeyhole} onPress={() => router.push("/(app)/(tabs)/account/password")} />
+            {hasPasswordSignIn(user) ? (
+              <Row label="Change password" Icon={LockKeyhole} onPress={() => router.push("/(app)/(tabs)/account/password")} />
+            ) : null}
             {/*
               One row instead of the ten that were here. Guides, the FAQ, what
               we measure, the legal pages — all things somebody reads once, and

@@ -17,3 +17,16 @@ const ENABLED = { apple: true, google: true };
 export const OFFER_APPLE_SIGN_IN: boolean = ENABLED.apple;
 
 export const OFFER_GOOGLE_SIGN_IN: boolean = ENABLED.google && ENABLED.apple;
+
+/**
+ * Whether an account signs in with an email and password, so has a password
+ * to change. One made with Apple or Google has none, and "Change password"
+ * would only set up a second way in that its owner never asked for. Supabase
+ * lists every way an account signs in under app_metadata.providers; an
+ * account without the list is treated as an email one, because hiding the row
+ * from someone who needs it is worse than showing it to someone who doesn't.
+ */
+export function hasPasswordSignIn(user: { app_metadata?: { providers?: unknown } } | null): boolean {
+  const providers = user?.app_metadata?.providers;
+  return Array.isArray(providers) ? providers.includes("email") : true;
+}
