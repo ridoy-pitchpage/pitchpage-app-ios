@@ -76,6 +76,8 @@ export const HOW_IT_WORKS: ReadonlyArray<{ title: string; body: string }> = [
   },
   {
     title: "See who opened it",
-    body: "Views, how far people read, what they clicked, and which link they came from.",
+    // Only what Analytics shows. It has no reading depth or clicks, and this
+    // line promised both.
+    body: "Views, when people came, whether they watched your intro video, and which link they came from.",
   },
 ];
