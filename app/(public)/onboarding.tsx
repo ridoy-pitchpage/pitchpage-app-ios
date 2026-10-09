@@ -31,7 +31,7 @@ const STEPS = [
   {
     label: "Your next move", title: "Send a link.\nMake a connection.",
     body: "Publish your page, send your link or QR code, and see when people visit. Simple as that.",
-    action: "Create my page", note: "Build for free. One credit to publish.",
+    action: "Create my page", note: "Build and publish for free.",
   },
 ] as const;
 

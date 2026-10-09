@@ -142,13 +142,6 @@ function isMissingFunction(error: { code?: string }): boolean {
   return error.code === "PGRST202" || error.code === "42883";
 }
 
-/**
- * How many pages publishing from the app keeps live for free. A copy of the
- * constant in `publish_pitch_page_from_app`, so the app can state the rule;
- * the app enforces nothing with it.
- */
-export const FREE_LIVE_PAGES = 3;
-
 /** Marks the server's refusal at the cap, the one publish error whose fix is elsewhere. */
 const PUBLISH_CAP = "PUBLISH_CAP";
 
@@ -157,8 +150,8 @@ export function isPublishCapError(error: unknown): boolean {
 }
 
 /**
- * Publishing from the app is free, for up to FREE_LIVE_PAGES live pages per
- * account (2026-10-09). The owner check and the cap live in
+ * Publishing from the app is free, for up to FREE_LIVE_PAGES
+ * (src/lib/free-publishing.ts) live pages per account (2026-10-09). The owner check and the cap live in
  * `publish_pitch_page_from_app` on the server, because the server can't tell
  * the app from a browser. At the cap the function refuses in a sentence, "You
  * already have 3 pages live from the app. Take one offline to publish this

@@ -5,6 +5,24 @@ const ROUTES = ['/', '/examples', '/faq', '/contact', '/how-it-works',
   '/choose-type/D', '/intake/athlete/D', '/builder/D', '/preview/D', '/share/L', '/share/L/qr',
   '/pages/L/links', '/analytics', '/analytics/L', '/account/tracking', '/account/guides', '/account/guides/job-search-statistics'];
 
+/*
+ * The app sells nothing: publishing from it is free, and pointing anyone at a
+ * purchase outside it is what Guideline 3.1.3(f) rules out. So no screen names
+ * a credit, a refund, a price or a way to buy. The delete screen's one line
+ * for people who bought credits on the website is the single exception.
+ * Welcome and onboarding are checked for this alone.
+ */
+const SELLING = /\bcredits?\b|refund|\$9(?![\d.,])|\$39\b|pricing|\bbuy\b|purchase|checkout/i;
+const ALLOWED = ["Any credits from the website you haven't used. Deleting doesn't refund them."];
+const TEXT_ONLY_ROUTES = ['/welcome', '/onboarding'];
+const selling = [];
+async function checkSelling(route) {
+  let text = await page.evaluate(() => document.body.innerText.replace(/\s+/g, ' '));
+  for (const line of ALLOWED) text = text.split(line).join(' ');
+  const hit = SELLING.exec(text);
+  if (hit) selling.push(`${route}: SELLS "${text.slice(Math.max(0, hit.index - 40), hit.index + 40).trim()}"`);
+}
+
 const browser = await launch();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
 const page = await ctx.newPage();
@@ -69,8 +87,24 @@ for (const route of ROUTES) {
   });
 
   for (const issue of new Set(out)) findings.push(`${route}: ${issue}`);
+  await checkSelling(route);
+}
+
+for (const route of TEXT_ONLY_ROUTES) {
+  await page.goto(BASE + route, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(1600);
+  await checkSelling(route);
+}
+// Onboarding draws one step at a time, and the last one used to say "1 credit".
+for (const step of [2, 3, 4]) {
+  await page.locator(`[aria-label^="Step ${step}:"]`).first().click();
+  await page.waitForTimeout(700);
+  await checkSelling(`/onboarding step ${step}`);
 }
 
 console.log(findings.length ? findings.join('\n') : 'No accessibility findings.');
 console.log('total:', findings.length);
+console.log(selling.length ? selling.join('\n') : 'Nothing on any screen sells.');
+// A finding above is for a person to weigh; this one blocks a release.
+if (selling.length) process.exitCode = 1;
 await browser.close();

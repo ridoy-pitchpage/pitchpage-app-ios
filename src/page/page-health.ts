@@ -6,8 +6,8 @@ import { isSampleQuote } from "./sample-content";
  * The pre-publish health nudge, ported from `src/lib/page-health.ts` in the web
  * repo.
  *
- * It catches a thin or clearly incomplete page before the credit is spent,
- * because a paid-for empty page is the worst possible first impression. It is a
+ * It catches a thin or clearly incomplete page before it goes live, because
+ * an empty page at a public link is the worst possible first impression. It is a
  * nudge and nothing more: it never blocks publishing, and it does not change
  * what counts as publishable. The one exception is `pageIsEmpty` below.
  */
@@ -114,9 +114,9 @@ export type EmptyCheckInput = PageHealthInput & {
  * The one case that is not a nudge.
  *
  * Everything above is advisory: a sparse page is still the customer's call.
- * A page with nothing on it is different — publishing costs a credit and puts
- * a public URL under their own name with nothing to read on it. That is not a
- * judgement about taste, it is a receipt with no product behind it.
+ * A page with nothing on it is different — publishing puts a public URL under
+ * their own name with nothing to read on it. That is not a judgement about
+ * taste, it is a link with nothing behind it.
  *
  * Deliberately narrow. This is not "thin", it is EMPTY: one filled section, a
  * bio, a video or a single photo all clear it.

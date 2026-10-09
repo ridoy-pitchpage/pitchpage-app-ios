@@ -127,7 +127,7 @@ export function OnboardingShowcase({ active, compact, ink, mutedInk, rule }: Pro
           </View>
           <View style={{ width: 1, backgroundColor: rule }} />
           <View style={{ flex: 1, gap: 4 }}>
-            <Text className="font-heading" style={{ fontSize: 25, color: colors.link }}>1 credit</Text>
+            <Text className="font-heading" style={{ fontSize: 25, color: colors.link }}>Free</Text>
             <Text className="font-body" style={{ fontSize: 13, color: mutedInk }}>to publish your page</Text>
           </View>
         </View>

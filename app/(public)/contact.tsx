@@ -33,7 +33,7 @@ export default function ContactScreen() {
         <View className="gap-2">
           <H1>Get in touch</H1>
           <Body className="text-muted-foreground">
-            Questions, refunds, account deletion, or anything that isn't working.
+            Questions, account deletion, or anything that isn't working.
             A real person reads every message.
           </Body>
         </View>

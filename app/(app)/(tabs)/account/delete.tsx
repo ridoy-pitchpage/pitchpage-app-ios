@@ -47,7 +47,7 @@ export default function DeleteAccountScreen() {
       "",
       `Account: ${user?.email ?? "(signed in on the app)"}`,
       "",
-      "I understand my published pages will come offline and any unused credits will be lost.",
+      "I understand my published pages will come offline and nothing on my account can be recovered.",
     ].join("\n");
 
     if (!(await MailComposer.isAvailableAsync())) {
@@ -116,12 +116,12 @@ export default function DeleteAccountScreen() {
             <Body className="text-muted-foreground">
               Your photos, videos and documents.
             </Body>
-            {/* The terms refund unused credits for 14 days after purchase, on
-                request; deleting the account doesn't ask for that refund. */}
+            {/* For anyone who bought credits on the website. One plain line,
+                and no way to buy or claim a refund from here: the app sells
+                nothing (Guideline 3.1.3(f)). */}
             <Body className="text-muted-foreground">
-              Any credits you haven't used. Deleting doesn't refund them, so if
-              you bought credits in the last 14 days, email support@pitchpage.co
-              for a refund first.
+              Any credits from the website you haven't used. Deleting doesn't
+              refund them.
             </Body>
           </Card>
 

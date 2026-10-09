@@ -10,8 +10,8 @@ import { sessionStorage } from "./session-storage";
 
 /**
  * The same Supabase project the website uses, reached with the same publishable
- * key the web app ships to every browser. Accounts, pages and the credit
- * balance are therefore shared between web and app (master plan §1).
+ * key the web app ships to every browser. Accounts and pages are therefore
+ * shared between web and app (master plan §1).
  */
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {

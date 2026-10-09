@@ -1,11 +1,12 @@
-import { APP_GUIDE_PAGES, appRelationFor, inCredits } from "@/content/guide-app-copy";
+import { APP_GUIDE_PAGES, appCopy, appRelationFor } from "@/content/guide-app-copy";
 import { GUIDE_PAGES } from "@/content/guide-pages";
 
 /**
- * The app must not quote the website's checkout price (Guideline 3.1.1), but
- * the guides it shows are copied verbatim from the site. These walk every
- * string the app renders, so a re-copied guide with a new way of saying "$9"
- * fails here rather than in App Review.
+ * The app sells nothing, so it must not quote the website's checkout price or
+ * its credits (Guideline 3.1.3(f)), but the guides it shows are copied
+ * verbatim from the site. These walk every string the app renders, so a
+ * re-copied guide with a new way of saying "$9" fails here rather than in App
+ * Review.
  */
 
 function stringsIn(value: unknown): string[] {
@@ -38,6 +39,15 @@ it("leaves no PitchPage price in any call to action under a guide", () => {
   expect(leftover).toEqual([]);
 });
 
+it("says nothing about credits, packs or refunds anywhere the app shows a guide", () => {
+  const buying = /credit|refund|five-page pack|\$39 pack/i;
+  const shown = [
+    ...Object.values(APP_GUIDE_PAGES).flatMap(stringsIn),
+    ...Object.keys(GUIDE_PAGES).flatMap((slug) => stringsIn(appRelationFor(slug))),
+  ];
+  expect(shown.filter((text) => buying.test(text))).toEqual([]);
+});
+
 it("keeps other products' prices, which are facts about them", () => {
   const carrd = stringsIn(APP_GUIDE_PAGES["pitchpage-vs-carrd"]).join(" ");
   expect(carrd).toContain("$9, $19 or $49 per year");
@@ -51,19 +61,38 @@ it("changes nothing in the copied source files", () => {
 });
 
 it("reads as a sentence after the rewrite", () => {
-  expect(inCredits("Free to build and edit, $9 one-time to publish.")).toBe(
-    "Free to build and edit, one credit to publish.",
+  expect(appCopy("Free to build and edit, $9 one-time to publish.")).toBe(
+    "Free to build, edit and publish in the app.",
   );
-  expect(inCredits("Free to build and edit. $9 one time to publish, with no subscription.")).toBe(
-    "Free to build and edit. One credit to publish, with no subscription.",
+  expect(appCopy("PitchPage is free to build and a one-time $9 to publish, with no subscription.")).toBe(
+    "PitchPage is free to build and publish in the app, with no subscription.",
   );
-  expect(inCredits("Publishing is $9 per page, or $39 for a five-page pack.")).toBe(
-    "Publishing is one credit per page, and credits also come in packs of five.",
+  expect(appCopy("Free to build and edit. $9 one time to publish, with no subscription.")).toBe(
+    "Free to build and edit. Free to publish in the app, with no subscription.",
   );
-  expect(inCredits("PitchPage is $9 one-time per published page (free to build).")).toBe(
-    "PitchPage is one credit per published page (free to build).",
+  expect(appCopy("Publishing is $9 per page, or $39 for a five-page pack.")).toBe(
+    "Publishing from the app is free, for up to 3 live pages at a time.",
   );
-  expect(inCredits("Want a job-ready page in minutes for a one-time $9? PitchPage.")).toBe(
-    "Want a job-ready page in minutes for one credit? PitchPage.",
+  expect(appCopy("PitchPage is $9 one-time per published page (free to build).")).toBe(
+    "PitchPage is free to build and publish in the app.",
   );
+  expect(appCopy("Want a job-ready page in minutes for a one-time $9? PitchPage.")).toBe(
+    "Want a job-ready page in minutes for free? PitchPage.",
+  );
+  expect(appCopy("PitchPage builds one shareable pitch page with video for $9 one-time.")).toBe(
+    "PitchPage builds one shareable pitch page with video, free in the app.",
+  );
+});
+
+it("drops the sentences that only explain buying", () => {
+  expect(
+    appCopy(
+      "Building on PitchPage is free. Publishing is $9 once for one page, or $39 for a five-page pack if you're tailoring per role. Credits never expire, and unused ones are refundable within 14 days.",
+    ),
+  ).toBe("Building on PitchPage is free. Publishing from the app is free, for up to 3 live pages at a time.");
+  expect(
+    appCopy(
+      "Tailoring per role is common, so there's a five-page pack at $39. Credits never expire and unused ones are refundable within 14 days. Nothing renews.",
+    ),
+  ).toBe("Tailoring per role is common, and the app keeps up to 3 live pages at a time. Nothing renews.");
 });

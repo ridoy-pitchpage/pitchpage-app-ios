@@ -60,7 +60,7 @@ export default function Welcome() {
           )}
         </Pressable>
         <Text className="font-body-medium" style={{ fontSize: 13, lineHeight: 19, textAlign: "center", color: colors.mutedForeground }}>
-          Free to build · 1 credit to publish
+          Free to build and publish
         </Text>
         <Pressable onPress={() => router.push("/(public)/examples")} accessibilityRole="link" accessibilityLabel="See examples"
           style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" }}>
