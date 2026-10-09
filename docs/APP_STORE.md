@@ -113,16 +113,14 @@ contacts, browsing or search history. The page analytics it shows are about
 the visitors to a person's published page, collected by the website, not data
 collected from the app's user.
 
-**Only once the website keeps its trackers out of the app.** The app draws
-pages with the website in its own web views (the builder, template previews,
-the live page), and Apple counts what those collect. Until
-[gregadosmond-oss/profile-pride-app#268](https://github.com/gregadosmond-oss/profile-pride-app/pull/268)
-is merged **and published**, Google Analytics and PostHog, session replay
-included, run in the builder's and the previews' web views, and "no analytics"
-is not true. Don't submit with these answers before then. If that change
-isn't going out, the label has to declare Usage Data → Product Interaction
-(Analytics), and the privacy policy has to say the app's page views use
-PostHog and Google Analytics.
+**The website keeps its trackers out of the app** (9 October 2026,
+[gregadosmond-oss/profile-pride-app#268](https://github.com/gregadosmond-oss/profile-pride-app/pull/268)).
+The app draws pages with the website in its own web views (the builder,
+template previews, the live page), and Apple counts what those collect. The
+web views mark themselves with "PitchPageApp" in the user agent, and the
+website starts neither Google Analytics nor PostHog when it sees that or
+/app-render. That is what makes "no analytics" true here: if the website ever
+loads a tracker in the app again, these answers have to change with it.
 
 **Tracking:** No. (That is also why there is no App Tracking Transparency prompt.)
 
