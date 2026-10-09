@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState, type ElementRef, type ReactNo
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
+import { useToast } from "@/components/Toast";
 import { RENDER_URL } from "@/lib/config";
+import { openPageLink } from "./page-links";
 import type { PublicData } from "./to-public-data";
 import { themeForTemplate } from "./template-theme";
 
@@ -117,6 +119,12 @@ export function RenderSurface({
     tapRef.current = onTap;
   }, [onTap]);
 
+  const toast = useToast();
+  const openLink = useCallback(
+    (url: string) => void openPageLink(url).catch((error: unknown) => toast.error(error)),
+    [toast],
+  );
+
   const send = useCallback(
     (message: Record<string, unknown>) => {
       const payload = JSON.stringify(message);
@@ -212,10 +220,28 @@ export function RenderSurface({
                 onHttpError={() => setState("unavailable")}
                 // The page draws in place; nothing in it may navigate the view
                 // somewhere else, in edit mode or out of it. Frames inside it
-                // are not the view: a film clip from YouTube loads in one.
-                onShouldStartLoadWithRequest={(request: { url: string; isTopFrame?: boolean }) =>
-                  request.url.startsWith(RENDER_URL) || request.isTopFrame === false
+                // are not the view: a film clip from YouTube loads in one. A
+                // link somebody taps opens outside the page instead. While
+                // editing, the route turns taps into edits, so none arrive.
+                onShouldStartLoadWithRequest={(request: {
+                  url: string;
+                  isTopFrame?: boolean;
+                  navigationType?: string;
+                }) => {
+                  if (request.url.startsWith(RENDER_URL) || request.isTopFrame === false) return true;
+                  if (request.navigationType === "click") openLink(request.url);
+                  return false;
+                }}
+                // The templates open a CV or a profile with target="_blank",
+                // which asks for a new window rather than navigating.
+                onOpenWindow={(event: { nativeEvent: { targetUrl: string } }) =>
+                  openLink(event.nativeEvent.targetUrl)
                 }
+                // Every link has to reach the two handlers above. The view's
+                // own default sends a non-web link to Linking.canOpenURL, which
+                // iOS answers "no" for any scheme the app hasn't declared, so
+                // the Contact button's mailto: was dropped without a word.
+                originWhitelist={["*"]}
                 style={{ flex: 1, backgroundColor: "transparent" }}
               />
             )}

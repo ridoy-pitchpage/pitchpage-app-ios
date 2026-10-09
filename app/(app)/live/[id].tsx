@@ -1,4 +1,4 @@
-import { Linking, Platform, Pressable, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { WebView } from "react-native-webview";
 import * as WebBrowser from "expo-web-browser";
@@ -9,8 +9,10 @@ import { BackButton } from "@/components/BackButton";
 import { Screen } from "@/components/Screen";
 import { ErrorState, Loading } from "@/components/States";
 import { Body, Muted } from "@/components/Text";
+import { useToast } from "@/components/Toast";
 import { useMyPage } from "@/api/queries";
 import { publicPageUrl } from "@/lib/share";
+import { openPageLink } from "@/render/page-links";
 
 /**
  * The live page (S78) — the real thing, rendered by the website's own layouts,
@@ -26,6 +28,7 @@ import { publicPageUrl } from "@/lib/share";
 export default function LivePageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const page = useMyPage(id);
+  const toast = useToast();
 
   if (page.isPending) {
     return (
@@ -103,17 +106,15 @@ export default function LivePageScreen() {
           // load where they are.
           onShouldStartLoadWithRequest={(request) => {
             if (request.url.startsWith(url) || request.isTopFrame === false) return true;
-            openOutside(request.url);
+            void openPageLink(request.url).catch((error: unknown) => toast.error(error));
             return false;
           }}
+          // Without this the view hands a mailto: to Linking.canOpenURL first,
+          // which iOS answers "no" for schemes the app hasn't declared, and the
+          // Contact button did nothing (src/render/RenderSurface.tsx).
+          originWhitelist={["*"]}
         />
       )}
     </Screen>
   );
-}
-
-/** A link tapped on the page: the web in the in-app browser, mail and phone in their own apps. */
-function openOutside(target: string) {
-  if (/^https?:\/\//i.test(target)) void WebBrowser.openBrowserAsync(target);
-  else if (/^(mailto|tel|sms):/i.test(target)) void Linking.openURL(target).catch(() => undefined);
 }

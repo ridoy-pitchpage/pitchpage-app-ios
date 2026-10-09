@@ -136,6 +136,19 @@ export function storagePathFromUrl(kind: MediaKind, url: string): string | null 
   return decodeURIComponent(url.slice(index + marker.length).split("?")[0] ?? "") || null;
 }
 
+/**
+ * A short-lived link to read a CV. The resumes bucket is private, and its
+ * policy lets the owner read their own folder, which is what lets the app sign
+ * one; the stored public-format URL 403s on its own.
+ */
+export async function signedResumeUrl(path: string, seconds: number): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(BUCKETS.resume.bucket)
+    .createSignedUrl(path, seconds);
+  if (error || !data?.signedUrl) throw error ?? new Error("No signed link came back");
+  return data.signedUrl;
+}
+
 /** Remove media a user has explicitly deleted, e.g. a gallery image. */
 export async function removeMedia(kind: MediaKind, urls: string[]): Promise<void> {
   const { data: auth } = await supabase.auth.getUser();
