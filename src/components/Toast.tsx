@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AccessibilityInfo, Text } from "react-native";
+import { AccessibilityInfo, Keyboard, Platform, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { vars } from "nativewind";
@@ -118,18 +118,47 @@ export function ToastHost({ active }: { active: boolean }) {
   return <ToastView toast={hosts.toast} />;
 }
 
+/**
+ * How far the keyboard reaches up the screen, on an iPhone. The keyboard is
+ * drawn above the app there, so a toast at the bottom raised while typing (a
+ * wrong password on sign-in, a failed save in a section) was hidden behind it.
+ * Android resizes the window for the keyboard instead and needs nothing.
+ */
+function useKeyboardHeight(): number {
+  const [height, setHeight] = useState(() =>
+    Platform.OS === "ios" && Keyboard.isVisible() ? (Keyboard.metrics()?.height ?? 0) : 0,
+  );
+
+  useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    const shown = Keyboard.addListener("keyboardWillShow", (event) => setHeight(event.endCoordinates.height));
+    const hidden = Keyboard.addListener("keyboardWillHide", () => setHeight(0));
+    return () => {
+      shown.remove();
+      hidden.remove();
+    };
+  }, []);
+
+  return height;
+}
+
 function ToastView({ toast }: { toast: Toast }) {
   const colors = useColors();
   const { palette, resolved } = useTheme();
+  const keyboard = useKeyboardHeight();
 
   return (
     <SafeAreaView
-      edges={["bottom"]}
+      // A raised keyboard already covers the home indicator.
+      edges={keyboard > 0 ? [] : ["bottom"]}
       pointerEvents="none"
-      // A host in a Modal is outside the tree ThemeProvider set the palette
-      // variables on, as Sheet explains, so they are set again here.
-      style={vars(paletteVars(palette))}
-      className="absolute inset-x-0 bottom-0 px-4 pb-2"
+      style={[
+        // A host in a Modal is outside the tree ThemeProvider set the palette
+        // variables on, as Sheet explains, so they are set again here.
+        vars(paletteVars(palette)),
+        { bottom: keyboard },
+      ]}
+      className="absolute inset-x-0 px-4 pb-2"
     >
       {/*
         A toast is the one thing on screen that has to be read over
