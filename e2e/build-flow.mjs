@@ -165,6 +165,50 @@ await check('Builder: Save lights up after an edit, saves and closes', async () 
   return '(off, on, saved)';
 });
 
+await check('Builder: a failed save shows its error over the sheet', async () => {
+  const before = errs.length;
+  const rest = '**/rest/v1/pitch_pages*';
+  // Every write fails, so Save leaves the section open with its error.
+  await p.route(rest, (route) => route.request().method() === 'PATCH'
+    ? route.fulfill({ status: 503, contentType: 'application/json', body: '{"message":"Service Unavailable"}' })
+    : route.fallback());
+  let drawn;
+  try {
+    await p.getByLabel('Sections', { exact: true }).click(); await p.waitForTimeout(800);
+    await p.locator('[aria-label^="Edit "]').last().click(); await p.waitForTimeout(900);
+    const f = p.locator('input[type="text"], textarea').first();
+    await f.fill(''); await p.keyboard.type('Highlights, again'); await p.waitForTimeout(400);
+    await p.getByRole('button', { name: 'Save', exact: true }).click(); await p.waitForTimeout(900);
+    // Is the toast what is actually painted at its own centre? A sheet covers
+    // everything drawn at the app's root, on an iPhone and in this build alike.
+    // A toast lets touches through, so hit-testing skips it unless every
+    // element is made hit-testable for the one lookup.
+    drawn = await p.evaluate(() => {
+      const toast = [...document.querySelectorAll('[aria-live="polite"]')]
+        .find((e) => e.textContent?.includes('The server had trouble with that'));
+      if (!toast) return 'missing';
+      const box = toast.getBoundingClientRect();
+      const all = document.createElement('style');
+      all.textContent = '* { pointer-events: auto !important; }';
+      document.head.append(all);
+      const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      all.remove();
+      return hit && toast.contains(hit) ? 'on top' : 'covered';
+    });
+    must(/Section name/.test(await text()), 'the section closed although the save failed');
+    await p.screenshot({ path: `${OUT_DIR}/e2e-2-toast-over-sheet.png` });
+  } finally {
+    await p.unroute(rest);
+    // Close the section whatever happened, so a failure here stays this step's.
+    const close = p.locator('[aria-label="Close"]').last();
+    if (await close.count()) { await close.click(); await p.waitForTimeout(500); }
+  }
+  must(drawn === 'on top', `the error toast is ${drawn}`);
+  // The 503s are this step's whole point, not a fault in the app.
+  errs.length = before;
+  return '(drawn over the sheet)';
+});
+
 await check('Builder: a style can be picked', async () => {
   await p.getByLabel('Style', { exact: true }).click(); await p.waitForTimeout(900);
   const swatches = await p.locator('[role="button"], [role="radio"]').count();

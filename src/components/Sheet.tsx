@@ -22,6 +22,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { X } from "lucide-react-native";
 
 import { H3 } from "./Text";
+import { ToastHost } from "./Toast";
 import { SheetFocusContext } from "./sheet-focus";
 import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { elevation, paletteVars, surfaceGradient } from "@/theme/tokens";
@@ -231,6 +232,9 @@ export function Sheet({
               </LinearGradient>
             </Animated.View>
           </KeyboardAvoidingView>
+
+          {/* A toast raised in here would be drawn under the sheet otherwise. */}
+          <ToastHost active={visible} />
         </GestureHandlerRootView>
       </ModalSurface>
     </Modal>
