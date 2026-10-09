@@ -69,12 +69,16 @@ credentials, 300 gallery images, 100 film clips.
 the server issued. The server writes the token's data, never the client's copy.
 Do not add a way for anything else to approve an edit.
 
-**Credits are bought on pitchpage.co, and the app is US-only because of it.**
-The app opens the website's credits page in Safari, where the Stripe checkout
-runs (`src/features/credits/web-checkout.ts`); Guideline 3.1.1(a) allows that
-link on the United States storefront and nowhere else. Never put a checkout
-inside the app — no card form, no Stripe sheet, no web view of the checkout.
-Offering the app on any other storefront needs In-App Purchase first (§13).
+**The app sells nothing and names no price.** Publishing from it is free, for
+up to 3 live pages per account (`src/lib/free-publishing.ts`), and the cap is
+the server's: `publish_pitch_page_from_app` counts and refuses, and the app only
+states it. Selling nothing is what puts the app on every storefront without
+In-App Purchase (Guideline 3.1.3(f)), so no screen shows a credit, a price, a
+refund or a way to buy, and the app opens no pitchpage.co marketing page,
+because every one of them shows the price (`src/content/guide-links.ts`,
+`src/render/page-links.ts`). The accessibility sweep fails on any of it. Never
+add buying, or a link to the website's checkout or pricing, without In-App
+Purchase first (§13).
 
 **Do not reimplement server logic.** If a rule lives in a server function, the
 app calls it. Slug collision retries, credit spending, company consent, staff

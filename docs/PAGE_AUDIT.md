@@ -48,7 +48,7 @@ Legend: **In the app** · **Out of scope** (deliberately not brought across) ·
 | `_authenticated/preview.$id` | `(app)/preview/[id]` | In the app, as the review step |
 | `p.$slug` | `(app)/live/[id]` | In the app. The real published page in a web view. |
 | `r.$slug` | — | **Out of scope.** A tracked-link redirect, not a page. Opening one is a visitor's job, not an owner's. |
-| `_authenticated/credits` | `(app)/(tabs)/credits` | In the app (balance and ledger). Buying is blocked — see below. |
+| `_authenticated/credits` | — | **Out of scope since 9 Oct 2026.** The app sells nothing and publishes free, so it shows no credits. |
 | `_authenticated/analytics` | `(app)/(tabs)/analytics` | In the app |
 | `_authenticated/analytics_.$pageId` | `(app)/(tabs)/analytics/[id]` | In the app for everything `getPageInsights` returns. The website's deeper per-section and video-funnel panels (`getPageDetail`) are **not built**. |
 
@@ -63,14 +63,14 @@ Screens the app adds, because a phone needs them and the website does not:
 | `tracking` | `account/tracking` | In the app |
 | `faq` | `(public)/faq` | In the app |
 | `how-it-works` | `(public)/how-it-works` | In the app |
-| `pricing` | `(public)/pricing` | In the app, without a buy button (Guideline 3.1.1) |
+| `pricing` | — | **Out of scope since 9 Oct 2026.** The app names no price; a guide's link to /pricing opens How it works. |
 | `examples` | `(public)/examples` | In the app |
 | `contact` | `(public)/contact` | In the app |
-| `about` | links out | **Out of scope.** One page of company copy. |
+| `about` | — | **Out of scope.** One page of company copy, which shows the price, so the app never opens it. |
 | `privacy`, `terms` | links out | **Out of scope.** Legal text that must match the website exactly and changes on its own schedule; linking is the normal and safer pattern. |
 | `compare` | — | **Out of scope.** A comparison table aimed at someone deciding whether to sign up. Everyone reading it in the app already has. The same ground is covered by the five comparison guides, which ARE in the app. |
 | `features` | — | **Out of scope**, same reason. |
-| `for.index`, `for.$role` | — | **Out of scope.** Role landing pages for search traffic. |
+| `for.index`, `for.$role` | — | **Out of scope.** Role landing pages for search traffic. Guides link to them; in the app those links read as plain text, because the pages show the price. |
 
 ## Organisation, outreach and admin
 
@@ -96,7 +96,7 @@ the website's own development and design-preview routes, not product.
 
 | What | Why |
 |---|---|
-| Buying credits in the app | `grant_credits` is `service_role` only and explicitly revoked from `authenticated`. Apple's receipt has to be verified server-side first. A client that could grant itself credits would be a hole. |
+| Buying credits in the app | Not wanted since 9 Oct 2026: publishing from the app is free. Selling would need In-App Purchase and a server that verifies Apple's receipt, since `grant_credits` is `service_role` only. |
 | Paige, and every AI step | Server code behind an API key the app must not hold |
 | Push notifications | Needs a device-token table and a sender |
 | Outreach sends | Sending email is server work |

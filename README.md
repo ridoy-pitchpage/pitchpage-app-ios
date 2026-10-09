@@ -56,9 +56,8 @@ Install **Expo Go** from the App Store, run `npm start`, and scan the QR code
 with the camera. Both devices need to be on the same Wi-Fi.
 
 Expo Go covers everything up to M1. From M2 the app needs a development build
-(In-App Purchase, native Sign in with Apple and the video module all contain
-native code Expo Go does not ship), which is built in the cloud with EAS and
-still needs no Mac.
+(native Sign in with Apple and the video module contain native code Expo Go
+does not ship), which is built in the cloud with EAS and still needs no Mac.
 
 ### On a Mac
 
@@ -66,9 +65,8 @@ still needs no Mac.
 npx expo run:ios
 ```
 
-You need Xcode. The Simulator is where In-App Purchase gets tested against a
-StoreKit configuration file, and where the Maestro end-to-end flows run. The
-Simulator has no camera, so recording is tested on a real iPhone.
+You need Xcode. The Simulator is where the Maestro end-to-end flows run. It
+has no camera, so recording is tested on a real iPhone.
 
 ## What works today
 
@@ -78,12 +76,12 @@ The app signs in against the live Supabase project and works with real data:
   through the website's sign-in bridge (`/app-auth/start` and `/app-auth/finish`)
 - **Your pages** — the list, create a draft, delete
 - **Review and publish** — what's on the page, the pre-publish health check,
-  and publishing, including the company-sponsored and awaiting-a-credit cases
+  and publishing, free from the app for up to 3 live pages (the server counts,
+  in `publish_pitch_page_from_app`)
 - **Share** — copy link, the iOS share sheet, LinkedIn, X, WhatsApp, Facebook,
   email, and a QR code you can show someone in person
 - **Tracked links** — one per recipient, created, copied and removed
 - **See it live** — the real published page
-- **Credits** — balance and ledger
 - **Account** — appearance (system/light/dark), profile, password, help and
   legal links, sign out
 - **The builder** — the page IS the screen: tap any region to edit it. Details,
@@ -109,20 +107,21 @@ plan §24), so use a test account.
 ## What is not in yet
 
 Paige and the other AI steps (rewriting a section, the guided questions),
-buying credits in the app, push notifications, outreach sends, and the company
-dashboard.
+push notifications, outreach sends, and the company dashboard.
 
-The first four need server code the app must not hold — `grant_credits`, for
-instance, is `service_role` only, and rightly so: a client that could grant
-itself credits would be a hole. The company dashboard is different: its
-functions ARE callable by a signed-in admin, so it is not blocked, just not
-built yet.
+The first three need server code the app must not hold. The company dashboard
+is different: its functions ARE callable by a signed-in admin, so it is not
+blocked, just not built yet.
+
+Nothing is sold in the app, by decision (9 Oct 2026): publishing from it is
+free, and credits are bought and spent only on the website. That is what lets
+the app go on every storefront without In-App Purchase.
 
 The website has three pieces that exist for the app: `/app-render`, the
 sign-in bridge, and the compose endpoint. Everything else works because the
 website already grants a signed-in user row-level access to their own pages,
-credits, profile and view events, and because publishing is a database
-function any signed-in user may call. Website changes follow that repo's
+profile and view events, and because publishing is a database function any
+signed-in user may call. Website changes follow that repo's
 `CLAUDE.md`, and none of them is live until it is published in Lovable.
 
 **Before submitting:** run `sql/001_delete_my_account.sql` against the

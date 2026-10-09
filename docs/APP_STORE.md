@@ -1,9 +1,10 @@
 # App Store submission pack — PitchPage 1.0
 
-Everything App Store Connect asks for, ready to paste. Credits are bought on
-pitchpage.co through a link in the app, which Apple allows on the United
-States storefront only — so the app is offered in the US only, and the
-listing and review notes below say so.
+Everything App Store Connect asks for, ready to paste. The app sells nothing:
+since 9 October 2026, publishing from it is free, for up to 3 live pages per
+account, and credits and their price exist only on pitchpage.co. So the app
+can be offered on every storefront except China mainland, and the listing and
+review notes below say so.
 
 Character limits were counted, not estimated.
 
@@ -12,6 +13,12 @@ Character limits were counted, not estimated.
 category and URLs, and certified the age rating at 4+. What is left in App
 Store Connect is the App Privacy answers (§2), the review notes and demo
 account (§3), the screenshots (§5) and choosing the build.
+
+**9 Oct 2026:** publishing from the app is free (`publish_pitch_page_from_app`,
+live on the database since 9 Oct), and the app no longer shows credits, a
+price or any way to buy. Availability, the description and the review notes
+changed with it, so paste §1 and §3 again, and set the EU trader status (§1)
+before submitting.
 
 ---
 
@@ -29,7 +36,13 @@ account (§3), the screenshots (§5) and choosing the build.
 | Privacy Policy URL | `https://pitchpage.co/privacy` (live) |
 | Copyright | `2026 <the legal entity that owns PitchPage>` |
 | Price | Free |
-| Availability | **United States only.** The app links to the website to buy credits, which no other storefront allows. Adding a country needs In-App Purchase first |
+| Availability | **Every country and region except China mainland.** The app sells nothing and links to no purchase, so no storefront rules it out. China mainland needs an ICP filing number first |
+
+**EU trader status (Digital Services Act):** declare PitchPage a **trader**.
+It is a business offering a paid service, and Apple won't put the app on EU
+storefronts until the declaration is made. A trader's address, phone number
+and email show on the EU product page, and Apple verifies them first, so
+allow a few days.
 
 **Keywords** (99 of 100 — words already in the name and subtitle are left out,
 because Apple indexes those anyway):
@@ -71,8 +84,8 @@ Publishing gives you one link that works everywhere. Share it to LinkedIn, X, Wh
 SEE WHAT HAPPENS NEXT
 Analytics show when people came, where they came from, whether they watched your intro video, and which tracked link brought them.
 
-FREE TO BUILD
-Building and editing are free, with every style. Publishing a page uses one credit, credits are bought on pitchpage.co, and they never expire.
+FREE TO BUILD AND PUBLISH
+Building, editing and publishing are free, with every style. Keep up to three pages live at a time, and take one offline whenever you want room for another.
 
 YOURS TO CONTROL
 Sign in with Apple, Google or email. Drafts are not public until you publish, and you can delete your account and everything on it from inside the app.
@@ -128,8 +141,11 @@ loads a tracker in the app again, these answers have to change with it.
 
 ## 3. App Review information
 
-**Sign-in required:** Yes. The demo account must have **at least 3 credits and
-one published page**, so the reviewer can publish without buying anything.
+**Sign-in required:** Yes. The demo account needs **one published page** and
+room to publish more. Publishing from the app is free for up to 3 live pages,
+and a page published on the website doesn't count toward them. On 9 Oct 2026
+the demo account had one page, live and published on the website, so a
+reviewer can publish three from the app.
 
 ```
 Username: <demo account email>
@@ -142,18 +158,18 @@ Password: <demo account password>
 
 ```
 DEMO ACCOUNT
-The demo account has credits and one published page, so every feature can be tried, including publishing. To test account deletion, please create a new account instead (email, Sign in with Apple or Google) — deleting the demo account would lock review out.
+The demo account has one published page, so every feature can be tried, including publishing. To test account deletion, please create a new account instead (email, Sign in with Apple or Google) — deleting the demo account would lock review out.
 
 HOW TO TRY IT
 1. Pages → New page. Choose what the page is for and pick a look. Then tell us about yourself (or add a CV) and tap "Build my page" for an AI first draft, or "I'll fill it in myself".
 2. Tap any section on the page to edit it. Add a photo or a short video from the media buttons.
-3. Preview → Publish. This uses one of the account's credits.
+3. Preview → Publish. Publishing from the app is free, for up to 3 live pages at a time; Pages → Take offline makes room.
 4. Share: copy the link, show the QR code, or make a tracked link.
 5. Analytics: open the published page to see its visits.
 6. Account → Delete your account removes the account and all of its data at once (Guideline 5.1.1(v)).
 
-CREDITS
-PitchPage is free to download and free to build with. Publishing a page uses one credit from the person's PitchPage account. Credits are sold on the PitchPage website: Credits → "Buy credits on pitchpage.co" opens pitchpage.co in Safari, as Guideline 3.1.1(a) permits for apps on the United States storefront, and this app is offered on the United States storefront only. Nothing is sold inside the app. PitchPage is a free companion to the paid PitchPage web service, which hosts the published pages (Guideline 3.1.3(f)). The demo account already has credits, so no purchase is needed to review publishing.
+PUBLISHING IS FREE
+PitchPage is free to download, and free to build and publish with. Publishing a page from the app costs nothing, and an account can keep up to 3 pages published from the app live at a time. Nothing is sold in the app, and nothing in it names a price or links to a purchase. PitchPage is a free companion to the paid PitchPage web service, which hosts the published pages (Guideline 3.1.3(f)).
 
 OTHER NOTES
 • The page itself is drawn with the same layout code the published page uses, inside a web view, so what the builder shows is exactly what visitors see. Sign-in, editing, camera and photo capture, sharing, QR codes and analytics are native.
@@ -275,7 +291,12 @@ the native sign-ins:
       draft; a prompt and a CV build one; Cancel stops it
 - [ ] Create a page, pick a style, edit sections, move one, delete one
 - [ ] Portrait from the camera and from Photos; an intro video
-- [ ] Publish with a credit; the live page opens; a link on it opens
+- [ ] Publish a draft on an account with no credits; the live page opens; a
+      link on it opens
+- [ ] Publish until the limit: the fourth asks you to take a page offline, and
+      See your pages goes to Pages
+- [ ] Take a page offline from Pages, then publish another
+- [ ] No screen mentions credits, a price or buying
 - [ ] Share: copy link, share sheet, QR code saved to Photos, tracked link
 - [ ] Analytics for the published page
 - [ ] Delete a throwaway account: it signs out, and its pages stop loading

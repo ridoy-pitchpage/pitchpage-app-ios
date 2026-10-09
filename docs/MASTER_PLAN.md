@@ -6,7 +6,7 @@
 | **App repo** | `ridoy-pitchpage/pitchpage-app-ios` (this repo) |
 | **Web + backend repo** | `gregadosmond-oss/profile-pride-app` (pitchpage.co) — **read-only** |
 | **Stack** | Expo SDK 57, React Native 0.86, TypeScript, Expo Router |
-| **Payments** | Apple In-App Purchase for credits. Stripe stays on the website. |
+| **Payments** | None in the app since 9 Oct 2026: publishing from it is free (§13). Credits and Stripe stay on the website. |
 | **Source of facts** | A full read-through of the web repo on 30 Sep 2026: every route, all 144 server functions, the migrations, storage and auth |
 
 ---
@@ -45,9 +45,9 @@
 > - Sign in, and stay signed in, through Supabase Auth.
 > - Read and write the user's own pages — row-level security already grants a
 >   signed-in account exactly that.
-> - Publish and unpublish, because those are database functions any signed-in
->   user may call, with every credit rule inside them.
-> - Read the credit balance and ledger.
+> - Publish and unpublish, through database functions any signed-in user may
+>   call. Publishing from the app is free, for up to 3 live pages, inside
+>   `publish_pitch_page_from_app` (live 9 Oct 2026, §13).
 > - Create, copy and remove tracked links.
 > - Read a page's analytics, and count them the same way the website does.
 > - Show a published page by loading `pitchpage.co/p/<slug>` in a web view.
@@ -55,15 +55,12 @@
 >   folder.
 > - Delete the account outright: `sql/001_delete_my_account.sql` was applied
 >   and tested end to end on 2026-10-06.
-> - Send someone to buy credits: on the US storefront the app opens
->   `pitchpage.co/credits` in Safari, where the website's Stripe checkout sells
->   them (approved by the owner 2026-10-06; `src/features/credits/web-checkout.ts`).
 >
 > **What it cannot do, each checked against the grants rather than assumed:**
 >
 > | Blocked | Why | What happens instead |
 > |---|---|---|
-> | Buying credits in the app | `grant_credits` is `service_role` only and explicitly revoked from `authenticated` — correctly, since a client that could grant itself credits would be a hole. Apple's receipt has to be verified server-side first. | Credits are bought on the website. On the US storefront the app links there (Guideline 3.1.1(a)); any other storefront needs In-App Purchase and this endpoint first |
+> | Buying credits in the app | `grant_credits` is `service_role` only and explicitly revoked from `authenticated` — correctly, since a client that could grant itself credits would be a hole. Apple's receipt has to be verified server-side first. | Nothing is sold in the app (9 Oct 2026, §13). Publishing from it is free, and credits are bought and spent only on the website |
 > | Push notifications | Needs a device-token table and a sender | Visitor alerts stay email and web push |
 > | AI — building from a résumé, Paige, style suggestions, gap questions | Server code behind an API key the app must not hold | The app edits by hand; AI steps stay on the website |
 > | Outreach sequences and sends | Sending email is server work | Stays on the website |
@@ -1124,6 +1121,17 @@ All of these are hand-applied in Lovable's SQL editor, then verified. RLS is on 
 - **Email confirmation** is off today. If it's switched on, `emailRedirectTo` should point at a path the app claims.
 
 ## 13. Credits and In-App Purchase
+
+> **Superseded on 9 Oct 2026, by the owner.** The app sells nothing.
+> Publishing from it is free, for up to 3 live pages per account, enforced by
+> `publish_pitch_page_from_app` on the server
+> (gregadosmond-oss/profile-pride-app#269). The website keeps credits and
+> Stripe exactly as they were. With nothing to sell, the app goes on every
+> storefront except China mainland without In-App Purchase (Guideline
+> 3.1.3(f)). It names no price, shows no credits and opens no page that
+> sells. The Credits tab, the Pricing screen and the Safari link to the
+> website's checkout are gone. The design below stays as the plan if the app
+> ever sells again; until then, any way to buy needs it first.
 
 **Products** (consumables in App Store Connect)
 
