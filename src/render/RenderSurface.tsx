@@ -4,7 +4,7 @@ import { WebView, type WebViewMessageEvent } from "react-native-webview";
 
 import { BlockLoader } from "@/components/BlockLoader";
 import { useToast } from "@/components/Toast";
-import { RENDER_URL } from "@/lib/config";
+import { RENDER_URL, WEB_VIEW_AGENT } from "@/lib/config";
 import { isResumeUrl, openPageLink, RESUME_TAP_SCRIPT } from "./page-links";
 import type { PublicData } from "./to-public-data";
 import { themeForTemplate } from "./template-theme";
@@ -225,6 +225,7 @@ export function RenderSurface({
               <WebView
                 ref={webview}
                 source={{ uri: RENDER_URL }}
+                applicationNameForUserAgent={WEB_VIEW_AGENT}
                 onMessage={(event: WebViewMessageEvent) => handle(event.nativeEvent.data)}
                 injectedJavaScriptBeforeContentLoaded={RESUME_TAP_SCRIPT}
                 onError={() => setState("unavailable")}
@@ -338,6 +339,7 @@ export function RenderWarmup() {
       ) : (
         <WebView
           source={{ uri: RENDER_URL }}
+          applicationNameForUserAgent={WEB_VIEW_AGENT}
           onMessage={(event: WebViewMessageEvent): void => {
             if (parse(event.nativeEvent.data)?.type === "ready") settle("available");
           }}

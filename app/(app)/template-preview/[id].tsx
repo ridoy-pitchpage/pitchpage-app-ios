@@ -13,7 +13,7 @@ import { Body, Muted } from "@/components/Text";
 import { useMyPage } from "@/api/queries";
 import { useApplyTemplate } from "@/features/builder/use-apply-template";
 import { FAMILY_BY_ID, STYLE_CATEGORY_SHORT } from "@/page/style-families";
-import { SITE_URL } from "@/lib/config";
+import { SITE_URL, WEB_VIEW_AGENT } from "@/lib/config";
 import { useColors } from "@/theme/ThemeProvider";
 
 /**
@@ -128,6 +128,7 @@ export default function TemplatePreviewScreen() {
         <WebView
           key={attempt}
           source={{ uri: url }}
+          applicationNameForUserAgent={WEB_VIEW_AGENT}
           style={{ flex: 1 }}
           startInLoadingState
           renderLoading={() => <Loading label={`Loading the ${family.label} sample…`} />}

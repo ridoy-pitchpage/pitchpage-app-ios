@@ -11,6 +11,7 @@ import { ErrorState, Loading } from "@/components/States";
 import { Body, Muted } from "@/components/Text";
 import { useToast } from "@/components/Toast";
 import { useMyPage } from "@/api/queries";
+import { WEB_VIEW_AGENT } from "@/lib/config";
 import { publicPageUrl } from "@/lib/share";
 import { openPageLink } from "@/render/page-links";
 
@@ -96,6 +97,7 @@ export default function LivePageScreen() {
       ) : (
         <WebView
           source={{ uri: url }}
+          applicationNameForUserAgent={WEB_VIEW_AGENT}
           style={{ flex: 1 }}
           startInLoadingState
           renderLoading={() => <Loading label="Loading your page…" />}

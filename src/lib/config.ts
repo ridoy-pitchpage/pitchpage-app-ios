@@ -22,6 +22,16 @@ export const API_URL = extra.apiUrl ?? `${SITE_URL}/api/app/v1`;
 /** The render surface that draws pages with the web's own layouts (§14). */
 export const RENDER_URL = extra.renderUrl ?? `${SITE_URL}/app-render`;
 
+/**
+ * Appended to the user agent of every web view the app embeds, so the website
+ * knows a page is showing inside the app and keeps Google Analytics and
+ * PostHog out of it (src/lib/ios-app-surface.ts in the web repo). The App
+ * Privacy answers say the app collects no analytics; this is what keeps the
+ * website's pages inside it to that. react-native-webview adds it after
+ * WebKit's own name, so pages still see an ordinary iPhone.
+ */
+export const WEB_VIEW_AGENT = "PitchPageApp";
+
 export const SUPABASE_URL =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? "https://ervsfjyuhtnepigfgskh.supabase.co";
 
