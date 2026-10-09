@@ -27,6 +27,9 @@ const BUCKETS: Record<MediaKind, { bucket: string; suffix: string; public: boole
   resume: { bucket: "resumes", suffix: "-resume", public: false },
 };
 
+/** The private bucket a page's CV lives in. */
+export const RESUMES_BUCKET = BUCKETS.resume.bucket;
+
 /** Kinds where a page holds exactly one, so the previous file can be removed. */
 const SINGLE_FILE_KINDS: ReadonlySet<MediaKind> = new Set(["portrait", "video", "skyline", "resume"]);
 

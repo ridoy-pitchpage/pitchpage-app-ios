@@ -5,7 +5,7 @@ import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { BlockLoader } from "@/components/BlockLoader";
 import { useToast } from "@/components/Toast";
 import { RENDER_URL } from "@/lib/config";
-import { openPageLink } from "./page-links";
+import { isResumeUrl, openPageLink, RESUME_TAP_SCRIPT } from "./page-links";
 import type { PublicData } from "./to-public-data";
 import { themeForTemplate } from "./template-theme";
 
@@ -61,7 +61,7 @@ const RENDER_ORIGIN = (() => {
   }
 })();
 
-function parse(raw: unknown): { type: string; target?: SurfaceTarget } | null {
+function parse(raw: unknown): { type: string; target?: SurfaceTarget; url?: string } | null {
   let data = raw;
   if (typeof data === "string") {
     try {
@@ -71,8 +71,15 @@ function parse(raw: unknown): { type: string; target?: SurfaceTarget } | null {
     }
   }
   if (typeof data !== "object" || data === null) return null;
-  const message = data as { type?: unknown; target?: unknown };
+  const message = data as { type?: unknown; target?: unknown; url?: unknown };
   if (typeof message.type !== "string") return null;
+  // Only ever a CV: RESUME_TAP_SCRIPT is the one sender, and anything else on
+  // the page that posted a "link" must not be able to open what it likes.
+  if (message.type === "link") {
+    return typeof message.url === "string" && isResumeUrl(message.url)
+      ? { type: "link", url: message.url }
+      : null;
+  }
   if (message.type !== "tap") return { type: message.type };
 
   const target = message.target as { kind?: unknown; sectionId?: unknown } | undefined;
@@ -152,10 +159,12 @@ export function RenderSurface({
       setState("live");
     } else if (message.type === "tap" && message.target) {
       tapRef.current?.(message.target);
+    } else if (message.type === "link" && message.url) {
+      openLink(message.url);
     } else if (message.type === "error") {
       setState("unavailable");
     }
-  }, []);
+  }, [openLink]);
 
   // Give up, quietly, if the route never says it is ready — which is exactly
   // what happens before it has been published.
@@ -217,6 +226,7 @@ export function RenderSurface({
                 ref={webview}
                 source={{ uri: RENDER_URL }}
                 onMessage={(event: WebViewMessageEvent) => handle(event.nativeEvent.data)}
+                injectedJavaScriptBeforeContentLoaded={RESUME_TAP_SCRIPT}
                 onError={() => setState("unavailable")}
                 onHttpError={() => setState("unavailable")}
                 // The page draws in place; nothing in it may navigate the view

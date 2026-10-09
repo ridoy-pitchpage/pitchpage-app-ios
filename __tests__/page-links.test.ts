@@ -1,7 +1,7 @@
 import { Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 
-import { linkActionFor, openPageLink } from "@/render/page-links";
+import { isResumeUrl, linkActionFor, openPageLink, RESUME_TAP_SCRIPT } from "@/render/page-links";
 
 const mockCreateSignedUrl = jest.fn();
 jest.mock("@/auth/supabase", () => ({
@@ -85,5 +85,54 @@ describe("openPageLink", () => {
     await openPageLink("javascript:void(0)");
     expect(open).not.toHaveBeenCalled();
     expect(WebBrowser.openBrowserAsync).not.toHaveBeenCalled();
+  });
+});
+
+describe("a tap on the CV while editing", () => {
+  /** Runs the injected script against a stand-in window, then taps an element inside `href`'s link. */
+  function tap(href: string | null) {
+    let listener: ((event: unknown) => void) | undefined;
+    let capture = false;
+    const posted: unknown[] = [];
+    const window = {
+      addEventListener: (type: string, fn: (event: unknown) => void, useCapture: boolean) => {
+        if (type === "click") [listener, capture] = [fn, useCapture];
+      },
+      ReactNativeWebView: { postMessage: (message: string) => posted.push(JSON.parse(message)) },
+    };
+    new Function("window", RESUME_TAP_SCRIPT)(window);
+    const event = {
+      target: { closest: () => (href ? { href } : null) },
+      prevented: false,
+      stopped: false,
+      preventDefault() { this.prevented = true; },
+      stopPropagation() { this.stopped = true; },
+    };
+    listener!(event);
+    return { posted, event, capture };
+  }
+
+  it("reaches the app before the editor can swallow it", () => {
+    const { posted, event, capture } = tap(STORED_CV);
+    // Window, capture phase: ahead of the renderer's listener on the document.
+    expect(capture).toBe(true);
+    expect(event.prevented && event.stopped).toBe(true);
+    expect(posted).toEqual([{ type: "link", url: STORED_CV }]);
+  });
+
+  it("leaves every other tap to the page", () => {
+    for (const href of ["https://www.linkedin.com/in/jane", "mailto:jane@example.com", null]) {
+      const { posted, event } = tap(href);
+      expect(posted).toEqual([]);
+      expect(event.prevented || event.stopped).toBe(false);
+    }
+  });
+
+  it("is only ever a CV that the app accepts from the page", () => {
+    expect(isResumeUrl(STORED_CV)).toBe(true);
+    expect(isResumeUrl(SIGNED_CV)).toBe(true);
+    for (const url of ["https://evil.example/download", "javascript:void(0)", `${STORAGE}/public/portraits/u/p.jpg`]) {
+      expect(isResumeUrl(url)).toBe(false);
+    }
   });
 });

@@ -1,7 +1,7 @@
 import { Linking } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 
-import { signedResumeUrl, storagePathFromUrl } from "@/features/media/upload";
+import { RESUMES_BUCKET, signedResumeUrl, storagePathFromUrl } from "@/features/media/upload";
 
 /**
  * Links tapped on a page the app shows in a web view.
@@ -67,6 +67,39 @@ export async function openPageLink(url: string): Promise<void> {
   }
   await WebBrowser.openBrowserAsync(signed);
 }
+
+/** A link to a CV in the resumes bucket, as stored or as the website signed it. */
+const RESUME_PATH = new RegExp(`/object/(?:public|sign)/${RESUMES_BUCKET}/`);
+
+export function isResumeUrl(url: string): boolean {
+  return /^https:\/\//i.test(url.trim()) && RESUME_PATH.test(url);
+}
+
+/**
+ * Lets "Download resume" open the CV while editing, injected into the web view
+ * before the page loads.
+ *
+ * While editing, the website's renderer swallows every tap and opens the
+ * editor for what was tapped. A CV link has no editor, so the tap did nothing
+ * at all (2026-10-09). A listener on the window hears a tap before the
+ * renderer's, which listens on the document, so a tap on a CV link is handed
+ * to the app here, in edit mode and preview alike, and every other tap is
+ * left to the page.
+ */
+export const RESUME_TAP_SCRIPT = `(function () {
+  var resume = new RegExp(${JSON.stringify(RESUME_PATH.source)});
+  window.addEventListener("click", function (event) {
+    var target = event.target;
+    var link = target && target.closest ? target.closest("a[href]") : null;
+    if (!link || !resume.test(link.href)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: "link", url: link.href }));
+    }
+  }, true);
+})();
+true;`;
 
 function noAppFor(url: string): string {
   if (/^mailto:/i.test(url)) return "There's no mail app set up on this device.";
