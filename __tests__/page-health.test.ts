@@ -73,6 +73,12 @@ describe("Apple's Hide My Email address", () => {
     expect(ids({ ...base, email: RELAY, video_url: "https://x/v.mp4" })).toEqual(["relay-email"]);
   });
 
+  it("is named on Apple's new relay domain too", () => {
+    expect(ids({ ...base, email: "x7k2pq9mzt@private.icloud.com" })).toEqual(["relay-email"]);
+    // An ordinary iCloud address takes mail from anyone.
+    expect(ids({ ...base, email: "private@icloud.com" })).toEqual([]);
+  });
+
   it("leaves a real address alone", () => {
     expect(ids({ ...base, sections: [...base.sections, contact("jane@icloud.com")] })).toEqual([]);
   });

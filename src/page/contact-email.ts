@@ -6,7 +6,11 @@
  * so a visitor writing to it from their own mail is turned away: a page
  * showing it has a Contact button that cannot reach anybody (2026-10-09).
  */
-const APPLE_RELAY = /@privaterelay\.appleid\.com$/i;
+// Both of Apple's relay domains: new Sign in with Apple addresses move to
+// private.icloud.com "later this year" (Apple, 24 August 2026), and the old
+// ones keep working. iCloud+ Hide My Email stays on icloud.com, and those
+// addresses take mail from anyone, so they are not caught here.
+const APPLE_RELAY = /@(?:privaterelay\.appleid\.com|private\.icloud\.com)$/i;
 
 export function isAppleRelayEmail(email: string | null | undefined): boolean {
   return typeof email === "string" && APPLE_RELAY.test(email.trim());
