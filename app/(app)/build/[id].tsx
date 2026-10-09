@@ -293,12 +293,16 @@ export default function BuildScreen() {
           <Muted className="text-center">
             This takes about 30 seconds. Your draft goes into the sections your page already has.
           </Muted>
-          <Button
-            title="Cancel"
-            variant="secondary"
-            fullWidth={false}
-            onPress={() => building.current?.abort()}
-          />
+          {/* A Button that isn't full width pins itself to the start; this
+              wrapper is what the centred column centres. */}
+          <View>
+            <Button
+              title="Cancel"
+              variant="secondary"
+              fullWidth={false}
+              onPress={() => building.current?.abort()}
+            />
+          </View>
         </View>
       </Screen>
     );
