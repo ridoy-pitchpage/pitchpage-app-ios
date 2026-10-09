@@ -11,7 +11,7 @@ import { ErrorState, Loading } from "@/components/States";
 import { Body, H1, H3, Muted } from "@/components/Text";
 import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
-import { useMyPage, usePublishEligibility, usePublishPage } from "@/api/queries";
+import { useMyCredits, useMyPage, usePublishEligibility, usePublishPage } from "@/api/queries";
 import { sectionsForLayout } from "@/page/page-sections";
 import { toPageModel } from "@/page/page-model";
 import { checkPageHealth, pageIsEmpty, EMPTY_PAGE_MESSAGE } from "@/page/page-health";
@@ -40,6 +40,10 @@ export default function PreviewScreen() {
   const isLive = page.data?.published_at != null;
   // Only meaningful for a draft; a live page has already been paid for.
   const eligibility = usePublishEligibility(id, !isLive);
+  // The person's own balance. get_publish_eligibility's credits_remaining is
+  // the COMPANY's pot, and 0 for every page without a company, so reading it
+  // as the balance told everyone with credits that they needed one.
+  const credits = useMyCredits();
   const publish = usePublishPage();
 
   // `sections` is jsonb, so the row has to go through the model — which runs
@@ -162,10 +166,14 @@ export default function PreviewScreen() {
         ) : (
           <PublishCard
             eligibility={eligibility.data}
-            loading={eligibility.isPending}
-            loadError={eligibility.isError ? eligibility.error : null}
-            retrying={eligibility.isFetching}
-            onRetry={() => void eligibility.refetch()}
+            balance={credits.data?.balance}
+            loading={eligibility.isPending || credits.isPending}
+            loadError={(eligibility.isError ? eligibility.error : null) ?? (credits.isError ? credits.error : null)}
+            retrying={eligibility.isFetching || credits.isFetching}
+            onRetry={() => {
+              void eligibility.refetch();
+              void credits.refetch();
+            }}
             publishing={publish.isPending}
             onPublish={() => void attemptPublish()}
             onBuyCredits={() => router.push("/(app)/(tabs)/credits/buy")}
@@ -201,6 +209,7 @@ function GlanceRow({ label, status }: { label: string; status: string }) {
  */
 function PublishCard({
   eligibility,
+  balance,
   loading,
   loadError,
   retrying,
@@ -212,6 +221,8 @@ function PublishCard({
   eligibility:
     | { mode: "sponsored" | "awaiting_credit" | "paid"; org_name: string | null; credits_remaining: number }
     | undefined;
+  /** The person's own credits, from user_credits. Never eligibility.credits_remaining (see above). */
+  balance: number | undefined;
   loading: boolean;
   loadError: unknown;
   retrying: boolean;
@@ -223,7 +234,7 @@ function PublishCard({
   // Only when there is nothing to show: a background refetch that fails keeps
   // the answer already on screen. Without this, a failed check left "Checking
   // your balance…" spinning for good, with no way forward.
-  if (!eligibility && loadError) {
+  if ((!eligibility || balance === undefined) && loadError) {
     return (
       <Card className="gap-3">
         <H3>We couldn't check your balance</H3>
@@ -233,7 +244,7 @@ function PublishCard({
     );
   }
 
-  if (loading || !eligibility) {
+  if (loading || !eligibility || balance === undefined) {
     return (
       <Card>
         <Button title="Checking your balance…" loading />
@@ -261,7 +272,7 @@ function PublishCard({
           {org} hasn't assigned you a credit yet. Ask them, or use one of your
           own.
         </Muted>
-        {eligibility.credits_remaining > 0 ? (
+        {balance > 0 ? (
           <Button title="Publish with my own credit" loading={publishing} haptic onPress={onPublish} />
         ) : (
           <Button title="Get a credit" variant="secondary" onPress={onBuyCredits} />
@@ -270,14 +281,14 @@ function PublishCard({
     );
   }
 
-  const hasCredit = eligibility.credits_remaining > 0;
+  const hasCredit = balance > 0;
 
   return (
     <Card className="gap-3">
       <H3>{hasCredit ? "Ready to publish" : "You need a credit"}</H3>
       <Muted>
         {hasCredit
-          ? `Publishing uses one credit. You have ${creditCount(eligibility.credits_remaining)}.`
+          ? `Publishing uses one credit. You have ${creditCount(balance)}.`
           : "Publishing a page costs one credit. Everything you've built is saved either way."}
       </Muted>
       {hasCredit ? (

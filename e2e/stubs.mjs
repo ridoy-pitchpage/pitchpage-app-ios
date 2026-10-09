@@ -147,7 +147,7 @@ export async function installStubs(ctx) {
       }
       return json(route, rows);
     }
-    if (url.includes('/rest/v1/rpc/get_publish_eligibility')) return json(route, { mode: 'paid', org_name: null, credits_remaining: 3 });
+    if (url.includes('/rest/v1/rpc/get_publish_eligibility')) return json(route, { mode: 'paid', org_name: null, credits_remaining: 0 }); // The live RPC: a company's pot, 0 without one
     if (url.includes('/rest/v1/rpc/')) return json(route, []);
     if (url.includes('/rest/v1/pitch_pages')) {
       // Honour an id=eq.<uuid> filter: maybeSingle() errors on two rows, so a
