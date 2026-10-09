@@ -116,8 +116,12 @@ export default function DeleteAccountScreen() {
             <Body className="text-muted-foreground">
               Your photos, videos and documents.
             </Body>
+            {/* The terms refund unused credits for 14 days after purchase, on
+                request; deleting the account doesn't ask for that refund. */}
             <Body className="text-muted-foreground">
-              Any credits you haven't used. They aren't refunded.
+              Any credits you haven't used. Deleting doesn't refund them, so if
+              you bought credits in the last 14 days, email support@pitchpage.co
+              for a refund first.
             </Body>
           </Card>
 
