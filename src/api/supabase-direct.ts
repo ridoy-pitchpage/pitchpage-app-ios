@@ -44,10 +44,18 @@ export type PageCard = Pick<
 
 /** Every page the signed-in user owns, newest first. */
 export async function listMyPages(): Promise<PageCard[]> {
-  const { data, error } = await supabase
+  const { data: auth } = await supabase.auth.getSession();
+  let query = supabase
     .from("pitch_pages")
     .select(PAGE_CARD_COLUMNS)
     .order("updated_at", { ascending: false });
+  // Row-level security already returns only the caller's rows: the one read
+  // policy on pitch_pages is the owner's (checked live, 2026-10-09). Asking
+  // for them by owner as well keeps this list theirs if a wider read policy
+  // is ever added, for company staff, say.
+  const userId = auth.session?.user.id;
+  if (userId) query = query.eq("user_id", userId);
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as PageCard[];
 }

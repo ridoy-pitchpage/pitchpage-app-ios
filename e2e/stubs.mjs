@@ -152,7 +152,8 @@ export async function installStubs(ctx) {
     if (url.includes('/rest/v1/pitch_pages')) {
       // Honour an id=eq.<uuid> filter: maybeSingle() errors on two rows, so a
       // stub that ignores the filter fails a query the real API answers.
-      const wanted = /id=eq\.([0-9a-f-]+)/.exec(url)?.[1];
+      // The id filter only: the Pages list also asks by user_id=eq.<uuid>.
+      const wanted = /[?&]id=eq\.([0-9a-f-]+)/.exec(url)?.[1];
       const pick = [DRAFT, LIVE, TEMPLATED].find((page) => page.id === wanted) ?? null;
       if (single) return json(route, pick ?? LIVE);
       if (wanted) return json(route, pick ? [pick] : []);
