@@ -29,11 +29,6 @@ export function relativeTime(iso: string | null | undefined): string {
   });
 }
 
-/** "1 credit", "5 credits". */
-export function creditCount(balance: number): string {
-  return `${balance} credit${balance === 1 ? "" : "s"}`;
-}
-
 /**
  * What a page is called when it has no headline yet. The web falls back from
  * the headline to a placeholder stored on the page, then to the slug.

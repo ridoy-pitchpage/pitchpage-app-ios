@@ -1,7 +1,7 @@
 import { BASE, launch } from "./harness.mjs";
 
-const ROUTES = ['/', '/examples', '/pricing', '/faq', '/contact', '/how-it-works',
-  '/pages', '/credits', '/account', '/account/profile', '/account/password', '/account/delete',
+const ROUTES = ['/', '/examples', '/faq', '/contact', '/how-it-works',
+  '/pages', '/account', '/account/profile', '/account/password', '/account/delete',
   '/choose-type/D', '/intake/athlete/D', '/builder/D', '/preview/D', '/share/L', '/share/L/qr',
   '/pages/L/links', '/analytics', '/analytics/L', '/account/tracking', '/account/guides', '/account/guides/job-search-statistics'];
 

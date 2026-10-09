@@ -1,6 +1,6 @@
 /**
  * The logic under test imports `Platform`, to choose a monospace face, and
- * `Linking`, to hand the credits page to Safari. Standing in for them keeps
+ * `Linking`, to hand a page's email links to Mail. Standing in for them keeps
  * these tests from needing the native runtime.
  */
 export const Platform = {

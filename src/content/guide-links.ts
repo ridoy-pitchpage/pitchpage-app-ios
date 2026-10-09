@@ -21,7 +21,10 @@ import type { GuideCtaTo } from "@/content/guide-related";
 /** Web paths that have a screen here. */
 const IN_APP: Record<string, string> = {
   "/examples": "/examples",
-  "/pricing": "/pricing",
+  // The app has no pricing screen, and must never open the website's: it
+  // shows the price and a Buy button, which no storefront without In-App
+  // Purchase allows (Guideline 3.1.1). How it works covers publishing.
+  "/pricing": "/how-it-works",
   "/faq": "/faq",
   "/how-it-works": "/how-it-works",
   "/contact": "/contact",

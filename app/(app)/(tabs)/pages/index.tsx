@@ -15,7 +15,6 @@ import {
   Plus,
   Share2,
   Trash2,
-  Wallet,
 } from "lucide-react-native";
 import type { LucideIcon } from "lucide-react-native";
 
@@ -33,15 +32,14 @@ import { useToast } from "@/components/Toast";
 import {
   useCreatePage,
   useDeletePage,
-  useMyCredits,
   useMyPages,
   useUnpublishPage,
 } from "@/api/queries";
 import type { PageCard as PageCardRow } from "@/api/supabase-direct";
-import { creditCount, pageSubtitle, relativeTime } from "@/lib/format";
+import { pageSubtitle, relativeTime } from "@/lib/format";
 import { publicPageUrl } from "@/lib/config";
 import { useColors } from "@/theme/ThemeProvider";
-import { MIN_TAP, mix } from "@/theme/tokens";
+import { mix } from "@/theme/tokens";
 
 /**
  * Pages (S22) — the app's home, replacing the web dashboard.
@@ -53,7 +51,6 @@ export default function PagesScreen() {
   const colors = useColors();
   const toast = useToast();
   const pages = useMyPages();
-  const credits = useMyCredits();
   const createPage = useCreatePage();
 
   const [creating, setCreating] = useState(false);
@@ -62,8 +59,7 @@ export default function PagesScreen() {
 
   const refresh = useCallback(() => {
     void pages.refetch();
-    void credits.refetch();
-  }, [pages, credits]);
+  }, [pages]);
 
   async function create() {
     // State updates render later; this also blocks a second keyboard submit
@@ -138,29 +134,11 @@ export default function PagesScreen() {
               onPress={() => setCreating(true)}
             />
           )}
-          <View className="flex-row flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <Muted>
-              {rows.length === 0
-                ? "Make your first impression count."
-                : `${rows.length} ${rows.length === 1 ? "page" : "pages"} in your workspace`}
-            </Muted>
-            <Pressable
-              onPress={() => router.push("/(app)/(tabs)/credits")}
-              accessibilityRole="button"
-              accessibilityLabel="View your credits"
-              style={{ minHeight: MIN_TAP }}
-              className="flex-row items-center gap-2 rounded-full px-1 active:opacity-70"
-            >
-              <Wallet size={16} color={colors.primary} />
-              <Muted className="font-body-bold" style={{ color: colors.primary }}>
-                {credits.isPending
-                  ? "Checking credits…"
-                  : credits.isError
-                    ? "Check credits"
-                    : creditCount(credits.data?.balance ?? 0)}
-              </Muted>
-            </Pressable>
-          </View>
+          <Muted>
+            {rows.length === 0
+              ? "Make your first impression count."
+              : `${rows.length} ${rows.length === 1 ? "page" : "pages"} in your workspace`}
+          </Muted>
         </MotionEntrance>
 
         {creating ? (

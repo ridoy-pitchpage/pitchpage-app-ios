@@ -20,7 +20,6 @@ import type { Database } from "./database.types";
 
 export type PitchPageRow = Database["public"]["Tables"]["pitch_pages"]["Row"];
 export type PitchPageUpdate = Database["public"]["Tables"]["pitch_pages"]["Update"];
-export type CreditTransactionRow = Database["public"]["Tables"]["credit_transactions"]["Row"];
 export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
 /** The columns the Pages list needs — matching the web's `listMyPitchPages`. */
@@ -191,43 +190,6 @@ export async function unpublishPage(id: string): Promise<void> {
     throw new Error("Taking a page offline isn't switched on yet. Try again soon.");
   }
   throw new Error(error.message);
-}
-
-export type PublishEligibility = {
-  mode: "sponsored" | "awaiting_credit" | "paid";
-  org_name: string | null;
-  credits_remaining: number;
-};
-
-/** What the publish sheet shows before anyone taps anything. */
-export async function getPublishEligibility(id: string): Promise<PublishEligibility> {
-  const { data, error } = await supabase.rpc("get_publish_eligibility", { _pitch_page_id: id });
-  if (error) throw error;
-  return data as unknown as PublishEligibility;
-}
-
-export type Credits = { balance: number; transactions: CreditTransactionRow[] };
-
-/** Balance and the recent ledger, the two things the Credits screen shows. */
-export async function getMyCredits(): Promise<Credits> {
-  const [balanceResult, ledgerResult] = await Promise.all([
-    supabase.from("user_credits").select("balance").maybeSingle(),
-    supabase
-      .from("credit_transactions")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50),
-  ]);
-
-  if (balanceResult.error) throw balanceResult.error;
-  if (ledgerResult.error) throw ledgerResult.error;
-
-  return {
-    // No row means a new account that has never held a credit, which is 0 —
-    // the web grants nothing on signup.
-    balance: balanceResult.data?.balance ?? 0,
-    transactions: ledgerResult.data ?? [],
-  };
 }
 
 export type PageLinkRow = Database["public"]["Tables"]["pitch_page_links"]["Row"];

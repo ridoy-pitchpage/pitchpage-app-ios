@@ -44,8 +44,7 @@ export default function HelpScreen() {
             <Row label="Guides" hint="Fifteen articles, readable offline" onPress={() => router.push("/(app)/(tabs)/account/guides")} />
             <Row label="How it works" onPress={() => router.push("/(public)/how-it-works")} />
             <Row label="Examples" onPress={() => router.push("/(public)/examples")} />
-            <Row label="Questions" onPress={() => router.push("/(public)/faq")} />
-            <Row label="Pricing" onPress={() => router.push("/(public)/pricing")} last />
+            <Row label="Questions" onPress={() => router.push("/(public)/faq")} last />
           </Card>
         </View>
 
@@ -66,10 +65,8 @@ export default function HelpScreen() {
           <H3>Get in touch</H3>
           {/*
             No "About PitchPage" link to the website here, deliberately: that
-            page shows the web price and a "Buy one now" button. The US
-            storefront allows it, but the app's one way into buying is Credits,
-            which says where it goes first (web-checkout.ts) — and no other
-            storefront allows a link like that at all (Guideline 3.1.1).
+            page shows the web price and a "Buy one now" button, and the app
+            sells nothing and links to no way of buying (Guideline 3.1.1).
           */}
           <Card className="p-0">
             <Row label="Contact support" hint={SUPPORT_EMAIL} onPress={() => void contactSupport()} last />

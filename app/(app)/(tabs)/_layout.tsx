@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import { Platform, StyleSheet, Text, View, useWindowDimensions, type ColorValue } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChartColumnBig, FileText, UserRound, Wallet } from "lucide-react-native";
+import { ChartColumnBig, FileText, UserRound } from "lucide-react-native";
 
 import { useColors, useTheme } from "@/theme/ThemeProvider";
 import { GLASS, mix } from "@/theme/tokens";
@@ -48,7 +48,9 @@ function TabIcon({
 /**
  * The tab bar (§5). The website has no tabs — it uses a desktop sidebar and
  * phone pills for Dashboard, Analytics and Credits — so the grouping follows
- * that, with Account added for the settings the App Store requires.
+ * that, with Account added for the settings the App Store requires. Credits
+ * left on 2026-10-09: publishing from the app is free, and the app sells
+ * nothing.
  *
  * Company appears only for company staff and arrives in M8; it is not a hidden
  * tab here because an empty tab is worse than no tab.
@@ -116,14 +118,6 @@ export default function TabsLayout() {
           title: "Analytics",
           tabBarAccessibilityLabel: "Page analytics",
           tabBarIcon: ({ color, focused }) => <TabIcon Icon={ChartColumnBig} color={color} focused={focused} surface={colors.card} />,
-        }}
-      />
-      <Tabs.Screen
-        name="credits"
-        options={{
-          title: "Credits",
-          tabBarAccessibilityLabel: "Publishing credits",
-          tabBarIcon: ({ color, focused }) => <TabIcon Icon={Wallet} color={color} focused={focused} surface={colors.card} />,
         }}
       />
       <Tabs.Screen

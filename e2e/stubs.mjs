@@ -117,8 +117,6 @@ export async function installStubs(ctx) {
     if (url.includes('/auth/v1/token')) return json(route, session);
     if (url.includes('/auth/v1/user')) return json(route, user);
     if (url.includes('/rest/v1/profiles')) return json(route, single ? { user_id: USER_ID, display_name: 'Alex Chen', avatar_url: null } : []);
-    if (url.includes('/rest/v1/user_credits')) return json(route, single ? { balance: 3 } : [{ balance: 3 }]);
-    if (url.includes('/rest/v1/credit_transactions')) return json(route, []);
     if (url.includes('/rest/v1/pitch_page_links')) return json(route, [
       { id: 'l1', label: 'Acme Corp — Dana', ref_slug: 'acme-dana', created_at: '2026-09-01T10:00:00Z' },
       { id: 'l2', label: 'Northwind — recruiter', ref_slug: 'northwind', created_at: '2026-09-03T10:00:00Z' },
@@ -147,7 +145,6 @@ export async function installStubs(ctx) {
       }
       return json(route, rows);
     }
-    if (url.includes('/rest/v1/rpc/get_publish_eligibility')) return json(route, { mode: 'paid', org_name: null, credits_remaining: 0 }); // The live RPC: a company's pot, 0 without one
     if (url.includes('/rest/v1/rpc/')) return json(route, []);
     if (url.includes('/rest/v1/pitch_pages')) {
       // Honour an id=eq.<uuid> filter: maybeSingle() errors on two rows, so a

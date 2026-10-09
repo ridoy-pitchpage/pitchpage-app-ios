@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { AppState } from "react-native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import * as direct from "./supabase-direct";
@@ -18,13 +16,9 @@ import type { AnalyticsRange } from "@/analytics/analytics-range";
 export const keys = {
   pages: ["pages"] as const,
   page: (id: string) => ["page", id] as const,
-  credits: ["credits"] as const,
   profile: ["profile"] as const,
   orgs: ["orgs"] as const,
   platformAdmin: ["platform-admin"] as const,
-  publishEligibility: (id: string) => ["publish-eligibility", id] as const,
-  /** Every page's publish check at once — the prefix of publishEligibility. */
-  allPublishEligibility: ["publish-eligibility"] as const,
   pageLinks: (id: string) => ["page-links", id] as const,
   insights: (id: string, range: string) => ["insights", id, range] as const,
 };
@@ -42,35 +36,6 @@ export function usePageInsights(id: string | undefined, range: AnalyticsRange) {
     queryFn: () => getPageInsights(id as string, range),
     enabled: Boolean(id),
     staleTime: 60_000,
-  });
-}
-
-/**
- * Re-reads the balance whenever the app comes back to the foreground.
- *
- * Credits are bought in Safari (src/features/credits/web-checkout.ts), so they
- * land in the database while the app sits in the background, and nothing tells
- * the app. The query client deliberately does not refetch on focus
- * (app/_layout.tsx), so this does it for the two things a purchase changes: the
- * balance, and the publish check of whichever page sent somebody to buy.
- */
-export function useRefreshCreditsOnReturn() {
-  const queryClient = useQueryClient();
-  useEffect(() => {
-    const subscription = AppState.addEventListener("change", (state) => {
-      if (state !== "active") return;
-      void queryClient.invalidateQueries({ queryKey: keys.credits });
-      void queryClient.invalidateQueries({ queryKey: keys.allPublishEligibility });
-    });
-    return () => subscription.remove();
-  }, [queryClient]);
-}
-
-export function usePublishEligibility(id: string | undefined, enabled = true) {
-  return useQuery({
-    queryKey: keys.publishEligibility(id ?? ""),
-    queryFn: () => direct.getPublishEligibility(id as string),
-    enabled: Boolean(id) && enabled,
   });
 }
 
@@ -108,10 +73,6 @@ export function useMyPage(id: string | undefined) {
     queryFn: () => direct.getMyPage(id as string),
     enabled: Boolean(id),
   });
-}
-
-export function useMyCredits() {
-  return useQuery({ queryKey: keys.credits, queryFn: direct.getMyCredits });
 }
 
 export function useMyProfile() {

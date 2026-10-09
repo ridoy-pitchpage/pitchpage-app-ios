@@ -1,6 +1,5 @@
 import { Redirect, Stack } from "expo-router";
 
-import { useRefreshCreditsOnReturn } from "@/api/queries";
 import { useAuth } from "@/auth/AuthProvider";
 import { Screen } from "@/components/Screen";
 import { Loading } from "@/components/States";
@@ -16,9 +15,6 @@ import { RenderWarmup } from "@/render/RenderSurface";
  */
 export default function AppLayout() {
   const { loading, signedIn } = useAuth();
-  // Here rather than on the Credits screens: whichever screen somebody comes
-  // back to from buying in Safari, the balance it shows has to be the new one.
-  useRefreshCreditsOnReturn();
 
   if (loading) {
     return (
