@@ -86,12 +86,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      NSCameraUsageDescription:
-        "PitchPage uses your camera so you can take a portrait and record your intro video.",
-      NSMicrophoneUsageDescription:
-        "PitchPage uses your microphone to record the audio for your intro video.",
-      NSPhotoLibraryUsageDescription:
-        "PitchPage needs your photo library so you can pick a portrait, project photos and video clips for your page.",
       // "Save Image" in the share sheet writes the QR code to Photos, and iOS
       // stops the app if this string is missing when somebody picks it.
       NSPhotoLibraryAddUsageDescription:
@@ -111,7 +105,23 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     "expo-router",
     "expo-font",
     "expo-web-browser",
-    "expo-secure-store",
+    // The app keeps its session in the keychain and never asks for Face ID,
+    // so the Face ID text the plugin adds by default would be a request for
+    // something the app doesn't use (App Review 5.1.1).
+    ["expo-secure-store", { faceIDPermission: false }],
+    // Said here rather than in infoPlist: Expo applies this plugin whether it
+    // is listed or not, and only here can the microphone be turned off. The
+    // camera takes a portrait and nothing else; the intro video comes from
+    // Photos, so the app never records sound.
+    [
+      "expo-image-picker",
+      {
+        cameraPermission: "PitchPage uses your camera so you can take a portrait for your page.",
+        photosPermission:
+          "PitchPage uses your photo library so you can choose a portrait and an intro video for your page.",
+        microphonePermission: false,
+      },
+    ],
     [
       "expo-splash-screen",
       {
