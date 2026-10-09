@@ -1,6 +1,6 @@
 import { savePage, type PitchPageRow, type SaveResult } from "@/api/supabase-direct";
 import { PITCH_SAVE_CONFLICT } from "@/lib/errors";
-import { hasUnsavedChanges, useDraft } from "@/state/draft-store";
+import { hasUnsavedChanges, shouldAdoptServerRow, useDraft } from "@/state/draft-store";
 
 jest.mock("@/api/supabase-direct", () => ({ savePage: jest.fn() }));
 
@@ -140,4 +140,34 @@ it("renumbers moved sections on screen as well as in the save, so a list sorted 
   expect(onScreen.map((s) => s.id)).toEqual(["c", "a", "b"]);
   const saved = (useDraft.getState().dirty.sections ?? []) as Array<{ id: string; order: number }>;
   expect(saved.map((s) => [s.id, s.order])).toEqual([["c", 0], ["a", 1], ["b", 2]]);
+});
+
+describe("shouldAdoptServerRow", () => {
+  const T1 = "2026-10-09T10:00:00.000Z";
+  const T2 = "2026-10-09T10:05:00.000Z";
+  const draft = (status: Parameters<typeof hasUnsavedChanges>[0], baseline: string | null = T1) => ({
+    pageId: "page-a",
+    baseline,
+    status,
+  });
+
+  it("always loads a different page", () => {
+    expect(shouldAdoptServerRow(draft("pending"), { id: "page-b", updated_at: T1 })).toBe(true);
+  });
+
+  it("takes a newer save of the same page when nothing is unsaved, as after publishing", () => {
+    expect(shouldAdoptServerRow(draft("saved"), { id: "page-a", updated_at: T2 })).toBe(true);
+    expect(shouldAdoptServerRow(draft("idle"), { id: "page-a", updated_at: T2 })).toBe(true);
+  });
+
+  it("never replaces unsaved edits, however new the row", () => {
+    for (const status of ["pending", "saving", "error", "conflict"] as const) {
+      expect([status, shouldAdoptServerRow(draft(status), { id: "page-a", updated_at: T2 })]).toEqual([status, false]);
+    }
+  });
+
+  it("ignores the same or an older save, such as its own write coming back", () => {
+    expect(shouldAdoptServerRow(draft("saved", T2), { id: "page-a", updated_at: T2 })).toBe(false);
+    expect(shouldAdoptServerRow(draft("saved", T2), { id: "page-a", updated_at: T1 })).toBe(false);
+  });
 });

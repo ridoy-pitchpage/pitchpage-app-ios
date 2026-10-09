@@ -37,6 +37,27 @@ export function hasUnsavedChanges(status: SaveStatus): boolean {
   return status !== "idle" && status !== "saved";
 }
 
+/**
+ * Should the builder load this row from the server over what the draft holds?
+ *
+ * Always for a different page. For the same page, only when the row is a newer
+ * save than the draft's baseline and nothing in the draft is unsaved:
+ * publishing, taking offline and "Build my page" all write the row, and a
+ * draft that kept its old baseline failed its next save as "updated somewhere
+ * else", losing the edit (2026-10-09). Never while something is unsaved,
+ * which would throw away what was just typed; a real clash is still the
+ * conflict screen's.
+ */
+export function shouldAdoptServerRow(
+  draft: { pageId: string | null; baseline: string | null; status: SaveStatus },
+  row: { id: string; updated_at: string | null },
+): boolean {
+  if (row.id !== draft.pageId) return true;
+  if (hasUnsavedChanges(draft.status) || !row.updated_at) return false;
+  if (!draft.baseline) return true;
+  return Date.parse(row.updated_at) > Date.parse(draft.baseline);
+}
+
 type DraftState = {
   pageId: string | null;
   page: PageModel | null;

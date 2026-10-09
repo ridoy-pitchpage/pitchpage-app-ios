@@ -28,7 +28,13 @@ import { SectionSheet } from "@/features/builder/SectionSheet";
 import { SectionsSheet } from "@/features/builder/SectionsSheet";
 import { StylePicker } from "@/features/builder/StylePicker";
 import { MediaSheet } from "@/features/media/MediaSheet";
-import { hasUnsavedChanges, saveLabel, startDraftAutosaveOnBackground, useDraft } from "@/state/draft-store";
+import {
+  hasUnsavedChanges,
+  saveLabel,
+  shouldAdoptServerRow,
+  startDraftAutosaveOnBackground,
+  useDraft,
+} from "@/state/draft-store";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 
@@ -86,10 +92,12 @@ export default function BuilderScreen() {
   const [sectionId, setSectionId] = useState<string | null>(null);
   const [toolbarHeight, setToolbarHeight] = useState(0);
 
-  // Load the row into the draft store once, and only when it is a different
-  // page — re-loading on every refetch would discard unsaved keystrokes.
+  // Load the row when it is a different page, or a newer save of this one
+  // while nothing here is unsaved (shouldAdoptServerRow says why). Publishing,
+  // taking offline and "Build my page" refresh this query, so the draft
+  // follows them instead of failing its next save against an old baseline.
   useEffect(() => {
-    if (query.data && query.data.id !== draftId) load(query.data);
+    if (query.data && shouldAdoptServerRow(useDraft.getState(), query.data)) load(query.data);
   }, [query.data, draftId, load]);
 
   useEffect(() => startDraftAutosaveOnBackground(), []);
