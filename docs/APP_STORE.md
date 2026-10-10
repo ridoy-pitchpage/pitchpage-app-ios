@@ -154,32 +154,81 @@ Password: <demo account password>
 
 **Contact:** the owner's name, phone number and email.
 
-**Notes** — paste this:
+**Notes** — paste this. It answers Apple's "Information Needed" request of
+10 Oct 2026 (below) and is 3,252 of the field's 4,000 characters:
 
 ```
-DEMO ACCOUNT
-The demo account has one published page, so every feature can be tried, including publishing. To test account deletion, please create a new account instead (email, Sign in with Apple or Google) — deleting the demo account would lock review out.
+1. SCREEN RECORDING
+Attached, recorded on an iPhone running the latest iOS and starting from launch: creating an account, building a page with "Build my page", editing it, publishing, sharing, the live page, analytics, taking the page offline, deleting the account, and signing in with the demo account.
+• User-generated content: each person sees and edits only their own pages. The app has no feed, search, messaging, comments or profiles, and no way to view anyone else's page, so there is nothing from other users to report or block in the app. Published pages are public on pitchpage.co. Our terms prohibit illegal and abusive content, we unpublish pages that break them, and anyone can report a page to support@pitchpage.co.
+• Paid content: none. Nothing is sold in the app.
 
-HOW TO TRY IT
-1. Pages → New page. Choose what the page is for and pick a look. Then tell us about yourself (or add a CV) and tap "Build my page" for an AI first draft, or "I'll fill it in myself".
-2. Tap any section on the page to edit it. Add a photo or a short video from the media buttons.
-3. Preview → Publish. Publishing from the app is free, for up to 3 live pages at a time; Pages → Take offline makes room.
-4. Share: copy the link, show the QR code, or make a tracked link.
-5. Analytics: open the published page to see its visits.
-6. Account → Delete your account removes the account and all of its data at once (Guideline 5.1.1(v)).
+2. PURPOSE AND AUDIENCE
+PitchPage turns what people usually attach to an application (a résumé, a stat sheet, a bid) into one web page that gets read: their story, their results as figures and charts, an optional intro video, and a design suited to their work. It is for anyone making a pitch: job seekers, students applying to university, athletes contacting coaches, real estate agents, contractors bidding for work and salespeople. Attachments get skimmed or never opened. A PitchPage is one link or QR code that works everywhere, and its analytics show when it was opened.
 
-PUBLISHING IS FREE
-PitchPage is free to download, and free to build and publish with. Publishing a page from the app costs nothing, and an account can keep up to 3 pages published from the app live at a time. Nothing is sold in the app, and nothing in it names a price or links to a purchase. PitchPage is a free companion to the paid PitchPage web service, which hosts the published pages (Guideline 3.1.3(f)).
+3. HOW TO USE IT
+The demo account is in the Sign-In Information fields and has one published page. There is only one kind of account.
+1. Pages → New page. Choose what the page is for, then pick a look.
+2. Describe yourself and tap "Build my page" for an AI first draft, or fill it in yourself. A CV is optional (any PDF); no sample files are needed.
+3. Tap any section on the page to edit it. Add a photo or a short video from the media buttons.
+4. Review → Publish now. Publishing from the app is free, for up to 3 live pages per account; Pages → Take offline makes room.
+5. Share: copy the link, show the QR code or make a tracked link. Analytics shows the page's visits.
+6. Account → Delete your account removes the account and all its data straight away. Please try it with a new account (email, Sign in with Apple or Google), not the demo account, which review needs.
 
-OTHER NOTES
-• The page itself is drawn with the same layout code the published page uses, inside a web view, so what the builder shows is exactly what visitors see. Sign-in, editing, camera and photo capture, sharing, QR codes and analytics are native.
-• "Build my page" writes a first draft with AI. Before anything is sent, the app asks once, naming what is sent (what the person typed, their CV, their section names) and where it goes (Google's Gemini through the Lovable AI Gateway). "Not now" leaves building by hand (Guideline 5.1.2(i)).
-• Sign in with Apple and Google open PitchPage's own sign-in page in a secure sign-in sheet and return to the app.
-• The app does no tracking and shows no advertising.
+4. EXTERNAL SERVICES
+• Supabase, through Lovable Cloud: accounts and sign-in, the database and file storage.
+• Sign in with Apple and Google Sign-In: optional ways to sign in. Both open PitchPage's own sign-in page in a secure sign-in sheet and return to the app.
+• pitchpage.co, hosted on Lovable: serves published pages, and draws the page in the builder exactly as visitors will see it.
+• Google Gemini, through the Lovable AI Gateway: writes the "Build my page" draft. The app asks for consent first, naming what is sent and where it goes.
+• Payments: none in the app. PitchPage is a free companion to the paid PitchPage web service, which hosts the published pages (Guideline 3.1.3(f)). The app has no analytics, advertising or tracking SDKs.
+
+5. REGIONS
+The app works the same in every region, with no regional differences in features or content. It is in English.
+
+6. REGULATED INDUSTRY OR PROTECTED MATERIAL
+Not applicable. PitchPage isn't in a regulated industry and provides no protected third-party material.
 ```
 
-Drop the web-view sentence if `/app-render` has not been published by then —
-until it is, the app draws pages itself.
+### The "Information Needed" request (2.1, 10 Oct 2026)
+
+The first submission came back with *Guideline 2.1 - Information Needed -
+New App Submission*. It is not a bug report: Apple asks it of developer
+accounts with little review history. It wants, in a reply in App Store
+Connect and in the Notes field:
+
+1. a screen recording on a physical device running the latest iOS, starting
+   from launch, showing registration, login and account deletion;
+2. the app's purpose and audience; 3. how to use it, with the login;
+4. the external services it uses; 5. regional differences; 6. any
+   regulated-industry paperwork.
+
+The Notes text above answers 2 to 6, and point 1 for user-generated content
+and paid features. To reply:
+
+1. **Record with the build being submitted**, installed from TestFlight, on
+   an iPhone updated to the latest iOS. Delete the app first so the
+   recording opens on onboarding, turn on Do Not Disturb, and start Screen
+   Recording from Control Center. Then, in one take:
+   1. Open PitchPage from the Home Screen and go through onboarding.
+   2. Create an account with Sign in with Apple. It is the quickest; email
+      sign-up needs the confirmation email first.
+   3. Pages → New page → type a name → Create → choose a type → pick a
+      style → describe yourself → Build my page, accept the AI consent, and
+      wait for the draft.
+   4. Tap a section and change a line; add a portrait from Photos.
+   5. Preview your page, then Edit your page; Publish → Publish now (and
+      Publish anyway, if it asks); on Share, Copy link, Show a QR code, then
+      See it live.
+   6. Analytics → the page.
+   7. Pages → the page's ⋯ → Take offline.
+   8. Account → Delete your account → type DELETE → Delete everything. The
+      app returns to Welcome.
+   9. Sign in with the demo account's email and password; Pages shows its
+      published page.
+2. **Attach the video** to the reply in App Store Connect, and upload the same
+   file under App Review Information → Attachment.
+3. **Paste the Notes text** into the reply and into App Review Information →
+   Notes, select the build, and resubmit.
 
 ---
 
