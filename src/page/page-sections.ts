@@ -2,13 +2,15 @@
  * The universal block kit — COPIED from the web repo, kept in step with it.
  *
  * Source: `src/lib/page-sections.ts` in gregadosmond-oss/profile-pride-app,
- * copied 2026-09-30. Only dependency is zod, which is why the app pins zod 3
- * to match the web: this file must copy across unchanged.
+ * copied 2026-10-24 (commit ae7dfbe). Only dependency is zod, which is why the
+ * app pins zod 3 to match the web: this file must copy across unchanged.
  *
  * It is the contract for a page's body — the nine block types, their field
- * limits, and what counts as empty. The app validates against exactly these
- * rules so a page edited on a phone and a page edited in a browser cannot
- * drift. Do not hand-edit; re-copy from the web repo instead.
+ * limits, what counts as empty, and (since 2026-10-23) the stable ids on
+ * timeline and cards rows that the web's Proof feature attaches to. The app
+ * validates against exactly these rules so a page edited on a phone and a
+ * page edited in a browser cannot drift. Do not hand-edit; re-copy from the
+ * web repo instead. The builder-only list lives in sections-for-editing.ts.
  */
 
 import { z } from "zod";
@@ -73,6 +75,145 @@ const arr = <T extends z.ZodTypeAny>(schema: T, max: number) =>
     z.array(schema).max(max).default([]),
   ) as unknown as z.ZodType<z.infer<T>[], z.ZodTypeDef, unknown>;
 
+// ─── Stable entry ids (Proof, 2026-10-23) ───────────────────────────────────
+// A timeline or cards ITEM can carry an id, so proof can be attached to one
+// entry (proof.ts: attach { type: "entry", sectionId, itemId }). Optional and
+// additive: rows saved before this have none, and render exactly as before.
+//
+// A missing id is filled DETERMINISTICALLY, from the section id and the item's
+// index, everywhere the server reads or writes sections (clampSections, and
+// ensureEntryIds for the builder's load). So the same stored page resolves to
+// the same ids on every read: SSR and the client never disagree, and the
+// public page, the builder and the save-time proof check all agree. Random ids
+// (freshEntryId) are only for the builder creating a NEW row. An id the item
+// already has is always kept; a generated one never takes an id a later item
+// in the same section already holds.
+//
+// Ids are identity, not content: blockIsEmpty ignores them, the size backstop
+// does not count them, and Paige's section fingerprint strips them.
+export const ENTRY_ID_BLOCKS = ["timeline", "cards"] as const;
+const ENTRY_ID = /^[A-Za-z0-9_-]{1,60}$/;
+
+/** The id an item may keep: 1-60 of [A-Za-z0-9_-], else undefined. */
+export function validEntryId(v: unknown): string | undefined {
+  return typeof v === "string" && ENTRY_ID.test(v) ? v : undefined;
+}
+
+const entryId = z.preprocess((v) => validEntryId(v), z.string().optional());
+
+/** For the builder when it creates a new row (PR 2). Never used by the server. */
+export function freshEntryId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `e-${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+  }
+}
+
+// FNV-1a, 32-bit: tiny, synchronous and stable across runtimes. Not security —
+// only a short, deterministic spelling of "section X, item n".
+function fnv1a(text: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+
+/** The deterministic id for item `index` of section `sectionId`. `attempt` > 0
+ *  only on a collision. */
+export function derivedEntryId(sectionId: string, index: number, attempt = 0): string {
+  return `e${fnv1a(attempt ? `${sectionId}#${index}#${attempt}` : `${sectionId}#${index}`)}`;
+}
+
+/**
+ * Give every item an id. Items that already hold a valid id keep it (the
+ * first holder, when two share one); the rest get derivedEntryId, skipping any
+ * id already taken in this section. Idempotent: a second pass changes nothing.
+ * Returns the same array when nothing needed filling.
+ */
+export function fillEntryIds<T extends object>(sectionId: string, items: readonly T[]): T[] {
+  const kept = new Set<string>();
+  const keep: Array<string | undefined> = items.map((it) => {
+    const id = validEntryId((it as { id?: unknown }).id);
+    if (!id || kept.has(id)) return undefined;
+    kept.add(id);
+    return id;
+  });
+  if (keep.every((id) => id !== undefined)) return items as T[];
+  return items.map((it, i) => {
+    if (keep[i] !== undefined) return it;
+    let attempt = 0;
+    let id = derivedEntryId(sectionId, i, attempt);
+    while (kept.has(id)) id = derivedEntryId(sectionId, i, ++attempt);
+    kept.add(id);
+    return { ...it, id };
+  });
+}
+
+/**
+ * Item ids carried from `prev` onto `next`, for an edit that rewrote a
+ * section's items wholesale (an AI rewrite returns items with no ids). An
+ * item in `next` keeps a valid id it already has when `prev` holds it and no
+ * earlier item claimed it; otherwise it takes the id of the first unclaimed
+ * `prev` item with the same title (and org, for timeline). Items that match
+ * nothing get no id here; fillEntryIds gives them one on save.
+ */
+export function carryEntryIds<T extends object>(prev: readonly object[], next: readonly T[]): T[] {
+  const key = (it: object) => {
+    const r = it as { title?: unknown; org?: unknown };
+    const t = (v: unknown) => (typeof v === "string" ? v.trim().toLowerCase() : "");
+    return `${t(r.title)}\u0000${t(r.org)}`;
+  };
+  const prevIds = prev.map((it) => validEntryId((it as { id?: unknown }).id));
+  const claimed = new Set<string>();
+  // First the ids next already holds that prev knows, so a later match by
+  // title cannot take an id an item is explicitly carrying.
+  const own = next.map((it) => {
+    const id = validEntryId((it as { id?: unknown }).id);
+    if (!id || claimed.has(id) || !prevIds.includes(id)) return undefined;
+    claimed.add(id);
+    return id;
+  });
+  return next.map((it, i) => {
+    if (own[i]) return it;
+    const k = key(it);
+    const j = prev.findIndex((p, pi) => {
+      const pid = prevIds[pi];
+      return pid !== undefined && !claimed.has(pid) && key(p) === k;
+    });
+    const { id: _drop, ...rest } = it as T & { id?: unknown };
+    void _drop;
+    if (j < 0) return rest as T;
+    claimed.add(prevIds[j]!);
+    return { ...rest, id: prevIds[j] } as T;
+  });
+}
+
+/**
+ * The builder's rule for an AI edit that rewrote a section's rows (a draft, a
+ * rewrite from the material, Finishing touches): carry the rows' ids across
+ * from what the section held (carryEntryIds), then give any row still without
+ * one a fresh id, so every row the builder holds can have proof attached.
+ * Blocks other than timeline / cards pass through untouched.
+ */
+export function withCarriedEntryIds<D>(blockType: string, prevData: unknown, nextData: D): D {
+  if (!(ENTRY_ID_BLOCKS as readonly string[]).includes(blockType)) return nextData;
+  const nextItems = (nextData as { items?: unknown } | null)?.items;
+  if (!Array.isArray(nextItems) || !nextItems.every((it) => it && typeof it === "object")) {
+    return nextData;
+  }
+  const prevItems = (prevData as { items?: unknown } | null)?.items;
+  const prev = Array.isArray(prevItems)
+    ? prevItems.filter((it): it is object => !!it && typeof it === "object")
+    : [];
+  const items = carryEntryIds(prev, nextItems as object[]).map((it) =>
+    validEntryId((it as { id?: unknown }).id) ? it : { ...it, id: freshEntryId() },
+  );
+  return { ...(nextData as object), items } as D;
+}
+
 export const BLOCK_DATA_SCHEMAS = {
   metric_grid: z.object({
     items: arr(z.object({ value: str(24), label: str(60), sub: str(80) }), 8),
@@ -96,6 +237,7 @@ export const BLOCK_DATA_SCHEMAS = {
     location: str(120),
     items: arr(
       z.object({
+        id: entryId,
         period: str(60),
         title: str(120),
         org: str(160),
@@ -118,7 +260,7 @@ export const BLOCK_DATA_SCHEMAS = {
     // 20 is ~9 KB per section — several full card sections still sit well
     // inside the 64 KB budget. In practice 20 is unreachable: the sections
     // people fill hold three to eight.
-    items: arr(z.object({ title: str(80), body: str(320), icon: str(24) }), 20),
+    items: arr(z.object({ id: entryId, title: str(80), body: str(320), icon: str(24) }), 20),
   }),
   quote_list: z.object({
     items: arr(z.object({ quote: str(400), name: str(80), role: str(120) }), 6),
@@ -219,7 +361,7 @@ export function clampSections(input: unknown): PageSection[] {
       id,
       title: env.data.title,
       blockType: env.data.blockType,
-      data: dataParsed.data as BlockData,
+      data: withEntryIds(env.data.blockType, id, dataParsed.data as BlockData),
       order: out.length,
       visible: env.data.visible,
       ...(env.data.hint ? { hint: env.data.hint } : {}),
@@ -228,12 +370,72 @@ export function clampSections(input: unknown): PageSection[] {
 
   if (dropped > 0) console.error(`clampSections: dropped ${dropped} invalid section(s)`);
 
-  // Size backstop: trim from the end until under the serialized cap.
-  while (out.length > 0 && JSON.stringify(out).length > MAX_SERIALIZED_BYTES) {
+  // Size backstop: trim from the end until under the serialized cap. Entry
+  // ids do not count toward it: they were added after the cap was set, and a
+  // page that fit before must never lose a section because its rows gained
+  // ids (worst case ~14 KB: 16 sections of 20 rows, each a 36-character
+  // builder id; derived ids are 7-8 characters).
+  while (out.length > 0 && JSON.stringify(out).length - entryIdBytes(out) > MAX_SERIALIZED_BYTES) {
     out.pop();
     console.error("clampSections: trimmed a section to stay under the size cap");
   }
   return out;
+}
+
+function isEntryIdBlock(blockType: unknown): boolean {
+  return (ENTRY_ID_BLOCKS as readonly unknown[]).includes(blockType);
+}
+
+function withEntryIds(blockType: BlockType, sectionId: string, data: BlockData): BlockData {
+  if (!isEntryIdBlock(blockType)) return data;
+  const items = (data as { items?: object[] }).items;
+  if (!Array.isArray(items)) return data;
+  const filled = fillEntryIds(sectionId, items);
+  return filled === items ? data : ({ ...data, items: filled } as BlockData);
+}
+
+// What the items' ids add to JSON.stringify(sections): `"id":"<id>",` each.
+function entryIdBytes(sections: PageSection[]): number {
+  let n = 0;
+  for (const s of sections) {
+    if (!isEntryIdBlock(s.blockType)) continue;
+    for (const it of (s.data as { items?: Array<{ id?: unknown }> }).items ?? []) {
+      if (typeof it.id === "string") n += it.id.length + 8;
+    }
+  }
+  return n;
+}
+
+/**
+ * The builder's load path (getMyPitchPage): the stored sections exactly as
+ * they are, plus an id on every timeline and cards item that lacks one —
+ * the SAME id clampSections would give it, so what the builder holds, what a
+ * save stores and what the public page resolves all agree. Touches nothing
+ * else: no section is dropped, clamped or reordered here.
+ */
+export function ensureEntryIds(sections: unknown): unknown {
+  if (!Array.isArray(sections)) return sections;
+  const seen = new Set<string>();
+  let changed = false;
+  const out = sections.map((raw) => {
+    if (!raw || typeof raw !== "object") return raw;
+    const sec = raw as { id?: unknown; blockType?: unknown; data?: unknown };
+    if (!(BLOCK_TYPES as readonly unknown[]).includes(sec.blockType)) return raw;
+    const id = typeof sec.id === "string" && sec.id.length > 0 && sec.id.length <= 60 ? sec.id : "";
+    // clampSections gives a missing or repeated section id a fresh random one,
+    // so there is nothing stable to derive from: those rows get their ids at
+    // the next save instead.
+    if (!id || seen.has(id)) return raw;
+    seen.add(id);
+    if (!isEntryIdBlock(sec.blockType) || !sec.data || typeof sec.data !== "object") return raw;
+    const items = (sec.data as { items?: unknown }).items;
+    if (!Array.isArray(items) || !items.every((it) => it && typeof it === "object")) return raw;
+    const filled = fillEntryIds(id, items as object[]);
+    if (filled === items) return raw;
+    changed = true;
+    return { ...sec, data: { ...(sec.data as object), items: filled } };
+  });
+  return changed ? out : sections;
 }
 
 /** Zod wrapper for save paths: preprocess through the defensive clamp. */
@@ -254,9 +456,11 @@ export function blockIsEmpty(blockType: BlockType, data: BlockData): boolean {
     case "cards":
     case "quote_list": {
       const items = (d.items as Array<Record<string, string>>) ?? [];
+      // An entry id is identity, not content: a row holding only an id is
+      // still an empty row.
       return !items.some((it) =>
-        Object.values(it).some((v) =>
-          Array.isArray(v) ? v.some(Boolean) : !!String(v ?? "").trim(),
+        Object.entries(it).some(
+          ([k, v]) => k !== "id" && (Array.isArray(v) ? v.some(Boolean) : !!String(v ?? "").trim()),
         ),
       );
     }
@@ -298,21 +502,51 @@ export function sectionsForLayout(data: { sections?: PageSection[] | null }): Pa
 }
 
 /**
- * The same list, for the BUILDER rather than a page.
- *
- * sectionsForLayout drops empty sections because a published page must not
- * show a heading over nothing. Applied while editing, that hid the entire
- * outline a template seeds: About Me, Experience, Skills, By the Numbers and
- * What People Say all start empty, so the only thing left on screen was
- * Contact, which is the one seed carrying copy. Every template opened as the
- * same near-blank page, and the sections that were supposed to be filled in
- * could not be reached to fill in.
- *
- * So the builder keeps them. Emptiness is still what decides whether a
- * section is published; it is not what decides whether its owner can see it.
+ * Where Projects & Proof goes: the id of the section it FOLLOWS, or null when
+ * there are no sections. Spec 2026-10-23-proof-media, "The Projects & Proof
+ * section": right after Experience; with no Experience, after the first
+ * timeline section; with no timeline, after About, else after the first
+ * section. Pass the sections in display order: the builder's own list for its
+ * fixed row, sectionsForLayout() for the public page.
  */
-export function sectionsForEditing(data: { sections?: PageSection[] | null }): PageSection[] {
-  return (data.sections ?? []).filter((s) => s.visible).sort((a, b) => a.order - b.order);
+export function proofSectionAnchor(
+  sections: readonly Pick<PageSection, "id" | "title" | "blockType">[],
+): string | null {
+  const titled = (re: RegExp) => (s: { title: string }) => re.test(s.title ?? "");
+  const pick =
+    sections.find((s) => s.blockType === "timeline" && titled(/experience/i)(s)) ??
+    sections.find((s) => s.blockType === "timeline") ??
+    sections.find(titled(/\babout\b/i)) ??
+    sections[0];
+  return pick?.id ?? null;
+}
+
+/** Where a layout draws the public Projects & Proof section. */
+export type ProjectsProofPlacement =
+  | { kind: "after-section"; sectionId: string }
+  | { kind: "after-hero" };
+
+/**
+ * Where the public Projects & Proof section goes (spec 2026-10-23-proof-media,
+ * "The public page (PR 3)"), for the layouts that place proof themselves.
+ * Pass the sections the page renders (sectionsForLayout) and
+ * proofPlacement(kind):
+ *   - "top" pages (athlete, real-estate, listing) get it directly under the
+ *     hero gallery (decided 2026-10-24);
+ *   - every other page gets it after proofSectionAnchor's pick among the BODY
+ *     sections (the closing CTA band is never an anchor);
+ *   - a page with no body sections at all gets it under the hero, so it is
+ *     never at the very bottom.
+ * `placement` is passed in rather than computed from the kind so this file
+ * does not import the proof helpers.
+ */
+export function projectsProofPlacement(
+  sections: readonly Pick<PageSection, "id" | "title" | "blockType">[],
+  placement: "top" | "middle",
+): ProjectsProofPlacement {
+  if (placement === "top") return { kind: "after-hero" };
+  const id = proofSectionAnchor(sections.filter((s) => s.blockType !== "cta"));
+  return id ? { kind: "after-section", sectionId: id } : { kind: "after-hero" };
 }
 
 /**

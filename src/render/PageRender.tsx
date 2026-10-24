@@ -7,13 +7,8 @@ import { BlockBody, SectionHeading } from "./blocks";
 import { Hero } from "./Hero";
 import { Reveal } from "./Reveal";
 import { RADIUS_FOR, TYPE_SPECS, themeForTemplate, type TemplateTheme } from "./template-theme";
-import {
-  MAX_SECTIONS,
-  blockIsEmpty,
-  sectionsForEditing,
-  sectionsForLayout,
-  type PageSection,
-} from "@/page/page-sections";
+import { MAX_SECTIONS, blockIsEmpty, sectionsForLayout, type PageSection } from "@/page/page-sections";
+import { sectionsForEditing } from "@/page/sections-for-editing";
 import type { PageModel } from "@/page/page-model";
 import { SITE_URL } from "@/lib/config";
 import { MIN_TAP } from "@/theme/tokens";

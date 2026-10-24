@@ -1,4 +1,5 @@
 import {
+  ENTRY_ID_BLOCKS,
   BLOCK_DATA_SCHEMAS,
   blockIsEmpty,
   type BlockData,
@@ -102,7 +103,27 @@ function sampleContents(): Set<string> {
 
 function normalisedContent(blockType: BlockType, data: unknown): string | null {
   const parsed = BLOCK_DATA_SCHEMAS[blockType].safeParse(data ?? {});
-  return parsed.success ? canonicalJson(parsed.data) : null;
+  return parsed.success ? canonicalJson(withoutEntryIds(blockType, parsed.data)) : null;
+}
+
+/**
+ * Entry ids are identity, not content (page-sections.ts, "Stable entry ids"):
+ * reading a page back gives every timeline and cards row one, and a sample
+ * whose rows have gained ids is still the untouched sample.
+ */
+function withoutEntryIds(blockType: BlockType, data: unknown): unknown {
+  if (!(ENTRY_ID_BLOCKS as readonly string[]).includes(blockType)) return data;
+  const items = (data as { items?: unknown }).items;
+  if (!Array.isArray(items)) return data;
+  return {
+    ...(data as object),
+    items: items.map((item) => {
+      if (!item || typeof item !== "object") return item;
+      const { id: _id, ...rest } = item as { id?: unknown };
+      void _id;
+      return rest;
+    }),
+  };
 }
 
 /** JSON with every object's keys sorted, and undefined fields left out as JSON would. */

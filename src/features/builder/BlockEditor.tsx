@@ -9,7 +9,7 @@ import { Segmented } from "@/components/Select";
 import { useColors } from "@/theme/ThemeProvider";
 import { MIN_TAP } from "@/theme/tokens";
 import { isAppleRelayEmail, RELAY_EMAIL_HINT } from "@/page/contact-email";
-import type { BlockData, BlockType } from "@/page/page-sections";
+import { freshEntryId, type BlockData, type BlockType } from "@/page/page-sections";
 
 /**
  * Editing one section's contents.
@@ -326,14 +326,17 @@ function TextBlockEditor({ data, set }: { data: BlockData; set: Setter }) {
   );
 }
 
-type Period = { period?: string; title?: string; org?: string; bullets?: string[] };
+// `id` is the row's identity for the website's Proof feature (page-sections.ts,
+// "Stable entry ids"): a new row gets a fresh one here, and update and move
+// carry it with the row, so an edit on the phone never detaches a proof.
+type Period = { id?: string; period?: string; title?: string; org?: string; bullets?: string[] };
 
 function TimelineEditor({ data, set }: { data: BlockData; set: Setter }) {
   const d = data as { location?: string; items?: Period[] };
   const list = useItemList<Period>(
     d.items ?? [],
     set,
-    () => ({ period: "", title: "", org: "", bullets: [] }),
+    () => ({ id: freshEntryId(), period: "", title: "", org: "", bullets: [] }),
     8,
   );
 
@@ -397,7 +400,7 @@ function TimelineEditor({ data, set }: { data: BlockData; set: Setter }) {
   );
 }
 
-type CardItem = { title?: string; body?: string; icon?: string };
+type CardItem = { id?: string; title?: string; body?: string; icon?: string };
 
 function CardsEditor({ data, set }: { data: BlockData; set: Setter }) {
   // 20, the schema's cap. The web's editor stops at 4, which silently truncates
@@ -405,7 +408,7 @@ function CardsEditor({ data, set }: { data: BlockData; set: Setter }) {
   const list = useItemList<CardItem>(
     ((data as { items?: CardItem[] }).items ?? []),
     set,
-    () => ({ title: "", body: "", icon: "" }),
+    () => ({ id: freshEntryId(), title: "", body: "", icon: "" }),
     20,
   );
 

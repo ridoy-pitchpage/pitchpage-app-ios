@@ -1,4 +1,5 @@
-import { sectionsForEditing, sectionsForLayout, clampSections } from "@/page/page-sections";
+import { sectionsForLayout, clampSections } from "@/page/page-sections";
+import { sectionsForEditing } from "@/page/sections-for-editing";
 import { STYLE_FAMILIES } from "@/page/style-families";
 import { TEMPLATE_SEEDS } from "@/page/template-seeds";
 import { seedSections } from "@/page/apply-template-seed";
