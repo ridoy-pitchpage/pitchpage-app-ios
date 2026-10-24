@@ -347,8 +347,22 @@ it on the version page in App Store Connect and **Add for Review**.
 
 ## 7. TestFlight check before submitting
 
-On a real iPhone, with the TestFlight build — not Expo Go, which cannot test
-the native sign-ins:
+First, on a simulator running the newest iOS — reviewers use the latest
+iPhone on the latest iOS, and a launch rule that is new in that iOS (build
+7's scene life cycle) shows up here in a minute and on no older phone:
+
+```bash
+xcodebuild -workspace ios/PitchPage.xcworkspace -scheme PitchPage \
+  -configuration Release -destination 'platform=iOS Simulator,name=<newest iPhone>' \
+  -derivedDataPath /tmp/pp-sim CODE_SIGNING_ALLOWED=NO build
+xcrun simctl install booted /tmp/pp-sim/Build/Products/Release-iphonesimulator/PitchPage.app
+xcrun simctl launch booted co.pitchpage.app
+```
+
+- [ ] The release build opens to onboarding on the newest iOS and stays open
+
+Then on a real iPhone, with the TestFlight build — not Expo Go, which cannot
+test the native sign-ins:
 
 - [ ] Sign in with Apple, with Google, and with email; sign out and back in.
       Apple and Google open pitchpage.co's sign-in sheet and come back signed in
