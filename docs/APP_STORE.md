@@ -326,6 +326,11 @@ TestFlight after Apple processes it.
 - **Never upload from a plain `npx expo prebuild`.** Without the release
   command the project comes out as "PitchPage Dev", `co.pitchpage.app.dev`,
   which matches no App ID.
+- **The variant travels with the project.** `plugins/with-app-variant.js`
+  writes the variant `ios:release` resolved into the Xcode build settings, so
+  the archive embeds `production` even though expo-constants re-runs
+  `app.config.ts` during the build without `APP_VARIANT`. Builds 5 to 8 lacked
+  this and showed "Version 1.0.0 (dev)" on the Account screen.
 
 ### Or with EAS, Expo's build service
 

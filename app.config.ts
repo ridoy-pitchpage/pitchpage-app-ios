@@ -139,6 +139,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // iOS 27 stops an app built with its SDK at launch unless it uses the
     // UIScene life cycle, and Expo's template doesn't yet (App Review, build 7).
     "./plugins/with-scene-lifecycle",
+    // expo-constants re-runs this file inside every Xcode build, without
+    // APP_VARIANT, so the project carries the variant prebuild resolved.
+    "./plugins/with-app-variant",
   ],
   experiments: { typedRoutes: true },
   extra: {
