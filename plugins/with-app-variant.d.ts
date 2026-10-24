@@ -3,7 +3,7 @@
 import type { ConfigPlugin } from "expo/config-plugins";
 
 declare const withAppVariant: ConfigPlugin & {
-  setVariant(section: Record<string, unknown>, variant: string): void;
+  withVariantExport(contents: string, variant: string): string;
 };
 
 export = withAppVariant;

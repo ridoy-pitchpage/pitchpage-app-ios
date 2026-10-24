@@ -3,20 +3,22 @@ import plugin from "../plugins/with-app-variant";
 
 jest.mock("expo/virtual/env", () => ({ env: { APP_VARIANT: "development" } }));
 
-type Section = Record<string, { isa?: string; buildSettings?: Record<string, string> } | string>;
+// ios/.xcode.env as Expo's template generates it.
+const TEMPLATE = "# Customize the NODE_BINARY variable here.\nexport NODE_BINARY=$(command -v node)\n";
 
-describe("the variant Xcode builds see", () => {
-  it("is written into the app target's build configurations only", () => {
-    const section: Section = {
-      A1: { isa: "XCBuildConfiguration", buildSettings: { PRODUCT_BUNDLE_IDENTIFIER: "co.pitchpage.app", SDKROOT: "iphoneos" } },
-      A1_comment: "Release",
-      A2: { isa: "XCBuildConfiguration", buildSettings: { PRODUCT_BUNDLE_IDENTIFIER: "co.pitchpage.app" } },
-      P1: { isa: "XCBuildConfiguration", buildSettings: { SDKROOT: "iphoneos" } },
-    };
-    plugin.setVariant(section, "production");
-    expect((section.A1 as { buildSettings: Record<string, string> }).buildSettings.APP_VARIANT).toBe("production");
-    expect((section.A2 as { buildSettings: Record<string, string> }).buildSettings.APP_VARIANT).toBe("production");
-    expect((section.P1 as { buildSettings: Record<string, string> }).buildSettings).not.toHaveProperty("APP_VARIANT");
+describe("the variant the Xcode script phases see", () => {
+  it("is exported after the template's node line", () => {
+    const out = plugin.withVariantExport(TEMPLATE, "production");
+    expect(out.startsWith(TEMPLATE)).toBe(true);
+    expect(out).toMatch(/\nexport APP_VARIANT=production\n$/);
+  });
+
+  it("is replaced, not duplicated, when prebuild runs again", () => {
+    const once = plugin.withVariantExport(TEMPLATE, "development");
+    const twice = plugin.withVariantExport(once, "production");
+    expect(twice.match(/export APP_VARIANT=/g)).toHaveLength(1);
+    expect(twice).toContain("export APP_VARIANT=production");
+    expect(twice).not.toContain("export APP_VARIANT=development");
   });
 
   it("comes from the same variant prebuild used for the bundle id", () => {

@@ -4,40 +4,54 @@
  *
  * `ios:release` sets APP_VARIANT=production for prebuild, which is where the
  * bundle id and app name come from. But expo-constants runs app.config.ts
- * again inside every Xcode build to embed the manifest, and that run only sees
- * Xcode's environment, where APP_VARIANT is unset, so `extra.variant` came out
- * as "development" in every upload: builds 5 to 8 showed "Version 1.0.0 (dev)"
- * on the Account screen. Xcode exports build settings to script phases as
- * environment variables, so writing the variant prebuild resolved into the app
- * target's build settings makes that second run agree with the first.
+ * again inside every Xcode build to embed the manifest, as a script phase of
+ * the Pods project that only sees the environment Xcode gives it, so
+ * `extra.variant` came out as "development" in every upload: builds 5 to 8
+ * showed "Version 1.0.0 (dev)" on the Account screen.
+ *
+ * Those script phases source ios/.xcode.env before anything else
+ * (expo-constants/scripts/with-node.sh), so the variant prebuild resolved is
+ * exported there. A build setting on the app target does not reach a Pods
+ * script phase, which is why this isn't one.
  */
-const { withXcodeProject } = require("expo/config-plugins");
+const fs = require("fs");
+const path = require("path");
+const { withDangerousMod } = require("expo/config-plugins");
+
+const EXPORT_LINE = /^export APP_VARIANT=.*$/m;
 
 /**
- * Sets APP_VARIANT on every build configuration of the app target, which are
- * the ones that carry a bundle identifier; the project-level ones don't.
- * @param {Record<string, any>} section the pbxproj XCBuildConfiguration section
+ * @param {string} contents ios/.xcode.env as prebuild generated it
  * @param {string} variant
  */
-function setVariant(section, variant) {
-  for (const key of Object.keys(section)) {
-    const entry = section[key];
-    if (!entry || typeof entry !== "object" || !entry.buildSettings) continue;
-    if (!entry.buildSettings.PRODUCT_BUNDLE_IDENTIFIER) continue;
-    entry.buildSettings.APP_VARIANT = variant;
-  }
+function withVariantExport(contents, variant) {
+  const line = `export APP_VARIANT=${variant}`;
+  if (EXPORT_LINE.test(contents)) return contents.replace(EXPORT_LINE, line);
+  const body = contents === "" || contents.endsWith("\n") ? contents : contents + "\n";
+  return (
+    body +
+    "\n# The variant prebuild resolved (plugins/with-app-variant.js), for the expo-constants\n" +
+    "# script phase that re-runs app.config.ts during the build.\n" +
+    line +
+    "\n"
+  );
 }
 
 /** @type {import("expo/config-plugins").ConfigPlugin} */
 const withAppVariant = (config) =>
-  withXcodeProject(config, (mod) => {
-    const variant = config.extra && config.extra.variant;
-    if (typeof variant !== "string" || !variant) {
-      throw new Error("with-app-variant: app.config.ts no longer sets extra.variant.");
-    }
-    setVariant(mod.modResults.pbxXCBuildConfigurationSection(), variant);
-    return mod;
-  });
+  withDangerousMod(config, [
+    "ios",
+    async (mod) => {
+      const variant = config.extra && config.extra.variant;
+      if (typeof variant !== "string" || !variant) {
+        throw new Error("with-app-variant: app.config.ts no longer sets extra.variant.");
+      }
+      const file = path.join(mod.modRequest.platformProjectRoot, ".xcode.env");
+      const current = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+      fs.writeFileSync(file, withVariantExport(current, variant));
+      return mod;
+    },
+  ]);
 
 module.exports = withAppVariant;
-module.exports.setVariant = setVariant;
+module.exports.withVariantExport = withVariantExport;
