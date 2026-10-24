@@ -136,6 +136,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         dark: { backgroundColor: "#0A141F", image: "./assets/splash-mark.png", imageWidth: 200 },
       },
     ],
+    // iOS 27 stops an app built with its SDK at launch unless it uses the
+    // UIScene life cycle, and Expo's template doesn't yet (App Review, build 7).
+    "./plugins/with-scene-lifecycle",
   ],
   experiments: { typedRoutes: true },
   extra: {

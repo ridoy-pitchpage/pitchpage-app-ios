@@ -230,6 +230,22 @@ and paid features. To reply:
 3. **Paste the Notes text** into the reply and into App Review Information →
    Notes, select the build, and resubmit.
 
+### The launch crash (2.1(a), 24 Oct 2026)
+
+Build 7 came back with *Guideline 2.1(a) - Performance - App Completeness*:
+it crashed on launch on the reviewer's iPhone 17 Pro Max on iOS 27.0.1, with
+three crash logs attached. All three stop in UIKit, in
+`_UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`, before a line
+of JavaScript runs: an app built with the iOS 27 SDK must use the UIScene life
+cycle, and Expo 57's project template still starts React Native from the app
+delegate, with no scene manifest in Info.plist.
+
+The fix is `plugins/with-scene-lifecycle.js`, which every `ios:release` runs:
+it hands React Native to Expo's own `EXExpoAppSceneDelegate` and declares the
+scene in Info.plist. It throws if the template ever changes shape, so a build
+can't go out without it again. Build 8 is the first with it. Nothing in the
+app's screens, sign-in or data changed, so the Notes above still describe it.
+
 ---
 
 ## 4. The other questions App Store Connect asks
