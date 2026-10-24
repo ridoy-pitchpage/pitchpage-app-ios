@@ -47,3 +47,16 @@ it("still reads iOS's offline sentence as a connection problem", () => {
     "Couldn't reach the server — check your connection and try again.",
   );
 });
+
+it("never shows a server sentence that names a price, an upgrade or a tier", () => {
+  // The website's pricing tiers (PR 4) write these; the app sells nothing.
+  const raw = [
+    "Basic pages can track up to 5 companies. Upgrade this page to Pro for $10 to track every company you send it to.",
+    "This needs the Pro plan.",
+    "Upgrade to continue.",
+    "That costs €3 a month.",
+  ];
+  for (const message of raw) {
+    expect(userFacingErrorMessage(new Error(message))).toBe(GENERIC);
+  }
+});

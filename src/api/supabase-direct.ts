@@ -207,6 +207,10 @@ export async function listPageLinks(pitchPageId: string): Promise<PageLinkRow[]>
  * web's loop. 23505 is the unique-violation code — anything else is a real
  * failure and is thrown.
  */
+/** The server's cap on a page's tracked links (pitch_page_links_basic_cap). */
+export const MAX_TRACKED_LINKS = 5;
+export const TRACKED_LINKS_CAP_MESSAGE = `A page can have up to ${MAX_TRACKED_LINKS} tracked links. Delete one to make another.`;
+
 export async function createPageLink(
   pitchPageId: string,
   label: string,
@@ -232,7 +236,16 @@ export async function createPageLink(
       .select("*")
       .single();
     if (!error && data) return data;
-    if (error && error.code !== "23505") throw error;
+    if (error && error.code !== "23505") {
+      // Pages published from the app are Basic, and the trigger that caps
+      // their links answers the 6th with a price and an upgrade to Pro
+      // (pricing-tiers PR 4). The app sells nothing, so it says its own
+      // sentence; errors.ts also refuses any such sentence as a backstop.
+      if (/^Basic pages can track up to/i.test(error.message ?? "")) {
+        throw new Error(TRACKED_LINKS_CAP_MESSAGE);
+      }
+      throw error;
+    }
   }
 
   throw new Error("Couldn't create the link — please try again.");

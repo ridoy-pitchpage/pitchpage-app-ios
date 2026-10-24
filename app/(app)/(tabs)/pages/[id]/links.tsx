@@ -13,7 +13,7 @@ import { TextField } from "@/components/TextField";
 import { useConfirm } from "@/components/Confirm";
 import { useToast } from "@/components/Toast";
 import { useCreatePageLink, useDeletePageLink, useMyPage, usePageLinks } from "@/api/queries";
-import type { PageLinkRow } from "@/api/supabase-direct";
+import { MAX_TRACKED_LINKS, type PageLinkRow } from "@/api/supabase-direct";
 import { publicPageUrl } from "@/lib/share";
 import { relativeTime } from "@/lib/format";
 
@@ -102,6 +102,9 @@ export default function TrackedLinksScreen() {
           <>
             <Card className="gap-3">
               <H3>New link</H3>
+              <Muted>
+                {(links.data ?? []).length} of {MAX_TRACKED_LINKS} tracked links on this page
+              </Muted>
               <TextField
                 value={label}
                 onChangeText={setLabel}
@@ -119,7 +122,7 @@ export default function TrackedLinksScreen() {
             ) : (links.data ?? []).length === 0 ? (
               <EmptyState
                 title="No tracked links yet"
-                body="Make one for each company or person you send the page to."
+                body={`Make one for each company or person you send the page to — up to ${MAX_TRACKED_LINKS} per page.`}
               />
             ) : (
               (links.data ?? []).map((link) => (

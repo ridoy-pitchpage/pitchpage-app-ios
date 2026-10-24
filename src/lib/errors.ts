@@ -59,6 +59,12 @@ const TRANSLATIONS: Array<[RegExp, string]> = [
   // Config problems are ours, never the customer's, and must never name the
   // setting that is missing.
   [/missing [A-Z0-9_]{4,}|api[_ ]?key|env(ironment)? variable/i, GENERIC],
+  // The website's pricing tiers answer some writes with a price and an
+  // upgrade ("Upgrade this page to Pro for $10…"). The app sells nothing and
+  // names no price (Guideline 3.1.3(f)), so no such sentence may reach a
+  // customer, including the next tier message nobody has seen yet. Last, so
+  // the specific translations above still win.
+  [/[$€£]\s?\d|\d\s?(?:usd|eur|gbp)\b|\bupgrade\b|\bpro\b/i, GENERIC],
 ];
 
 /** Supabase Auth messages, which are written for developers. */
