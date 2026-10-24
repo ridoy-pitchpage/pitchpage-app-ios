@@ -359,12 +359,17 @@ iPhone on the latest iOS, and a launch rule that is new in that iOS (build
 ```bash
 xcodebuild -workspace ios/PitchPage.xcworkspace -scheme PitchPage \
   -configuration Release -destination 'platform=iOS Simulator,name=<newest iPhone>' \
-  -derivedDataPath /tmp/pp-sim CODE_SIGNING_ALLOWED=NO build
+  -derivedDataPath /tmp/pp-sim build
 xcrun simctl install booted /tmp/pp-sim/Build/Products/Release-iphonesimulator/PitchPage.app
 xcrun simctl launch booted co.pitchpage.app
 ```
 
+Leave code signing on. An unsigned simulator build has no entitlements, the
+keychain refuses it (`-34018`), and sign-in then silently fails.
+
 - [ ] The release build opens to onboarding on the newest iOS and stays open
+- [ ] Sign in with the demo account: Pages lists its pages, and Account shows
+      the version with no "(dev)" after it
 
 Then on a real iPhone, with the TestFlight build — not Expo Go, which cannot
 test the native sign-ins:
